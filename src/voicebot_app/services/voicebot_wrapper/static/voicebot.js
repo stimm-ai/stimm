@@ -22,6 +22,17 @@ class VoicebotInterface {
         this.audioPlayer = document.getElementById('audioPlayer');
         this.errorContainer = document.getElementById('errorContainer');
         
+        // Status tracking elements
+        this.statusSection = document.getElementById('statusSection');
+        this.llmStatus = document.getElementById('llmStatus');
+        this.ttsStatus = document.getElementById('ttsStatus');
+        this.tokenCount = document.getElementById('tokenCount');
+        this.audioChunkCount = document.getElementById('audioChunkCount');
+        this.streamTime = document.getElementById('streamTime');
+        this.latencySection = document.getElementById('latencySection');
+        this.firstChunkLatency = document.getElementById('firstChunkLatency');
+        this.playbackStartLatency = document.getElementById('playbackStartLatency');
+        
         // Debug logging removed for production
 
         // Audio context and processing (pour VAD uniquement)
@@ -44,6 +55,15 @@ class VoicebotInterface {
         this.SPEECH_PAUSE_THRESHOLD = 500; // 500ms pause threshold
         this.lastVadResult = null; // Store last VAD result from backend
         
+        // Progress tracking state
+        this.tokenCounter = 0;
+        this.audioChunkCounter = 0;
+        this.startTime = null;
+        this.firstChunkReceived = false;
+        this.playbackStarted = false;
+        this.firstChunkTime = null;
+        this.playbackStartTime = null;
+        
         // Audio configuration for backend WebRTC VAD
         this.audioConfig = {
             sampleRate: 16000,  // WebRTC VAD requires 16kHz
@@ -61,9 +81,16 @@ class VoicebotInterface {
         this.audioStreamer = new AudioStreamer({
             sampleRate: 44100, // TTS utilise 44.1kHz
             onPlaybackStart: () => {
-                // Debug logging removed for production
+                this.playbackStarted = true;
+                this.playbackStartTime = Date.now();
+                const latency = this.playbackStartTime - this.startTime;
+                this.playbackStartLatency.textContent = `${latency}ms`;
+                this.playbackStartLatency.className = 'latency-value measured';
+                console.log(`🎵 Audio playback started after ${latency}ms`);
             },
             onPlaybackEnd: () => {
+                // Reset TTS status when audio playback ends
+                this.ttsStatus.classList.remove('active');
                 // Debug logging removed for production
             },
             onError: (error) => {
@@ -397,6 +424,9 @@ class VoicebotInterface {
             // Stop audio playback immediately when voice is detected
             this.stopAudioPlayback();
             
+            // Reset progress tracking for new conversation turn
+            this.resetProgressTracking();
+            
             // Update button to green (active speech)
             this.updateVoiceButton(this.isListening, true);
             
@@ -453,6 +483,18 @@ class VoicebotInterface {
                 
             case 'assistant_response':
                 this.updateAssistantResponse(data.text, data.is_complete, data.is_first_token);
+                // Update LLM status when we receive assistant response
+                if (data.is_first_token) {
+                    this.tokenCounter++;
+                    this.llmStatus.classList.add('active');
+                } else if (!data.is_complete) {
+                    // Increment token counter for streaming tokens
+                    this.tokenCounter++;
+                } else if (data.is_complete) {
+                    // When response is complete, reset LLM status
+                    this.llmStatus.classList.remove('active');
+                }
+                this.updateStats();
                 break;
                 
             case 'audio_chunk':
@@ -533,6 +575,21 @@ class VoicebotInterface {
         if (!audioData) return;
         
         try {
+            // Track first audio chunk latency
+            if (!this.firstChunkReceived) {
+                this.firstChunkReceived = true;
+                this.firstChunkTime = Date.now();
+                const latency = this.firstChunkTime - this.startTime;
+                this.firstChunkLatency.textContent = `${latency}ms`;
+                this.firstChunkLatency.className = 'latency-value measured';
+                console.log(`⏱️ First audio chunk received after ${latency}ms`);
+            }
+
+            // Update TTS status
+            this.audioChunkCounter++;
+            this.ttsStatus.classList.add('active');
+            this.updateStats();
+
             // Utiliser l'AudioStreamer partagé pour gérer la lecture audio TTS
             this.audioStreamer.addAudioChunk(audioData);
             
@@ -636,6 +693,42 @@ class VoicebotInterface {
         // Note: We don't close the main audio context here because it's used for VAD
         // The playback will stop naturally when isPlayingAudio is false and queue is empty
         // Debug logging removed for production
+    }
+
+    resetProgressTracking() {
+        // Reset all status tracking variables
+        this.tokenCounter = 0;
+        this.audioChunkCounter = 0;
+        this.startTime = Date.now();
+        this.firstChunkReceived = false;
+        this.playbackStarted = false;
+        this.firstChunkTime = null;
+        this.playbackStartTime = null;
+
+        // Reset UI elements
+        this.llmStatus.classList.remove('active');
+        this.ttsStatus.classList.remove('active');
+        this.tokenCount.textContent = 'Tokens: 0';
+        this.audioChunkCount.textContent = 'Audio Chunks: 0';
+        this.streamTime.textContent = 'Time: 0s';
+        this.firstChunkLatency.textContent = '-';
+        this.firstChunkLatency.className = 'latency-value pending';
+        this.playbackStartLatency.textContent = '-';
+        this.playbackStartLatency.className = 'latency-value pending';
+
+        // Show status section
+        this.statusSection.style.display = 'block';
+        this.latencySection.style.display = 'block';
+
+        console.log('🔄 Status tracking reset for new conversation turn');
+    }
+
+    updateStats() {
+        const elapsedTime = this.startTime ? Math.round((Date.now() - this.startTime) / 1000) : 0;
+
+        this.tokenCount.textContent = `Tokens: ${this.tokenCounter}`;
+        this.audioChunkCount.textContent = `Audio Chunks: ${this.audioChunkCounter}`;
+        this.streamTime.textContent = `Time: ${elapsedTime}s`;
     }
 
     // Cleanup method

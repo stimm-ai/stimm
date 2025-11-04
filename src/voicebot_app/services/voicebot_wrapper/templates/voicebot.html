@@ -241,6 +241,105 @@
         }
 
         /* Responsive design */
+        .status-section {
+            padding: 16px 20px;
+            background: #f8fafc;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .status-indicators {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .status-indicator-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .status-label {
+            font-size: 0.9rem;
+            color: #6b7280;
+            min-width: 120px;
+        }
+
+        .status-dot-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #9ca3af;
+            transition: background-color 0.3s ease;
+        }
+
+        .status-dot-indicator.active {
+            background: #10b981;
+            animation: pulse 1s infinite;
+        }
+
+        .status-stats {
+            margin-top: 12px;
+            font-size: 0.8rem;
+            color: #6b7280;
+            display: flex;
+            gap: 16px;
+        }
+
+        .latency-section {
+            margin-top: 16px;
+            padding: 12px;
+            background: #f1f5f9;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .latency-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .latency-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+        }
+
+        .latency-label {
+            font-size: 0.85rem;
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .latency-value {
+            font-size: 0.85rem;
+            color: #059669;
+            font-weight: 600;
+            background: #d1fae5;
+            padding: 2px 8px;
+            border-radius: 12px;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .latency-value.pending {
+            color: #6b7280;
+            background: #f3f4f6;
+        }
+
+        .latency-value.measured {
+            color: #059669;
+            background: #d1fae5;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         @media (max-width: 768px) {
             .content {
                 flex-direction: column;
@@ -307,6 +406,37 @@
                 <div class="panel-content">
                     <div id="assistantResponse" class="response-output">
                         Assistant responses will appear here...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="status-section" id="statusSection" style="display: none;">
+            <div class="status-indicators">
+                <div class="status-indicator-row">
+                    <span class="status-label">🔄 LLM Sending</span>
+                    <div class="status-dot-indicator" id="llmStatus"></div>
+                </div>
+                <div class="status-indicator-row">
+                    <span class="status-label">🔊 TTS Receiving</span>
+                    <div class="status-dot-indicator" id="ttsStatus"></div>
+                </div>
+            </div>
+            <div class="status-stats">
+                <span id="tokenCount">Tokens: 0</span>
+                <span id="audioChunkCount">Audio Chunks: 0</span>
+                <span id="streamTime">Time: 0s</span>
+            </div>
+
+            <div class="latency-section" id="latencySection" style="display: none;">
+                <div class="latency-bars">
+                    <div class="latency-bar">
+                        <span class="latency-label">⏱️ First Audio Chunk</span>
+                        <span class="latency-value" id="firstChunkLatency">-</span>
+                    </div>
+                    <div class="latency-bar">
+                        <span class="latency-label">🎵 Audio Playback Start</span>
+                        <span class="latency-value" id="playbackStartLatency">-</span>
                     </div>
                 </div>
             </div>

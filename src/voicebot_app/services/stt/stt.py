@@ -9,6 +9,7 @@ from typing import AsyncGenerator, Dict, Any, Optional
 
 from .config import stt_config
 from .providers.whisper_local import WhisperLocalProvider
+from .providers.deepgram_provider import DeepgramProvider
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,9 @@ class STTService:
         
         if provider_name == "whisper.local":
             self.provider = WhisperLocalProvider()
+            logger.info(f"Initialized STT provider: {provider_name}")
+        elif provider_name == "deepgram.com":
+            self.provider = DeepgramProvider()
             logger.info(f"Initialized STT provider: {provider_name}")
         else:
             raise ValueError(f"Unsupported STT provider: {provider_name}")

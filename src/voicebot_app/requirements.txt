@@ -14,3 +14,4 @@ sounddevice
 soundfile
 webrtcvad==2.0.10
 scipy==1.13.0
+deepgram-sdk>=3.0.0

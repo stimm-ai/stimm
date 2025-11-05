@@ -110,13 +110,26 @@ async def test_tts_live_streaming():
 
 @pytest.mark.asyncio
 async def test_tts_service_initialization():
-    """Verify that TTS service initializes properly with Async.ai configuration"""
+    """Verify that TTS service initializes properly with current configuration"""
     tts_service = TTSService()
     assert tts_service.provider is not None
     current_provider = tts_service.config.get_provider()
     print(f"TTS service initialized with provider: {current_provider}")
-    assert tts_service.config.async_ai_api_key is not None
-    assert tts_service.config.async_ai_url is not None
+    
+    # Verify provider-specific configuration based on current provider
+    if current_provider == "async.ai":
+        assert tts_service.config.async_ai_api_key is not None
+        assert tts_service.config.async_ai_url is not None
+    elif current_provider == "elevenlabs.io":
+        assert tts_service.config.elevenlabs_api_key is not None
+        assert tts_service.config.elevenlabs_voice_id is not None
+    elif current_provider == "kokoro.local":
+        assert tts_service.config.kokoro_local_url is not None
+        assert tts_service.config.kokoro_local_voice_id is not None
+    elif current_provider == "deepgram.com":
+        assert tts_service.config.deepgram_tts_api_key is not None
+        assert tts_service.config.deepgram_model is not None
+    
     print("✅ TTS service initialized successfully with environment configuration")
 
 if __name__ == "__main__":

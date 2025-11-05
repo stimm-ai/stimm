@@ -16,7 +16,7 @@ services:
       - KOKORO_TTS_DEFAULT_LANGUAGE=${KOKORO_TTS_DEFAULT_LANGUAGE:-en-US}
       - KOKORO_TTS_DEFAULT_VOICE=${KOKORO_TTS_DEFAULT_VOICE:-af_sarah}
       - KOKORO_TTS_DEFAULT_SPEED=${KOKORO_TTS_DEFAULT_SPEED:-1.0}
-      - KOKORO_TTS_SAMPLE_RATE=${KOKORO_TTS_SAMPLE_RATE:-24000}
+      - KOKORO_TTS_SAMPLE_RATE=${KOKORO_TTS_SAMPLE_RATE:-22050}
       - KOKORO_TTS_BLEND_RATIO=${KOKORO_TTS_BLEND_RATIO:-0.5}
       - KOKORO_MODEL_URL=${KOKORO_MODEL_URL:-https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx}
       - KOKORO_VOICES_URL=${KOKORO_VOICES_URL:-https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin}

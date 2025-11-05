@@ -33,7 +33,7 @@ class TTSConfig:
         self.kokoro_local_url = os.getenv("KOKORO_LOCAL_TTS_URL",
                                        "ws://kokoro-tts:5000/ws/tts/stream")
         self.kokoro_local_voice_id = os.getenv("KOKORO_TTS_DEFAULT_VOICE", "af_sarah")
-        self.kokoro_local_sample_rate = int(os.getenv("KOKORO_TTS_SAMPLE_RATE", "44100"))
+        self.kokoro_local_sample_rate = int(os.getenv("KOKORO_TTS_SAMPLE_RATE", "22050"))
         self.kokoro_local_encoding = os.getenv("KOKORO_TTS_ENCODING", "pcm_s16le")
         self.kokoro_local_container = os.getenv("KOKORO_TTS_CONTAINER", "raw")
         self.kokoro_local_language = os.getenv("KOKORO_TTS_DEFAULT_LANGUAGE", "fr-fr")

@@ -90,6 +90,10 @@ class ElevenLabsProvider:
                         
                         # Parse the standardized JSON payload
                         try:
+                            # Handle case where text_chunk might be an integer or other non-string type
+                            if not isinstance(text_chunk, str):
+                                text_chunk = str(text_chunk)
+                            
                             payload = json.loads(text_chunk)
                             # Convert our standard format to ElevenLabs format
                             elevenlabs_payload = {
@@ -99,15 +103,16 @@ class ElevenLabsProvider:
                             }
                             payload_str = json.dumps(elevenlabs_payload)
                             logger.info(f"Sent text chunk {text_count}: '{payload.get('text', '').strip()}' (flush: {payload.get('flush', False)})")
-                        except json.JSONDecodeError:
-                            # Fallback: if it's plain text, wrap it in our standard format
+                        except (json.JSONDecodeError, TypeError):
+                            # Fallback: if it's not valid JSON, treat as plain text
+                            text_content = str(text_chunk) if not isinstance(text_chunk, str) else text_chunk
                             standard_payload = {
-                                "text": text_chunk + " ",  # Add space for continuity
+                                "text": text_content + " ",  # Add space for continuity
                                 "try_trigger_generation": False,  # Disable auto generation triggering
                                 "flush": False
                             }
                             payload_str = json.dumps(standard_payload)
-                            logger.info(f"Sent text chunk {text_count}: '{text_chunk.strip()}' (converted from plain text)")
+                            logger.info(f"Sent text chunk {text_count}: '{text_content.strip()}' (converted from {type(text_chunk).__name__})")
                         
                         try:
                             await self.websocket.send_str(payload_str)

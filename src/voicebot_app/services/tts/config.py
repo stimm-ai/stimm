@@ -38,6 +38,14 @@ class TTSConfig:
         self.deepgram_model = os.getenv("DEEPGRAM_TTS_MODEL", "aura-asteria-en")
         self.deepgram_sample_rate = int(os.getenv("DEEPGRAM_TTS_SAMPLE_RATE", "16000"))
         self.deepgram_encoding = os.getenv("DEEPGRAM_TTS_ENCODING", "linear16")
+        
+        # ElevenLabs specific configuration
+        self.elevenlabs_api_key = os.getenv("ELEVENLABS_TTS_API_KEY")
+        self.elevenlabs_voice_id = os.getenv("ELEVENLABS_TTS_VOICE_ID", "21m00Tcm4TlvDq8ikWAM")
+        self.elevenlabs_model_id = os.getenv("ELEVENLABS_TTS_MODEL_ID", "eleven_multilingual_v2")
+        self.elevenlabs_sample_rate = int(os.getenv("ELEVENLABS_TTS_SAMPLE_RATE", "44100"))
+        self.elevenlabs_encoding = os.getenv("ELEVENLABS_TTS_ENCODING", "pcm_s16le")
+        self.elevenlabs_output_format = os.getenv("ELEVENLABS_TTS_OUTPUT_FORMAT", "mp3_44100_128")
 
     def get_provider(self):
         """Get the current TTS provider"""

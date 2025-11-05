@@ -134,7 +134,7 @@ class AudioStreamer {
     }
 
     /**
-     * Méthode principale de lecture audio (détection automatique du format)
+     * Méthode principale de lecture audio basée sur la configuration
      * @param {ArrayBuffer|Blob} audioData - Données audio à jouer
      */
     async playAudioDirect(audioData) {
@@ -146,29 +146,12 @@ class AudioStreamer {
             arrayBuffer = audioData;
         }
 
-        // Détecter le format audio
-        const format = this.detectAudioFormat(arrayBuffer);
-        console.log(`🎵 Format audio détecté: ${format}`);
+        console.log(`🎵 Lecture audio: ${arrayBuffer.byteLength} bytes, encoding: ${this.options.encoding}, sampleRate: ${this.options.sampleRate}`);
 
         try {
-            if (format === 'wav') {
-                // Décoder comme WAV
-                const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
-                const source = this.audioContext.createBufferSource();
-                source.buffer = audioBuffer;
-                source.connect(this.audioContext.destination);
-                
-                await new Promise((resolve) => {
-                    source.onended = () => {
-                        console.log('🎵 Chunk WAV terminé');
-                        resolve();
-                    };
-                    source.start();
-                    console.log('🎵 Chunk WAV démarré');
-                });
-                
-            } else if (format === 'pcm') {
-                // Décoder comme PCM brut
+            // Basé sur l'encoding configuré
+            if (this.options.encoding === 'pcm_s16le' || this.options.encoding === 'linear16') {
+                // Décoder comme PCM 16-bit little-endian
                 const audioBuffer = this.audioContext.createBuffer(1, arrayBuffer.byteLength / 2, this.options.sampleRate);
                 const channelData = audioBuffer.getChannelData(0);
                 
@@ -191,7 +174,7 @@ class AudioStreamer {
                     console.log('🎵 Chunk PCM démarré');
                 });
                 
-            } else if (format === 'mp3') {
+            } else if (this.options.encoding === 'mp3') {
                 // Décoder comme MP3
                 const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
                 const source = this.audioContext.createBufferSource();
@@ -208,60 +191,26 @@ class AudioStreamer {
                 });
                 
             } else {
-                // Format inconnu, essayer le décodage générique
-                console.log('🔄 Format inconnu, essai de décodage générique...');
+                // Fallback: décodage générique (pour WAV, etc.)
                 const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
                 const source = this.audioContext.createBufferSource();
                 source.buffer = audioBuffer;
                 source.connect(this.audioContext.destination);
                 
                 await new Promise((resolve) => {
-                    source.onended = resolve;
+                    source.onended = () => {
+                        console.log('🎵 Chunk générique terminé');
+                        resolve();
+                    };
                     source.start();
+                    console.log('🎵 Chunk générique démarré');
                 });
-                console.log('✅ Décodage générique réussi');
             }
             
         } catch (error) {
             console.log('🔄 Échec du décodage principal, essai en méthode alternative...');
             throw error; // Laisser la méthode alternative gérer
         }
-    }
-
-    /**
-     * Détecte le format audio basé sur les en-têtes
-     * @param {ArrayBuffer} arrayBuffer - Données audio
-     * @returns {string} Format détecté ('wav', 'pcm', 'mp3', 'unknown')
-     */
-    detectAudioFormat(arrayBuffer) {
-        const uint8Array = new Uint8Array(arrayBuffer);
-        
-        // Vérifier WAV (RIFF header)
-        if (uint8Array.length >= 12) {
-            const riffHeader = String.fromCharCode.apply(null, uint8Array.slice(0, 4));
-            const waveHeader = String.fromCharCode.apply(null, uint8Array.slice(8, 12));
-            if (riffHeader === 'RIFF' && waveHeader === 'WAVE') {
-                return 'wav';
-            }
-        }
-        
-        // Vérifier MP3 (ID3 header ou MPEG sync)
-        if (uint8Array.length >= 3) {
-            // ID3 header
-            const id3Header = String.fromCharCode.apply(null, uint8Array.slice(0, 3));
-            if (id3Header === 'ID3') {
-                return 'mp3';
-            }
-            
-            // MPEG sync (0xFF followed by 0xE0-0xFF)
-            if (uint8Array[0] === 0xFF && (uint8Array[1] & 0xE0) === 0xE0) {
-                return 'mp3';
-            }
-        }
-        
-        // Si pas d'en-tête reconnu, supposer PCM brut
-        // (ElevenLabs envoie souvent du PCM sans en-tête)
-        return 'pcm';
     }
 
     /**

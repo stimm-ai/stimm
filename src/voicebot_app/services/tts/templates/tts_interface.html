@@ -345,7 +345,10 @@
                     </button>
                 </div>
                 <div class="control-info">
-                    Hard-coded text: "{{ tts_interface_text }}"
+                    Provider: {{ tts_provider }} | Sample Rate: {{ tts_sample_rate }}Hz | Encoding: {{ tts_encoding }}
+                </div>
+                <div class="control-info">
+                    Text: "{{ tts_interface_text }}"
                 </div>
             </div>
         </div>
@@ -445,11 +448,10 @@
                 // Hard-coded text from the test file
                 this.hardCodedText = "{{ tts_interface_text }}";
 
-                // Initialiser l'AudioStreamer partagé avec configuration par défaut
-                // La configuration sera mise à jour selon le provider lors de la connexion
+                // Initialiser l'AudioStreamer partagé avec la configuration dynamique
                 this.audioStreamer = new AudioStreamer({
-                    sampleRate: 44100, // Valeur par défaut
-                    encoding: 'pcm_s16le', // Valeur par défaut
+                    sampleRate: {{ tts_sample_rate }}, // Configuration dynamique du backend
+                    encoding: '{{ tts_encoding }}', // Configuration dynamique du backend
                     onPlaybackStart: () => {
                         this.playbackStarted = true;
                         this.playbackStartTime = Date.now();
@@ -484,9 +486,8 @@
                 this.initializeEventListeners();
                 this.initializePreConnection();
                 
-                // Mettre à jour la configuration audio selon le provider actuel
-                const currentProvider = '{{ tts_provider }}' || 'elevenlabs.io'; // Remplacer par la variable réelle
-                this.updateAudioConfig(currentProvider);
+                // Configuration audio déjà définie via les variables du template
+                console.log(`🎵 Configuration audio: provider={{ tts_provider }}, sampleRate={{ tts_sample_rate }}, encoding={{ tts_encoding }}`);
             }
 
             initializeEventListeners() {
@@ -840,41 +841,6 @@
                 this.streamTime.textContent = `Time: ${elapsedTime}s`;
             }
 
-            /**
-             * Met à jour la configuration audio selon le provider
-             * @param {string} provider - Nom du provider (elevenlabs.io, async.ai, etc.)
-             */
-            updateAudioConfig(provider) {
-                // Configuration par défaut
-                let sampleRate = 44100;
-                let encoding = 'pcm_s16le';
-
-                // Configuration spécifique au provider
-                switch(provider) {
-                    case 'elevenlabs.io':
-                        sampleRate = 44100; // ElevenLabs utilise maintenant 44.1kHz en PCM
-                        encoding = 'pcm_s16le';
-                        break;
-                    case 'async.ai':
-                        sampleRate = 44100; // Async.AI utilise 44.1kHz en PCM
-                        encoding = 'pcm_s16le';
-                        break;
-                    case 'kokoro.local':
-                        sampleRate = 44100; // Kokoro utilise 44.1kHz en PCM
-                        encoding = 'pcm_s16le';
-                        break;
-                    case 'deepgram.com':
-                        sampleRate = 16000; // Deepgram utilise 16kHz en PCM
-                        encoding = 'linear16';
-                        break;
-                }
-
-                console.log(`🎵 Configuration audio pour ${provider}: sampleRate=${sampleRate}, encoding=${encoding}`);
-                
-                // Mettre à jour l'AudioStreamer
-                this.audioStreamer.options.sampleRate = sampleRate;
-                this.audioStreamer.options.encoding = encoding;
-            }
         }
 
     // Initialize the interface when the page loads

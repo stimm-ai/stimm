@@ -45,10 +45,10 @@ class ElevenLabsProvider:
         params = {
             "model_id": self.model_id,
             "output_format": self.output_format,
-            "enable_logging": "true",  # Must be string "true" not boolean True
-            "inactivity_timeout": "60",
-            "sync_alignment": "true",  # Must be string "true" not boolean True
-            "auto_mode": "true",  # Must be string "true" not boolean True
+            "enable_logging": "false",     # Reduce logging for performance
+            "inactivity_timeout": "300",   # Longer timeout for continuous streaming
+            "sync_alignment": "false",     # Disable alignment for smoother flow
+            "auto_mode": "false",          # Manual control of generation triggering
             "apply_text_normalization": "auto"
         }
         
@@ -93,8 +93,8 @@ class ElevenLabsProvider:
                             payload = json.loads(text_chunk)
                             # Convert our standard format to ElevenLabs format
                             elevenlabs_payload = {
-                                "text": payload.get("text", ""),
-                                "try_trigger_generation": payload.get("try_trigger_generation", True),
+                                "text": payload.get("text", "") + " ",  # Add space for continuity
+                                "try_trigger_generation": False,        # Disable auto generation triggering
                                 "flush": payload.get("flush", False)
                             }
                             payload_str = json.dumps(elevenlabs_payload)
@@ -102,8 +102,8 @@ class ElevenLabsProvider:
                         except json.JSONDecodeError:
                             # Fallback: if it's plain text, wrap it in our standard format
                             standard_payload = {
-                                "text": text_chunk,
-                                "try_trigger_generation": True,
+                                "text": text_chunk + " ",  # Add space for continuity
+                                "try_trigger_generation": False,  # Disable auto generation triggering
                                 "flush": False
                             }
                             payload_str = json.dumps(standard_payload)

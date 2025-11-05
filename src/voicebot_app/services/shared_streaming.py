@@ -7,7 +7,10 @@ that enable true parallel live streaming with progress tracking.
 """
 
 import asyncio
+import json
 import logging
+import os
+import uuid
 from typing import AsyncGenerator, Callable, Optional, Dict, Any
 from fastapi import WebSocket
 
@@ -89,6 +92,20 @@ class SharedStreamingManager:
         session.is_streaming = True
         session.start_time = asyncio.get_event_loop().time()
         
+        # Configuration pour l'enregistrement des chunks
+        record_chunks = os.getenv('TTS_RECORD_CHUNKS', 'false').lower() == 'true'
+        chunks_dir = os.getenv('TTS_CHUNKS_DIR', '/tmp/tts_chunks_web')
+        
+        # Créer le dossier d'enregistrement si activé
+        if record_chunks:
+            os.makedirs(chunks_dir, exist_ok=True)
+            # Vider le dossier existant pour un nouvel enregistrement
+            for file in os.listdir(chunks_dir):
+                file_path = os.path.join(chunks_dir, file)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+            logger.info(f"📁 Enregistrement des chunks audio activé dans: {chunks_dir}")
+        
         try:
             # Process synthesis using streaming (like TTS interface)
             audio_chunk_count = 0
@@ -108,6 +125,13 @@ class SharedStreamingManager:
                     logger.info(f"First audio chunk received after {first_chunk_latency:.2f}ms")
                 
                 logger.info(f"Sending audio chunk {audio_chunk_count}: {len(audio_chunk)} bytes")
+                
+                # Enregistrer le chunk audio si activé
+                if record_chunks:
+                    chunk_filename = os.path.join(chunks_dir, f"chunk_{audio_chunk_count:03d}.wav")
+                    with open(chunk_filename, 'wb') as f:
+                        f.write(audio_chunk)
+                    logger.info(f"💾 Chunk audio enregistré: {chunk_filename} ({len(audio_chunk)} bytes)")
                 
                 # Send audio data as binary (like TTS interface) if websocket is provided
                 if websocket:
@@ -141,6 +165,20 @@ class SharedStreamingManager:
         session.is_streaming = True
         session.start_time = asyncio.get_event_loop().time()
         
+        # Configuration pour l'enregistrement des chunks
+        record_chunks = os.getenv('TTS_RECORD_CHUNKS', 'false').lower() == 'true'
+        chunks_dir = os.getenv('TTS_CHUNKS_DIR', '/tmp/tts_chunks_web')
+        
+        # Créer le dossier d'enregistrement si activé
+        if record_chunks:
+            os.makedirs(chunks_dir, exist_ok=True)
+            # Vider le dossier existant pour un nouvel enregistrement
+            for file in os.listdir(chunks_dir):
+                file_path = os.path.join(chunks_dir, file)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+            logger.info(f"📁 Enregistrement des chunks audio activé dans: {chunks_dir}")
+        
         try:
             # Process synthesis using streaming (like TTS interface)
             audio_chunk_count = 0
@@ -160,6 +198,14 @@ class SharedStreamingManager:
                     logger.info(f"First audio chunk received after {first_chunk_latency:.2f}ms")
                 
                 logger.info(f"Generated audio chunk {audio_chunk_count}: {len(audio_chunk)} bytes")
+                
+                # Enregistrer le chunk audio si activé
+                if record_chunks:
+                    chunk_filename = os.path.join(chunks_dir, f"chunk_{audio_chunk_count:03d}.wav")
+                    with open(chunk_filename, 'wb') as f:
+                        f.write(audio_chunk)
+                    logger.info(f"💾 Chunk audio enregistré: {chunk_filename} ({len(audio_chunk)} bytes)")
+                
                 yield audio_chunk
             
             logger.info(f"Stream completed: {audio_chunk_count} audio chunks generated")
@@ -181,7 +227,7 @@ class SharedStreamingManager:
         Create a text generator that tracks LLM sending progress.
         
         This generator:
-        - Yields text chunks from the source
+        - Yields standardized JSON text chunks to providers
         - Tracks LLM sending progress
         - Allows for custom processing of text chunks
         """
@@ -199,16 +245,29 @@ class SharedStreamingManager:
             if session.total_text_chunks > 0:
                 session.llm_progress = min(1.0, text_chunk_count / session.total_text_chunks)
             
+            # Create standardized JSON payload for providers
+            standard_payload = {
+                "text": text_chunk,
+                "try_trigger_generation": True,
+                "flush": False  # More text is coming
+            }
+            json_payload = json.dumps(standard_payload)
+            
             logger.info(f"Sending text chunk {text_chunk_count}: '{text_chunk.strip()}'")
             
             # Allow custom processing
             if on_text_chunk:
                 await on_text_chunk(text_chunk, text_chunk_count)
             
-            yield text_chunk
+            yield json_payload
         
-        # Signal end of stream with empty string (like TTS interface)
-        yield ""
+        # Signal end of stream with final JSON payload
+        final_payload = {
+            "text": "",  # Empty string to indicate end
+            "try_trigger_generation": True,
+            "flush": True  # Flush the buffer - this is the final chunk
+        }
+        yield json.dumps(final_payload)
         
         logger.info(f"Text streaming completed: {text_chunk_count} chunks sent")
     

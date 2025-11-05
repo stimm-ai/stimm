@@ -12,3 +12,6 @@ llama.cpp
 TensorRT-LLM/checkpoints
 TensorRT-LLM_repo_tmp
 models
+tts_chunks_analysis/
+tts_chunks_web_analysis/
+tts_chunks_test_analysis/

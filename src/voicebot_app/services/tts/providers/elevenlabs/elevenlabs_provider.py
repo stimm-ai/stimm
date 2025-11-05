@@ -87,23 +87,37 @@ class ElevenLabsProvider:
                     text_count = 0
                     async for text_chunk in text_generator:
                         text_count += 1
-                        # Send text message with proper parameters
-                        # For partial text chunks, flush should be False to indicate more text is coming
-                        text_payload = {
-                            "text": text_chunk,
-                            "try_trigger_generation": True,
-                            "flush": False  # Don't flush the buffer - more text is coming
-                        }
+                        
+                        # Parse the standardized JSON payload
                         try:
-                            await self.websocket.send_str(json.dumps(text_payload))
-                            logger.info(f"Sent text chunk {text_count}: '{text_chunk.strip()}'")
+                            payload = json.loads(text_chunk)
+                            # Convert our standard format to ElevenLabs format
+                            elevenlabs_payload = {
+                                "text": payload.get("text", ""),
+                                "try_trigger_generation": payload.get("try_trigger_generation", True),
+                                "flush": payload.get("flush", False)
+                            }
+                            payload_str = json.dumps(elevenlabs_payload)
+                            logger.info(f"Sent text chunk {text_count}: '{payload.get('text', '').strip()}' (flush: {payload.get('flush', False)})")
+                        except json.JSONDecodeError:
+                            # Fallback: if it's plain text, wrap it in our standard format
+                            standard_payload = {
+                                "text": text_chunk,
+                                "try_trigger_generation": True,
+                                "flush": False
+                            }
+                            payload_str = json.dumps(standard_payload)
+                            logger.info(f"Sent text chunk {text_count}: '{text_chunk.strip()}' (converted from plain text)")
+                        
+                        try:
+                            await self.websocket.send_str(payload_str)
                         except Exception as send_error:
                             logger.error(f"Failed to send text chunk {text_count}: {send_error}")
                             break
                     
                     logger.info(f"Text generator completed, sent {text_count} chunks total")
                     
-                    # Send final text chunk with flush=True to indicate end of text
+                    # Send final empty text with flush=True to indicate end
                     final_payload = {
                         "text": "",  # Empty string to indicate end
                         "try_trigger_generation": True,
@@ -127,6 +141,7 @@ class ElevenLabsProvider:
                     chunk_count = 0
                     text_chunks_sent = 0
                     text_chunks_processed = 0
+                    received_final_signal = False
                     
                     async for msg in self.websocket:
                         if msg.type == aiohttp.WSMsgType.TEXT:
@@ -141,17 +156,31 @@ class ElevenLabsProvider:
                                     if audio_b64:
                                         audio_bytes = base64.b64decode(audio_b64)
                                         chunk_count += 1
-                                        logger.info(f"Received audio chunk {chunk_count}: {len(audio_bytes)} bytes")
+                                        chunk_size = len(audio_bytes)
+                                        
+                                        # Log detailed information about the chunk
+                                        has_alignment = "alignment" in data
+                                        has_normalized_alignment = "normalizedAlignment" in data
+                                        is_final = data.get("isFinal", False)
+                                        
+                                        logger.info(f"Received audio chunk {chunk_count}: {chunk_size} bytes "
+                                                   f"(alignment: {has_alignment}, normalizedAlignment: {has_normalized_alignment}, isFinal: {is_final})")
+                                        
+                                        # For now, accept all audio chunks to see what we receive
+                                        # We'll add filtering later based on actual observation
                                         await queue.put(audio_bytes)
                                     
                                     # Handle isFinal flag - ElevenLabs sends this with each audio chunk
+                                    # Note: isFinal with audio means this chunk is final for the current text segment
+                                    # but more audio chunks may come for other segments
                                     if data.get("isFinal"):
                                         text_chunks_processed += 1
                                         logger.debug(f"Audio chunk {chunk_count} marked as final (processed {text_chunks_processed} text chunks)")
                                     
                                 elif "isFinal" in data and data["isFinal"]:
                                     # Final output message (no audio) - this is the real end signal
-                                    logger.info("Received final output signal (no audio)")
+                                    logger.info("Received final output signal (no audio) - ending stream")
+                                    received_final_signal = True
                                     await queue.put(None)
                                     break
                                     
@@ -166,7 +195,7 @@ class ElevenLabsProvider:
                                     
                                 else:
                                     # Other message types (alignment data, etc.)
-                                    logger.info(f"Received non-audio message: {data}")
+                                    logger.debug(f"Received non-audio message: {data}")
                                     
                             except json.JSONDecodeError:
                                 logger.warning(f"Received non-JSON message: {msg.data}")
@@ -176,7 +205,9 @@ class ElevenLabsProvider:
                             break
                         elif msg.type == aiohttp.WSMsgType.CLOSE:
                             logger.info("WebSocket connection closed")
-                            await queue.put(None)
+                            # Only put None if we haven't already received the final signal
+                            if not received_final_signal:
+                                await queue.put(None)
                             break
                             
                 except Exception as e:

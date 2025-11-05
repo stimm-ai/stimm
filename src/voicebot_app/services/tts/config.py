@@ -3,6 +3,12 @@ TTS Configuration Module
 """
 
 import os
+import tempfile
+import uuid
+
+# Configuration pour l'enregistrement des chunks audio
+TTS_RECORD_CHUNKS = os.getenv('TTS_RECORD_CHUNKS', 'false').lower() == 'true'
+TTS_CHUNKS_DIR = os.getenv('TTS_CHUNKS_DIR', '/tmp/tts_chunks_web')
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -42,10 +48,10 @@ class TTSConfig:
         # ElevenLabs specific configuration
         self.elevenlabs_api_key = os.getenv("ELEVENLABS_TTS_API_KEY")
         self.elevenlabs_voice_id = os.getenv("ELEVENLABS_TTS_VOICE_ID", "21m00Tcm4TlvDq8ikWAM")
-        self.elevenlabs_model_id = os.getenv("ELEVENLABS_TTS_MODEL_ID", "eleven_multilingual_v2")
-        self.elevenlabs_sample_rate = int(os.getenv("ELEVENLABS_TTS_SAMPLE_RATE", "44100"))
-        self.elevenlabs_encoding = os.getenv("ELEVENLABS_TTS_ENCODING", "pcm_s16le")
-        self.elevenlabs_output_format = os.getenv("ELEVENLABS_TTS_OUTPUT_FORMAT", "mp3_44100_128")
+        self.elevenlabs_model_id = os.getenv("ELEVENLABS_TTS_MODEL_ID", "eleven_flash_v2_5")
+        self.elevenlabs_sample_rate = int(os.getenv("ELEVENLABS_TTS_SAMPLE_RATE", "22050"))
+        self.elevenlabs_encoding = os.getenv("ELEVENLABS_TTS_ENCODING", "mp3")
+        self.elevenlabs_output_format = os.getenv("ELEVENLABS_TTS_OUTPUT_FORMAT", "mp3_22050_32")
 
     def get_provider(self):
         """Get the current TTS provider"""

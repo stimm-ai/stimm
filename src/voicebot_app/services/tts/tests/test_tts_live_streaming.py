@@ -10,7 +10,10 @@ import asyncio
 import os
 import pytest
 import time
+import tempfile
+import json
 from services.tts.tts import TTSService
+from services.shared_streaming import shared_streaming_manager
 
 def create_progress_bar(current, total, width=20, prefix=""):
     """Create a simple text-based progress bar"""
@@ -55,12 +58,59 @@ async def test_tts_live_streaming():
     print("🔄 LLM Sending | 🔊 TTS Receiving")
     print("-" * 60)
 
+    # Use the same recording system as the web interface
+    record_chunks = os.getenv('TTS_RECORD_CHUNKS', 'false').lower() == 'true'
+    chunks_dir = os.getenv('TTS_CHUNKS_DIR', '/tmp/tts_chunks_web')
+    
+    if record_chunks:
+        # Create and clean the recording directory
+        os.makedirs(chunks_dir, exist_ok=True)
+        # Clear existing files for a new recording
+        for file in os.listdir(chunks_dir):
+            file_path = os.path.join(chunks_dir, file)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+        print(f"📁 Enregistrement des chunks audio activé dans: {chunks_dir}")
+    else:
+        # Fallback to temporary directory if recording is disabled
+        chunks_dir = tempfile.mkdtemp(prefix="tts_chunks_")
+        print(f"📁 Saving audio chunks to: {chunks_dir}")
+
     async def consume_stream():
         nonlocal chunk_count, send_progress, send_counter
 
-        async for audio_chunk in tts_service.stream_synthesis(text_gen):
+        # Use the shared streaming manager like the web interface does
+        session_id = "test_session"
+        
+        async def text_generator():
+            async for chunk in text_gen:
+                # Convert to standardized JSON format like the web interface
+                payload = {
+                    "text": chunk,
+                    "try_trigger_generation": True,
+                    "flush": False
+                }
+                yield json.dumps(payload)
+            # Send final signal
+            final_payload = {
+                "text": "",
+                "try_trigger_generation": True,
+                "flush": True
+            }
+            yield json.dumps(final_payload)
+
+        async for audio_chunk in shared_streaming_manager.stream_text_to_audio_no_websocket(
+            text_generator(), tts_service, session_id
+        ):
             audio_chunks.append(audio_chunk)
             chunk_count += 1
+            
+            # Save each chunk to a file for analysis using the same system as web interface
+            chunk_filename = os.path.join(chunks_dir, f"chunk_{chunk_count:03d}.wav")
+            with open(chunk_filename, 'wb') as f:
+                f.write(audio_chunk)
+            print(f"💾 Saved chunk {chunk_count} to {chunk_filename} ({len(audio_chunk)} bytes)")
+            
             # Update send_progress from the shared counter
             send_progress = send_counter
 

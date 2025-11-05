@@ -445,9 +445,10 @@
                 // Hard-coded text from the test file
                 this.hardCodedText = "{{ tts_interface_text }}";
 
-                // Initialiser l'AudioStreamer partagé
+                // Initialiser l'AudioStreamer partagé avec configuration par défaut
+                // Le sample rate sera mis à jour selon le provider lors de la connexion
                 this.audioStreamer = new AudioStreamer({
-                    sampleRate: 44100,
+                    sampleRate: 44100, // Valeur par défaut, sera mise à jour
                     onPlaybackStart: () => {
                         this.playbackStarted = true;
                         this.playbackStartTime = Date.now();
@@ -706,10 +707,15 @@
                     const chunk = words.slice(i, i + tokensPerChunk).join(' ') + ' ';
                     const currentChunk = Math.floor(i / tokensPerChunk) + 1;
 
-                    // Send token to TTS
+                    // Send token to TTS as standardized JSON
                     if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
-                        this.websocket.send(chunk);
-                        console.log(`📤 Sent token chunk ${currentChunk}: "${chunk.trim()}"`);
+                        const payload = {
+                            text: chunk,
+                            try_trigger_generation: true,
+                            flush: false
+                        };
+                        this.websocket.send(JSON.stringify(payload));
+                        console.log(`📤 Sent token chunk ${currentChunk}: "${chunk.trim()}" (as JSON)`);
                     }
 
                     // Update displayed text
@@ -726,10 +732,15 @@
                     await new Promise(resolve => setTimeout(resolve, delay));
                 }
 
-                // Send empty message to signal end of stream
+                // Send final JSON message to signal end of stream
                 if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
-                    this.websocket.send('');
-                    console.log('📤 Sent end-of-stream signal');
+                    const finalPayload = {
+                        text: "",
+                        try_trigger_generation: true,
+                        flush: true
+                    };
+                    this.websocket.send(JSON.stringify(finalPayload));
+                    console.log('📤 Sent end-of-stream signal (final JSON)');
                 }
 
                 console.log('✅ Token streaming completed');

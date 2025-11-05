@@ -97,9 +97,18 @@ class KokoroLocalProvider:
                     text_count = 0
                     async for text_chunk in text_generator:
                         text_count += 1
-                        # Send text chunk directly (no JSON wrapper needed for live streaming)
-                        await ws.send(text_chunk)
-                        logger.info(f"Sent live text chunk {text_count}: '{text_chunk.strip()}'")
+                        
+                        # Parse the standardized JSON payload
+                        try:
+                            payload = json.loads(text_chunk)
+                            text_content = payload.get("text", "")
+                            # Send text chunk directly (no JSON wrapper needed for live streaming)
+                            await ws.send(text_content)
+                            logger.info(f"Sent live text chunk {text_count}: '{text_content.strip()}'")
+                        except json.JSONDecodeError:
+                            # Fallback: if it's plain text, use it directly
+                            await ws.send(text_chunk)
+                            logger.info(f"Sent live text chunk {text_count}: '{text_chunk.strip()}' (converted from plain text)")
                     
                     # Send end signal
                     await ws.send("")

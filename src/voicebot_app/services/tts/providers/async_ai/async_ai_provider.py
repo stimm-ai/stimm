@@ -55,12 +55,25 @@ class AsyncAIProvider:
                     text_count = 0
                     async for chunk in text_generator:
                         text_count += 1
-                        if not chunk.endswith(" "):
-                            chunk += " "
-                        # Send text message directly as {"transcript": "text "}
-                        text_payload = {"transcript": chunk}
-                        await ws.send(json.dumps(text_payload))
-                        logger.info(f"Sent text chunk {text_count}: {chunk.strip()}")
+                        
+                        # Parse the standardized JSON payload
+                        try:
+                            payload = json.loads(chunk)
+                            text_content = payload.get("text", "")
+                            if text_content and not text_content.endswith(" "):
+                                text_content += " "
+                            
+                            # Convert our standard format to AsyncAI format
+                            asyncai_payload = {"transcript": text_content}
+                            await ws.send(json.dumps(asyncai_payload))
+                            logger.info(f"Sent text chunk {text_count}: {text_content.strip()}")
+                        except json.JSONDecodeError:
+                            # Fallback: if it's plain text, use it directly
+                            if not chunk.endswith(" "):
+                                chunk += " "
+                            await ws.send(json.dumps({"transcript": chunk}))
+                            logger.info(f"Sent text chunk {text_count}: {chunk.strip()} (converted from plain text)")
+                    
                     # Send close connection message as {"transcript": ""}
                     await ws.send(json.dumps({"transcript": ""}))
                     logger.info("Sent close connection message")

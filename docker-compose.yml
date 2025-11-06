@@ -1,109 +1,139 @@
 services:
+  # riva-builder:
+  #   extends:
+  #     file: ./docker/riva-builder/docker-compose.yml
+  #     service: riva-builder
+  #   networks:
+  #     - voicebot-network
   postgres:
-    image: postgres:15
-    container_name: voicebot-postgres
-    environment:
-      POSTGRES_DB: voicebot
-      POSTGRES_USER: voicebot_user
-      POSTGRES_PASSWORD: voicebot_password
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U voicebot_user -d voicebot"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  qdrant:
-    image: qdrant/qdrant:latest
-    container_name: qdrant
-    ports:
-      - "6333:6333"
-      - "6334:6334"
-    volumes:
-      - qdrant_data:/qdrant/storage
-    environment:
-      QDRANT__SERVICE__HTTP_PORT: 6333
-      QDRANT__SERVICE__GRPC_PORT: 6334
-
-  llama-cpp-server:
-    build:
-      context: ./docker/llama-cpp
-      dockerfile: Dockerfile
-    container_name: llama-cpp-server
-    ports:
-      - "8002:8002"
-    volumes:
-      - llm_models:/app/models
-    environment:
-      - MODEL_PATH=/app/models/llama-2-7b-chat.gguf
-      - HOST=0.0.0.0
-      - PORT=8002
-      - N_CTX=4096
-      - N_BATCH=512
-      - N_THREADS=4
-    command: ["/app/llama-server", "-m", "/app/models/llama-2-7b-chat.gguf", "-c", "4096", "-b", "512", "--host", "0.0.0.0", "--port", "8002", "--n-gpu-layers", "0"]
-
-  whisper-stt:
-    build:
-      context: ./docker/whisper-stt
-      dockerfile: Dockerfile
-    container_name: whisper-stt
-    ports:
-      - "8003:8003"
-    volumes:
-      - whisper_models:/app/models
-    environment:
-      - MODEL=base
-      - HOST=0.0.0.0
-      - PORT=8003
-
-  kokoro-tts:
-    build:
-      context: ./docker/kokoro-tts
-      dockerfile: Dockerfile
-    container_name: kokoro-tts
-    ports:
-      - "5000:5000"
-    volumes:
-      - kokoro_models:/app/models
+    extends:
+      file: ./docker/postgre/docker-compose.yml
+      service: voicebot-postgres
+    networks:
+      - voicebot-network
+    env_file:
+      - ./src/voicebot_app/.env
 
   voicebot-app:
-    build:
-      context: ./src/voicebot_app
-      dockerfile: ../docker/voicebot-app/Dockerfile
-    container_name: voicebot-app
-    volumes:
-      - ./src/voicebot_app:/app
-    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]
-    ports:
-      - "8001:8001"
-    environment:
-      - DATABASE_URL=postgresql://voicebot_user:voicebot_password@postgres:5432/voicebot
-      - QDRANT_HOST=qdrant
-      - QDRANT_PORT=6333
-      - LLAMA_CPP_LLM_API_URL=http://llama-cpp-server:8002
-      - WHISPER_LOCAL_STT_URL=ws://whisper-stt:8003
-      - KOKORO_LOCAL_TTS_URL=ws://kokoro-tts:5000/ws/tts/stream
-    depends_on:
-      postgres:
-        condition: service_healthy
-      qdrant:
-        condition: service_started
-      llama-cpp-server:
-        condition: service_started
-      whisper-stt:
-        condition: service_started
-      kokoro-tts:
-        condition: service_started
-    stdin_open: true
-    tty: true
+    extends:
+      file: ./docker/voicebot-app/docker-compose.yml
+      service: voicebot-app
+    networks:
+      - voicebot-network
+    env_file:
+      - ./src/voicebot_app/.env
+
+  qdrant:
+    extends:
+      file: ./docker/qdrant/docker-compose.yml
+      service: qdrant
+    networks:
+      - voicebot-network
+
+  model-prep:
+    extends:
+      file: ./docker/llama-cpp/docker-compose.yml
+      service: model-prep
+    networks:
+      - voicebot-network
+    env_file:
+      - ./src/llama_cpp/.env
+
+  llama-cpp-server:
+    extends:
+      file: ./docker/llama-cpp/docker-compose.yml
+      service: llm-server
+    networks:
+      - voicebot-network
+    env_file:
+      - ./src/llama_cpp/.env
+
+  # coqui-xtts:
+  #   extends:
+  #     file: ./docker/coqui-xtts/docker-compose.yml
+  #     service: coqui-xtts
+  #   networks:
+  #     - voicebot-network
+
+  kokoro-tts:
+    extends:
+      file: ./docker/kokoro-tts/docker-compose.yml
+      service: kokoro-tts
+    networks:
+      - voicebot-network
+
+  whisper-stt:
+    extends:
+      file: ./docker/whisper-stt/docker-compose.yml
+      service: whisper-stt
+    networks:
+      - voicebot-network
+
+  # otel-collector:
+  #   image: otel/opentelemetry-collector-contrib:latest
+  #   container_name: otel-collector
+  #   command: ["--config=/etc/otelcol-contrib/config.yaml"]
+  #   volumes:
+  #     - ./observability/otel-collector/config.yaml:/etc/otelcol-contrib/config.yaml
+  #   ports:
+  #     - "4317:4317"  # OTLP gRPC
+  #     - "4318:4318"  # OTLP HTTP
+  #     - "8889:8889"  # Prometheus metrics
+  #   networks:
+  #     - observability-network
+  #     - voicebot-network
+  #   restart: unless-stopped
+
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   container_name: prometheus
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #     - '--storage.tsdb.path=/prometheus'
+  #     - '--web.console.libraries=/etc/prometheus/console_libraries'
+  #     - '--web.console.templates=/etc/prometheus/consoles'
+  #     - '--storage.tsdb.retention.time=200h'
+  #     - '--web.enable-lifecycle'
+  #   volumes:
+  #     - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+  #     - prometheus_data:/prometheus
+  #   ports:
+  #     - "9090:9090"
+  #   networks:
+  #     - observability-network
+  #   restart: unless-stopped
+
+  # grafana:
+  #   image: grafana/grafana:latest
+  #   container_name: grafana
+  #   environment:
+  #     - GF_SECURITY_ADMIN_PASSWORD=admin
+  #     - GF_USERS_ALLOW_SIGN_UP=false
+  #   volumes:
+  #     - grafana_data:/var/lib/grafana
+  #     - ./observability/grafana/provisioning:/etc/grafana/provisioning
+  #   ports:
+  #     - "3000:3000"
+  #   networks:
+  #     - observability-network
+  #   restart: unless-stopped
+
+networks:
+  voicebot-network:
+    name: voicebot-network
+    driver: bridge
+  observability-network:
+    name: observability-network
+    driver: bridge
 
 volumes:
-  postgres_data:
-  qdrant_data:
-  llm_models:
+  llm-models:
+  qdrant_storage:
   whisper_models:
   kokoro_models:
+  riva_models:
+  coqui_speech_models:
+  prometheus_data:
+  grafana_data:
+
+

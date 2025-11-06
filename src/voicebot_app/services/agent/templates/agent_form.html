@@ -180,12 +180,6 @@
                                placeholder="Enter API key">
                     </div>
 
-                    <div class="form-group">
-                        <label for="llm_base_url">Base URL (Optional)</label>
-                        <input type="text" id="llm_base_url" name="llm_base_url"
-                               value="{% if agent and agent.llm_provider %}{{ agent.llm_provider.base_url or '' }}{% endif %}"
-                               placeholder="e.g., http://localhost:8080">
-                    </div>
                 </div>
             </div>
 
@@ -218,12 +212,6 @@
                                placeholder="Enter API key">
                     </div>
 
-                    <div class="form-group">
-                        <label for="tts_base_url">Base URL (Optional)</label>
-                        <input type="text" id="tts_base_url" name="tts_base_url"
-                               value="{% if agent and agent.tts_provider %}{{ agent.tts_provider.base_url or '' }}{% endif %}"
-                               placeholder="e.g., http://localhost:8080">
-                    </div>
                 </div>
             </div>
 
@@ -254,12 +242,6 @@
                                placeholder="Enter API key">
                     </div>
 
-                    <div class="form-group">
-                        <label for="stt_base_url">Base URL (Optional)</label>
-                        <input type="text" id="stt_base_url" name="stt_base_url"
-                               value="{% if agent and agent.stt_provider %}{{ agent.stt_provider.base_url or '' }}{% endif %}"
-                               placeholder="e.g., http://localhost:8080">
-                    </div>
                 </div>
             </div>
 

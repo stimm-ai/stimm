@@ -150,7 +150,12 @@
     <div class="container">
         <div class="header-actions">
             <h1>Agent Management</h1>
-            <a href="/agent/create" class="btn btn-primary">Create New Agent</a>
+            <div>
+                <a href="/agent/global-config" class="btn btn-warning" style="margin-right: 10px;">
+                    <i class="fas fa-cog" style="margin-right: 5px;"></i>Settings
+                </a>
+                <a href="/agent/create" class="btn btn-primary">Create New Agent</a>
+            </div>
         </div>
 
         {% if error %}

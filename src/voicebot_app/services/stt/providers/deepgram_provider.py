@@ -13,6 +13,7 @@ import urllib.parse
 from typing import AsyncGenerator, Dict, List, Optional, Any
 
 import aiohttp
+from services.agent.global_config_service import get_global_config_service
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,7 @@ class DeepgramProvider:
         self.api_key = os.getenv("DEEPGRAM_STT_API_KEY")
         self.model = os.getenv("DEEPGRAM_MODEL", "nova-2")
         self.language = os.getenv("DEEPGRAM_LANGUAGE", "fr")
+        self.global_config_service = get_global_config_service()
         self.websocket = None
         self.connected = False
         self.transcripts: List[Dict[str, Any]] = []
@@ -37,13 +39,23 @@ class DeepgramProvider:
             if not self.api_key:
                 raise ValueError("DEEPGRAM_STT_API_KEY environment variable is required")
 
+            # Get global configuration for Deepgram STT
+            global_config = self.global_config_service.get_provider_config("stt", "deepgram")
+            if not global_config:
+                raise ValueError("Global configuration not found for Deepgram STT provider")
+            
+            # Get global settings
+            global_settings = global_config.settings
+            base_url = global_settings.get("base_url", "https://api.deepgram.com")
+            sample_rate = global_settings.get("sample_rate", "16000")
+
             # Build WebSocket URL with query parameters
             params = {
                 "model": self.model,
                 "language": self.language,
                 "smart_format": "true",
                 "encoding": "linear16",
-                "sample_rate": "16000",
+                "sample_rate": sample_rate,
                 "channels": "1",
                 "interim_results": "true",
                 "endpointing": "500",
@@ -51,7 +63,7 @@ class DeepgramProvider:
             }
             
             query_string = urllib.parse.urlencode(params)
-            ws_url = f"wss://api.deepgram.com/v1/listen?{query_string}"
+            ws_url = f"{base_url.replace('https://', 'wss://').replace('http://', 'ws://')}/v1/listen?{query_string}"
             
             # Connect with authorization header using aiohttp
             headers = {

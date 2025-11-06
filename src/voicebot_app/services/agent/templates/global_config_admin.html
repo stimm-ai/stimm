@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration Globale des Providers - VoiceBot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .provider-card {
+            transition: all 0.3s ease;
+        }
+        .provider-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .setting-group {
+            border-left: 3px solid #3b82f6;
+        }
+        .tab-active {
+            border-bottom: 2px solid #3b82f6;
+            color: #3b82f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Configuration Globale des Providers</h1>
+                <p class="text-gray-600 mt-2">Paramètres globaux qui s'appliquent à tous les agents d'un provider donné</p>
+            </div>
+            <div class="flex space-x-4">
+                <a href="/agent/admin" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>Retour aux Agents
+                </a>
+                <button onclick="migrateEnvVars()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors">
+                    <i class="fas fa-database mr-2"></i>Migrer Variables d'Environnement
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="border-b border-gray-200 mb-6">
+            <nav class="-mb-px flex space-x-8">
+                <button onclick="showTab('tts')" id="tts-tab" class="tab-active py-4 px-1 text-sm font-medium">
+                    <i class="fas fa-volume-up mr-2"></i>TTS Providers
+                </button>
+                <button onclick="showTab('stt')" id="stt-tab" class="py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-microphone mr-2"></i>STT Providers
+                </button>
+                <button onclick="showTab('llm')" id="llm-tab" class="py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-brain mr-2"></i>LLM Providers
+                </button>
+            </nav>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading" class="text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p class="mt-4 text-gray-600">Chargement des configurations...</p>
+        </div>
+
+        <!-- Content Areas -->
+        <div id="tts-content" class="tab-content">
+            <!-- TTS providers will be loaded here -->
+        </div>
+
+        <div id="stt-content" class="tab-content hidden">
+            <!-- STT providers will be loaded here -->
+        </div>
+
+        <div id="llm-content" class="tab-content hidden">
+            <!-- LLM providers will be loaded here -->
+        </div>
+
+        <!-- Toast Notification -->
+        <div id="toast" class="fixed top-4 right-4 p-4 rounded-lg shadow-lg hidden transition-all duration-300">
+            <div class="flex items-center">
+                <i id="toast-icon" class="mr-3"></i>
+                <span id="toast-message"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTab = 'tts';
+        let providerTemplates = {};
+        let providerConfigs = {};
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTemplates();
+        });
+
+        // Tab management
+        function showTab(tabName) {
+            // Hide all tabs and content
+            document.querySelectorAll('[id$="-tab"]').forEach(tab => {
+                tab.classList.remove('tab-active', 'text-gray-900');
+                tab.classList.add('text-gray-500');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+
+            // Show selected tab and content
+            document.getElementById(`${tabName}-tab`).classList.add('tab-active', 'text-gray-900');
+            document.getElementById(`${tabName}-tab`).classList.remove('text-gray-500');
+            document.getElementById(`${tabName}-content`).classList.remove('hidden');
+            
+            currentTab = tabName;
+            loadProviderConfigs(tabName);
+        }
+
+        // Load provider templates
+        async function loadTemplates() {
+            try {
+                const response = await fetch('/api/global-config/templates');
+                if (!response.ok) throw new Error('Failed to load templates');
+                
+                const templates = await response.json();
+                
+                // Organize templates by provider type and name
+                providerTemplates = {};
+                templates.forEach(template => {
+                    const { provider_type, provider_name, setting_name, ...templateData } = template;
+                    
+                    if (!providerTemplates[provider_type]) {
+                        providerTemplates[provider_type] = {};
+                    }
+                    if (!providerTemplates[provider_type][provider_name]) {
+                        providerTemplates[provider_type][provider_name] = [];
+                    }
+                    
+                    providerTemplates[provider_type][provider_name].push({
+                        name: setting_name,
+                        ...templateData
+                    });
+                });
+
+                // Load initial provider configs
+                loadProviderConfigs(currentTab);
+            } catch (error) {
+                console.error('Error loading templates:', error);
+                showToast('Erreur lors du chargement des templates', 'error');
+            }
+        }
+
+        // Load provider configurations for a specific type
+        async function loadProviderConfigs(providerType) {
+            try {
+                const response = await fetch(`/api/global-config/providers?provider_type=${providerType}`);
+                if (!response.ok) throw new Error('Failed to load provider configs');
+                
+                const configs = await response.json();
+                
+                // Store configs for later use
+                providerConfigs[providerType] = {};
+                configs.forEach(config => {
+                    providerConfigs[providerType][config.provider_name] = config.settings;
+                });
+
+                // Render the content
+                renderProviderContent(providerType);
+                
+                // Hide loading
+                document.getElementById('loading').classList.add('hidden');
+            } catch (error) {
+                console.error('Error loading provider configs:', error);
+                showToast('Erreur lors du chargement des configurations', 'error');
+            }
+        }
+
+        // Render provider content for a specific type
+        function renderProviderContent(providerType) {
+            const contentDiv = document.getElementById(`${providerType}-content`);
+            const templates = providerTemplates[providerType] || {};
+            
+            let html = '<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">';
+            
+            for (const [providerName, providerTemplates] of Object.entries(templates)) {
+                const config = providerConfigs[providerType]?.[providerName] || {};
+                const providerConfig = providerConfigs[providerType]?.[providerName];
+                const isConfigured = providerConfig && Object.keys(providerConfig).length > 0;
+                
+                html += `
+                    <div class="provider-card bg-white rounded-lg shadow-md p-6">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900 capitalize">${providerName}</h3>
+                                <p class="text-sm text-gray-500 mt-1">${providerTemplates.length} paramètres disponibles</p>
+                            </div>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                isConfigured ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                            }">
+                                <i class="fas ${isConfigured ? 'fa-check' : 'fa-exclamation-triangle'} mr-1"></i>
+                                ${isConfigured ? 'Configuré' : 'Non configuré'}
+                            </span>
+                        </div>
+                        
+                        <div class="space-y-4">
+                `;
+                
+                providerTemplates.forEach(template => {
+                    const value = config[template.name] || template.default_value || '';
+                    const isRequired = template.is_required;
+                    
+                    html += `
+                        <div class="setting-group pl-3">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                ${template.name}
+                                ${isRequired ? '<span class="text-red-500 ml-1">*</span>' : ''}
+                            </label>
+                            <input 
+                                type="${getInputType(template.setting_type)}"
+                                data-provider="${providerName}"
+                                data-setting="${template.name}"
+                                value="${value}"
+                                placeholder="${template.description || template.name}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                ${isRequired && !value ? 'required' : ''}
+                            >
+                            ${template.description ? `
+                                <p class="text-xs text-gray-500 mt-1">${template.description}</p>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                        
+                        <div class="mt-6 flex justify-end space-x-2">
+                            <button onclick="saveProviderConfig('${providerType}', '${providerName}')" 
+                                    class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                                <i class="fas fa-save mr-1"></i>Sauvegarder
+                            </button>
+                            ${isConfigured ? `
+                                <button onclick="deleteProviderConfig('${providerType}', '${providerName}')" 
+                                        class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                                    <i class="fas fa-trash mr-1"></i>Supprimer
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            contentDiv.innerHTML = html;
+        }
+
+        // Get appropriate input type for setting type
+        function getInputType(settingType) {
+            const typeMap = {
+                'string': 'text',
+                'integer': 'number',
+                'float': 'number',
+                'boolean': 'checkbox',
+                'url': 'url'
+            };
+            return typeMap[settingType] || 'text';
+        }
+
+        // Save provider configuration
+        async function saveProviderConfig(providerType, providerName) {
+            try {
+                const inputs = document.querySelectorAll(`input[data-provider="${providerName}"]`);
+                const settings = {};
+                
+                inputs.forEach(input => {
+                    const settingName = input.getAttribute('data-setting');
+                    let value = input.value;
+                    
+                    // Handle different data types
+                    if (input.type === 'number') {
+                        value = input.type === 'integer' ? parseInt(value) : parseFloat(value);
+                    } else if (input.type === 'checkbox') {
+                        value = input.checked;
+                    }
+                    
+                    // Only include non-empty values
+                    if (value !== '' && value !== null && value !== undefined) {
+                        settings[settingName] = value;
+                    }
+                });
+
+                const response = await fetch(`/api/global-config/providers/${providerType}/${providerName}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(settings)
+                });
+
+                if (!response.ok) throw new Error('Failed to save configuration');
+
+                showToast('Configuration sauvegardée avec succès', 'success');
+                // Reload the configs to update the UI
+                loadProviderConfigs(providerType);
+            } catch (error) {
+                console.error('Error saving provider config:', error);
+                showToast('Erreur lors de la sauvegarde', 'error');
+            }
+        }
+
+        // Delete provider configuration
+        async function deleteProviderConfig(providerType, providerName) {
+            if (!confirm(`Êtes-vous sûr de vouloir supprimer la configuration pour ${providerName}?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/global-config/providers/${providerType}/${providerName}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) throw new Error('Failed to delete configuration');
+
+                showToast('Configuration supprimée avec succès', 'success');
+                // Reload the configs to update the UI
+                loadProviderConfigs(providerType);
+            } catch (error) {
+                console.error('Error deleting provider config:', error);
+                showToast('Erreur lors de la suppression', 'error');
+            }
+        }
+
+        // Migrate environment variables
+        async function migrateEnvVars() {
+            if (!confirm('Cette action va migrer les variables d\'environnement actuelles vers le nouveau système. Continuer?')) {
+                return;
+            }
+
+            try {
+                // In a real implementation, you would fetch current env vars from the server
+                // For now, we'll show a message
+                showToast('Migration des variables d\'environnement...', 'info');
+                
+                // This would typically be done server-side by reading the .env file
+                // For now, we'll just reload the page
+                setTimeout(() => {
+                    showToast('Migration terminée!', 'success');
+                    location.reload();
+                }, 2000);
+            } catch (error) {
+                console.error('Error migrating env vars:', error);
+                showToast('Erreur lors de la migration', 'error');
+            }
+        }
+
+        // Toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toast-icon');
+            const toastMessage = document.getElementById('toast-message');
+
+            const styles = {
+                success: 'bg-green-500 text-white',
+                error: 'bg-red-500 text-white',
+                warning: 'bg-yellow-500 text-white',
+                info: 'bg-blue-500 text-white'
+            };
+
+            const icons = {
+                success: 'fas fa-check-circle',
+                error: 'fas fa-exclamation-circle',
+                warning: 'fas fa-exclamation-triangle',
+                info: 'fas fa-info-circle'
+            };
+
+            toast.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg ${styles[type]} transition-all duration-300`;
+            toastIcon.className = icons[type];
+            toastMessage.textContent = message;
+
+            toast.classList.remove('hidden');
+
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

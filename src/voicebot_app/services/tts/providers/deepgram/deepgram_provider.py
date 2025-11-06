@@ -13,6 +13,7 @@ from typing import AsyncGenerator
 import aiohttp
 
 from ...config import tts_config
+from services.agent.global_config_service import get_global_config_service
 
 logger = logging.getLogger(__name__)
 
@@ -22,25 +23,38 @@ class DeepgramProvider:
 
     def __init__(self):
         self.config = tts_config
-        self.api_key = self.config.deepgram_tts_api_key
-        self.model = self.config.deepgram_model
-        self.sample_rate = self.config.deepgram_sample_rate
-        self.encoding = self.config.deepgram_encoding
+        self.global_config_service = get_global_config_service()
         self.session = None
         self.websocket = None
-        logger.info(f"DeepgramProvider initialized with model: {self.model}, sample_rate: {self.sample_rate}Hz")
+        logger.info("DeepgramProvider initialized")
 
     async def stream_synthesis(self, text_generator: AsyncGenerator[str, None]) -> AsyncGenerator[bytes, None]:
         """Stream synthesis using Deepgram TTS WebSocket API with aiohttp."""
-        if not self.api_key:
-            raise ValueError("DEEPGRAM_TTS_API_KEY environment variable is required")
+        # Get global configuration for Deepgram TTS
+        global_config = self.global_config_service.get_provider_config("tts", "deepgram")
+        if not global_config:
+            raise ValueError("Global configuration not found for Deepgram TTS provider")
+        
+        # Get agent-specific settings (api_key, model, etc.)
+        agent_config = self.config.get_agent_config() if hasattr(self.config, 'get_agent_config') else {}
+        api_key = agent_config.get("api_key") or self.config.deepgram_tts_api_key
+        model = agent_config.get("model") or self.config.deepgram_model
+        
+        if not api_key:
+            raise ValueError("Deepgram API key is required")
 
+        # Get global settings
+        global_settings = global_config.settings
+        base_url = global_settings.get("base_url", "https://api.deepgram.com")
+        sample_rate = global_settings.get("sample_rate", "16000")
+        encoding = global_settings.get("encoding", "linear16")
+        
         # Build WebSocket URL with query parameters
-        url = f"wss://api.deepgram.com/v1/speak?model={self.model}&encoding={self.encoding}&sample_rate={self.sample_rate}"
+        url = f"{base_url.replace('https://', 'wss://').replace('http://', 'ws://')}/v1/speak?model={model}&encoding={encoding}&sample_rate={sample_rate}"
         
         # Set headers for authentication
         headers = {
-            "Authorization": f"Token {self.api_key}"
+            "Authorization": f"Token {api_key}"
         }
         
         logger.info(f"Connecting to Deepgram TTS WebSocket: {url}...")

@@ -24,10 +24,11 @@ class ChatbotService:
     """Service for handling chatbot operations with RAG integration"""
     
     def __init__(self):
-        self.llm_service = LLMService()
+        # LLM service will be created per request with agent configuration
+        self.llm_service = None
         self._is_prewarmed = False
     
-    async def prewarm_models(self):
+    async def prewarm_models(self, agent_id: str = None, session_id: str = None):
         """Pre-warm models and connections at startup"""
         if self._is_prewarmed:
             return
@@ -36,11 +37,14 @@ class ChatbotService:
         start_time = time.time()
         
         try:
+            # Create LLM service with agent configuration for pre-warming
+            llm_service = LLMService(agent_id=agent_id, session_id=session_id)
+            
             # Pre-warm with a simple query to load models
             dummy_query = "hello"
             try:
                 # This will trigger model loading if not already loaded
-                async for _ in self.llm_service.generate_stream(dummy_query):
+                async for _ in llm_service.generate_stream(dummy_query):
                     break
             except Exception as e:
                 LOGGER.debug(f"Pre-warm query completed (expected): {e}")
@@ -52,7 +56,7 @@ class ChatbotService:
         except Exception as e:
             LOGGER.error(f"Failed to pre-warm chatbot models: {e}")
     
-    async def process_chat_message(self, message: str, conversation_id: str = None, rag_state: RagState = None):
+    async def process_chat_message(self, message: str, conversation_id: str = None, rag_state: RagState = None, agent_id: str = None, session_id: str = None):
         """
         Process a chat message with RAG context and return a streaming response
         
@@ -60,6 +64,8 @@ class ChatbotService:
             message: User message
             conversation_id: Optional conversation ID
             rag_state: RAG state instance
+            agent_id: Optional agent ID for provider configuration
+            session_id: Optional session ID for tracking
             
         Yields:
             Dict with response data
@@ -68,6 +74,9 @@ class ChatbotService:
         processing_start = time.time()
         
         try:
+            # Create LLM service with agent configuration
+            self.llm_service = LLMService(agent_id=agent_id, session_id=session_id)
+            
             # Ensure models are pre-warmed
             if not self._is_prewarmed:
                 await self.prewarm_models()

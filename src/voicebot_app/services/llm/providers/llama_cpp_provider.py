@@ -24,8 +24,10 @@ class LlamaCppProvider(OpenAICompatibleProvider):
     - Authentication: None required for local server
     """
     
-    def __init__(self):
-        super().__init__(llm_config.get_llama_cpp_config())
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        if config is None:
+            config = llm_config.get_llama_cpp_config()
+        super().__init__(config)
     
     def _validate_config(self):
         """Validate that required configuration is present (API key is optional for local server)"""
@@ -59,6 +61,6 @@ class LlamaCppProvider(OpenAICompatibleProvider):
         return headers
 
 
-def create_llama_cpp_provider() -> LlamaCppProvider:
+def create_llama_cpp_provider(config: Optional[Dict[str, Any]] = None) -> LlamaCppProvider:
     """Factory function to create llama.cpp provider"""
-    return LlamaCppProvider()
+    return LlamaCppProvider(config)

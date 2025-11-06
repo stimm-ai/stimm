@@ -131,6 +131,8 @@ class ChatRequest(BaseModel):
     """Model for chat requests"""
     message: str
     conversation_id: Optional[str] = None
+    agent_id: Optional[str] = None
+    session_id: Optional[str] = None
 
 
 @router.get("/chat", response_class=HTMLResponse)
@@ -145,12 +147,12 @@ async def chat_message(request: ChatRequest, rag_state: RagState = Depends(get_r
     Process a chat message with RAG context and stream the response
     """
     try:
-        LOGGER.info(f"Received chat message: {request.message}, conversation_id: {request.conversation_id}")
+        LOGGER.info(f"Received chat message: {request.message}, conversation_id: {request.conversation_id}, agent_id: {request.agent_id}")
         conversation_id = request.conversation_id or str(uuid.uuid4())
         
         async def generate_response():
             async for chunk_data in chatbot_service.process_chat_message(
-                request.message, conversation_id, rag_state
+                request.message, conversation_id, rag_state, request.agent_id, request.session_id
             ):
                 yield f"data: {json.dumps(chunk_data)}\n\n"
         

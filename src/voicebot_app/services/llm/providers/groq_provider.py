@@ -14,8 +14,10 @@ from .openai_compatible_provider import OpenAICompatibleProvider
 class GroqProvider(OpenAICompatibleProvider):
     """Groq.com LLM provider implementation using OpenAI-compatible API"""
     
-    def __init__(self):
-        super().__init__(llm_config.get_groq_config())
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        if config is None:
+            config = llm_config.get_groq_config()
+        super().__init__(config)
     
     def _get_api_url(self) -> str:
         """Get the full API URL"""
@@ -35,6 +37,6 @@ class GroqProvider(OpenAICompatibleProvider):
         }
 
 
-def create_groq_provider() -> GroqProvider:
+def create_groq_provider(config: Optional[Dict[str, Any]] = None) -> GroqProvider:
     """Factory function to create Groq provider"""
-    return GroqProvider()
+    return GroqProvider(config)

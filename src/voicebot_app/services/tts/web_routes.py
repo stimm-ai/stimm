@@ -8,12 +8,18 @@ with token streaming simulation and real-time audio playback.
 import logging
 import os
 from pathlib import Path
+from typing import List, Optional
 
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
+from sqlalchemy.orm import Session
+
 from .config import tts_config
+from ...database.session import get_db
+from ..agent.agent_service import AgentService
+from ..agent.models import Agent
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +33,19 @@ router = APIRouter()
 templates_dir = Path(__file__).parent / "templates"
 templates = Jinja2Templates(directory=str(templates_dir))
 
+
+async def get_available_agents(db: Session = Depends(get_db)) -> List[Agent]:
+    """Get list of available agents for selection"""
+    try:
+        agent_service = AgentService(db)
+        agents = agent_service.get_all_agents()
+        return agents
+    except Exception as e:
+        logger.error(f"Failed to fetch agents: {e}")
+        return []
+
 @router.get("/interface", response_class=HTMLResponse)
-async def tts_interface(request: Request):
+async def tts_interface(request: Request, db: Session = Depends(get_db)):
     """Serve the TTS web interface"""
     try:
         # Get the TTS interface text from environment variable
@@ -55,12 +72,16 @@ async def tts_interface(request: Request):
             sample_rate = 44100
             encoding = "pcm_s16le"
 
+        # Get available agents
+        agents = await get_available_agents(db)
+
         return templates.TemplateResponse("tts_interface.html", {
             "request": request,
             "tts_interface_text": tts_interface_text,
             "tts_provider": current_provider,
             "tts_sample_rate": sample_rate,
-            "tts_encoding": encoding
+            "tts_encoding": encoding,
+            "agents": agents
         })
     except Exception as e:
         logger.error(f"Failed to load TTS interface template: {e}")

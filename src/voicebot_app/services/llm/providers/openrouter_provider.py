@@ -27,8 +27,10 @@ class OpenRouterProvider(OpenAICompatibleProvider):
     - Additional headers: X-Title, HTTP-Referer for tracking
     """
     
-    def __init__(self):
-        super().__init__(llm_config.get_openrouter_config())
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        if config is None:
+            config = llm_config.get_openrouter_config()
+        super().__init__(config)
     
     def _get_api_url(self) -> str:
         """Get the full API URL for OpenRouter.ai completions"""
@@ -60,6 +62,6 @@ class OpenRouterProvider(OpenAICompatibleProvider):
         return headers
 
 
-def create_openrouter_provider() -> OpenRouterProvider:
+def create_openrouter_provider(config: Optional[Dict[str, Any]] = None) -> OpenRouterProvider:
     """Factory function to create OpenRouter.ai provider"""
-    return OpenRouterProvider()
+    return OpenRouterProvider(config)

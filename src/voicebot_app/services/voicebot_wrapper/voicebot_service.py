@@ -87,8 +87,10 @@ class ConversationState:
 class VoicebotService:
     """Main orchestrator for the complete voicebot pipeline with proper speech turn management."""
     
-    def __init__(self):
+    def __init__(self, agent_id: str = None, session_id: str = None):
         self.config = voicebot_config
+        self.agent_id = agent_id
+        self.session_id = session_id
         self.stt_service: Optional[STTService] = None
         self.tts_service: Optional[TTSService] = None
         self.chatbot_service: Optional[ChatbotService] = None
@@ -100,13 +102,13 @@ class VoicebotService:
     def _initialize_services(self):
         """Initialize the dependent services."""
         try:
-            self.stt_service = STTService()
+            self.stt_service = STTService(agent_id=self.agent_id, session_id=self.session_id)
             # Debug logging removed for production
         except Exception as e:
             logger.error(f"Failed to initialize STT service: {e}")
             
         try:
-            self.tts_service = TTSService()
+            self.tts_service = TTSService(agent_id=self.agent_id, session_id=self.session_id)
             # Debug logging removed for production
         except Exception as e:
             logger.error(f"Failed to initialize TTS service: {e}")
@@ -417,7 +419,9 @@ class VoicebotService:
                     async for response_chunk in self.chatbot_service.process_chat_message(
                         conversation.final_transcript,
                         conversation.conversation_id,
-                        rag_state=rag_state
+                        rag_state=rag_state,
+                        agent_id=self.agent_id,
+                        session_id=self.session_id
                     ):
                         # Check if user started speaking (interruption)
                         if conversation.is_user_speaking:

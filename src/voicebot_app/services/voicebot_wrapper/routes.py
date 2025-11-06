@@ -128,6 +128,8 @@ async def voicebot_websocket_endpoint(websocket: WebSocket):
     - Response streaming
     """
     conversation_id = None
+    agent_id = None
+    session_id = None
     
     try:
         # Accept connection immediately (like STT service)
@@ -146,13 +148,22 @@ async def voicebot_websocket_endpoint(websocket: WebSocket):
             return
             
         conversation_id = init_data.get("conversation_id")
+        agent_id = init_data.get("agent_id")
+        session_id = init_data.get("session_id")
+        
         if not conversation_id:
-            conversation_id = voicebot_service.create_conversation()
+            # Create voicebot service with agent configuration
+            voicebot_service_instance = VoicebotService(agent_id=agent_id, session_id=session_id)
+            conversation_id = voicebot_service_instance.create_conversation()
+        else:
+            # Use existing conversation with agent configuration
+            voicebot_service_instance = VoicebotService(agent_id=agent_id, session_id=session_id)
             
         # Register connection
         await connection_manager.connect(websocket, conversation_id)
         
-        # Get TTS provider configuration
+        # Get TTS provider configuration from agent if available
+        # For now, use the existing config system
         from services.tts.config import tts_config
         
         current_provider = tts_config.get_provider()
@@ -192,7 +203,7 @@ async def voicebot_websocket_endpoint(websocket: WebSocket):
         
         # Start continuous audio processing task
         processing_task = asyncio.create_task(
-            _process_audio_continuous(conversation_id, websocket)
+            _process_audio_continuous(conversation_id, websocket, voicebot_service_instance)
         )
         
         # Main message processing loop
@@ -226,7 +237,7 @@ async def voicebot_websocket_endpoint(websocket: WebSocket):
                     pass
             
             connection_manager.disconnect(conversation_id)
-            voicebot_service.end_conversation(conversation_id)
+            voicebot_service_instance.end_conversation(conversation_id)
 
 
 async def _handle_websocket_message(conversation_id: str, data: Dict[str, Any], websocket: WebSocket):
@@ -299,7 +310,7 @@ async def _handle_audio_chunk(conversation_id: str, data: Dict[str, Any], websoc
         })
 
 
-async def _process_audio_continuous(conversation_id: str, websocket: WebSocket):
+async def _process_audio_continuous(conversation_id: str, websocket: WebSocket, voicebot_service_instance):
     """Continuous audio processing with proper speech turn management."""
     try:
         logger.info(f"Continuous audio processing started for conversation: {conversation_id}")
@@ -312,7 +323,7 @@ async def _process_audio_continuous(conversation_id: str, websocket: WebSocket):
             return
             
         # Start continuous processing (STT + VAD monitoring)
-        await voicebot_service.start_continuous_processing(conversation_id, audio_generator)
+        await voicebot_service_instance.start_continuous_processing(conversation_id, audio_generator)
             
     except asyncio.CancelledError:
         logger.info(f"Continuous audio processing cancelled for conversation: {conversation_id}")

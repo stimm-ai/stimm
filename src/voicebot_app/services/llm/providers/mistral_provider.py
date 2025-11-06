@@ -24,8 +24,10 @@ class MistralProvider(OpenAICompatibleProvider):
     - Authentication: Bearer token in Authorization header
     """
     
-    def __init__(self):
-        super().__init__(llm_config.get_mistral_config())
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        if config is None:
+            config = llm_config.get_mistral_config()
+        super().__init__(config)
     
     def _get_api_url(self) -> str:
         """Get the full API URL for Mistral.ai completions"""
@@ -48,6 +50,6 @@ class MistralProvider(OpenAICompatibleProvider):
         }
 
 
-def create_mistral_provider() -> MistralProvider:
+def create_mistral_provider(config: Optional[Dict[str, Any]] = None) -> MistralProvider:
     """Factory function to create Mistral.ai provider"""
-    return MistralProvider()
+    return MistralProvider(config)

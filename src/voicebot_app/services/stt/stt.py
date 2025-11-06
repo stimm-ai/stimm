@@ -17,14 +17,17 @@ logger = logging.getLogger(__name__)
 class STTService:
     """Service for handling Speech-to-Text operations"""
 
-    def __init__(self):
-        self.config = stt_config
+    def __init__(self, agent_id: Optional[str] = None, session_id: Optional[str] = None):
+        self.agent_id = agent_id
+        self.session_id = session_id
         self.provider = None
         self._initialize_provider()
 
     def _initialize_provider(self):
         """Initialize the configured STT provider"""
-        provider_name = self.config.get_provider()
+        # For now, use the existing config system
+        # This will be updated to use agent-based configuration
+        provider_name = stt_config.get_provider()
         
         if provider_name == "whisper.local":
             self.provider = WhisperLocalProvider()

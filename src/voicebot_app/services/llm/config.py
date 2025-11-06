@@ -31,6 +31,12 @@ class LLMConfig:
         self.openrouter_completions_path = os.getenv("OPENROUTER_LLM_COMPLETIONS_PATH", "/chat/completions")
         self.openrouter_app_name = os.getenv("OPENROUTER_LLM_APP_NAME", "VoiceBot")
         self.openrouter_app_url = os.getenv("OPENROUTER_LLM_APP_URL", "https://github.com/etienne/voicebot")
+        
+        # Llama.cpp-specific configuration
+        self.llama_cpp_api_url = os.getenv("LLAMA_CPP_LLM_API_URL", "http://llama-cpp:8002")
+        self.llama_cpp_api_key = os.getenv("LLAMA_CPP_LLM_API_KEY", "")
+        self.llama_cpp_model = os.getenv("LLAMA_CPP_LLM_MODEL", "default")
+        self.llama_cpp_completions_path = os.getenv("LLAMA_CPP_LLM_COMPLETIONS_PATH", "/v1/chat/completions")
 
     def get_provider(self):
         """Get the current LLM provider"""
@@ -63,6 +69,15 @@ class LLMConfig:
             "completions_path": self.openrouter_completions_path,
             "app_name": self.openrouter_app_name,
             "app_url": self.openrouter_app_url
+        }
+    
+    def get_llama_cpp_config(self):
+        """Get Llama.cpp-specific configuration"""
+        return {
+            "api_url": self.llama_cpp_api_url,
+            "api_key": self.llama_cpp_api_key,
+            "model": self.llama_cpp_model,
+            "completions_path": self.llama_cpp_completions_path
         }
 
 # Initialize the configuration

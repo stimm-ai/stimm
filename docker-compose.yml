@@ -15,26 +15,6 @@ services:
     env_file:
       - ./src/voicebot_app/.env
 
-  # rag-service:
-  #   extends:
-  #     file: ./docker/rag-service/docker-compose.yml
-  #     service: rag-service
-  #   networks:
-  #     - voicebot-network
-  #   depends_on:
-  #     - qdrant
-
-  # rag-ingest:
-  #   extends:
-  #     file: ./docker/rag-ingest/docker-compose.yml
-  #     service: rag-ingest
-  #   networks:
-  #     - voicebot-network
-  #   depends_on:
-  #     rag-service:
-  #       condition: service_started
-  #     qdrant:
-  #       condition: service_started
 
   qdrant:
     extends:
@@ -43,15 +23,23 @@ services:
     networks:
       - voicebot-network
 
-  # model-prep:
-  #   extends:
-  #     file: ./docker/llama-cpp/docker-compose.yml
-  #     service: model-prep
-  #   networks:
-  #     - voicebot-network
+  model-prep:
+    extends:
+      file: ./docker/llama-cpp/docker-compose.yml
+      service: model-prep
+    networks:
+      - voicebot-network
+    env_file:
+      - ./src/llama_cpp/.env
 
-  #   networks:
-  #     - voicebot-network
+  llama-cpp-server:
+    extends:
+      file: ./docker/llama-cpp/docker-compose.yml
+      service: llm-server
+    networks:
+      - voicebot-network
+    env_file:
+      - ./src/llama_cpp/.env
 
   # coqui-xtts:
   #   extends:

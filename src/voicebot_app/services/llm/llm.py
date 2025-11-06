@@ -5,7 +5,7 @@ Language Model Service Module
 import asyncio
 from typing import AsyncIterator
 from .config import llm_config
-from .providers import create_groq_provider, create_mistral_provider, create_openrouter_provider
+from .providers import create_groq_provider, create_mistral_provider, create_openrouter_provider, create_llama_cpp_provider
 
 
 class LLMService:
@@ -25,6 +25,8 @@ class LLMService:
             return create_mistral_provider()
         elif provider_name == "openrouter.ai":
             return create_openrouter_provider()
+        elif provider_name == "llama-cpp.local":
+            return create_llama_cpp_provider()
         else:
             raise ValueError(f"Unsupported LLM provider: {provider_name}")
 

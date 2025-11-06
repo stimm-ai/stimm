@@ -6,10 +6,6 @@ services:
     user: "0"
     volumes:
       - llm-models:/models
-    environment:
-      - LLM_HF_MODEL=${LLM_HF_MODEL}
-      - MODEL_FILE=${MODEL_FILE}
-      - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
     entrypoint: >
       sh -c '
         set -e
@@ -58,7 +54,7 @@ services:
     volumes:
       - llm-models:/models
     ports:
-      - "8000:8000"
+      - "8002:8002"
     deploy:
       resources:
         reservations:
@@ -67,7 +63,7 @@ services:
     command: [
       "-m", "/models/${MODEL_FILE}",
       "--host", "0.0.0.0",
-      "--port", "8000",
+      "--port", "8002",
       "--ctx-size", "4096",
       "--n-gpu-layers", "10000",
       "--threads", "8",

@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 
 from sqlalchemy.orm import Session
 
-from ..database import get_db, Agent, AgentSession
+from database import get_db, Agent, AgentSession
 from .models import AgentConfig, AgentResponse, AgentSessionCreate
 from .agent_service import AgentService
 from .exceptions import AgentNotFoundError, AgentServiceError

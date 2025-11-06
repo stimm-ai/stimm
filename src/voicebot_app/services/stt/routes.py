@@ -13,11 +13,12 @@ import numpy as np
 import soundfile as sf
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from .stt import STTService
+from services.agent.agent_manager import get_agent_manager
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-stt_service = STTService()
+# Don't initialize STTService globally - create instances per request with agent_id
 
 
 @router.websocket("/stt/ws")
@@ -144,7 +145,7 @@ async def stt_streaming_websocket(websocket: WebSocket):
 
 
 @router.websocket("/stt/sync-stream")
-async def stt_sync_streaming_websocket(websocket: WebSocket):
+async def stt_sync_streaming_websocket(websocket: WebSocket, agent_id: str = None):
     """
     Synchronized streaming WebSocket endpoint for real-time transcription.
     
@@ -153,9 +154,10 @@ async def stt_sync_streaming_websocket(websocket: WebSocket):
     - Reads the test audio file with sounddevice
     - Streams audio chunks at correct timing (real-time speed)
     - Sends real-time transcription results
+    - Supports agent-based configuration via agent_id parameter
     """
     await websocket.accept()
-    logger.info("STT sync streaming WebSocket connection established")
+    logger.info(f"STT sync streaming WebSocket connection established (agent_id: {agent_id})")
     
     # Constants for WebRTC-like streaming
     STREAM_SAMPLE_RATE = 16000
@@ -207,6 +209,9 @@ async def stt_sync_streaming_websocket(websocket: WebSocket):
                 # Calculate real delay based on audio duration (real-time speed)
                 chunk_duration = chunk_samples / STREAM_SAMPLE_RATE
                 await asyncio.sleep(chunk_duration)
+        
+        # Create STT service instance with agent configuration
+        stt_service = STTService(agent_id=agent_id)
         
         # Use real streaming with the audio chunk generator
         async for transcript in stt_service.transcribe_streaming(audio_chunk_generator()):

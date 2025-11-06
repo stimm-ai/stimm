@@ -216,6 +216,19 @@
 
         <div class="audio-section">
             <div class="audio-player">
+                <div class="agent-selection" style="margin-bottom: 15px;">
+                    <label for="agentSelect" style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151;">Select Agent:</label>
+                    <select id="agentSelect" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: white;">
+                        {% for agent in agents %}
+                        <option value="{{ agent.id }}" data-provider="{{ agent.stt_provider }}">
+                            {{ agent.name }} ({{ agent.stt_provider }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div id="agentInfo" style="margin-top: 8px; font-size: 0.85rem; color: #6b7280;">
+                        STT Provider: <span id="providerName">{{ agents[0].stt_provider if agents else 'None' }}</span>
+                    </div>
+                </div>
                 <div class="audio-controls">
                     <button class="play-button" id="playButton">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -263,6 +276,8 @@
             constructor() {
                 this.audioPlayer = document.getElementById('audioPlayer');
                 this.playButton = document.getElementById('playButton');
+                this.agentSelect = document.getElementById('agentSelect');
+                this.providerName = document.getElementById('providerName');
                 this.transcriptionOutput = document.getElementById('transcriptionOutput');
                 this.statusDot = document.getElementById('statusDot');
                 this.statusText = document.getElementById('statusText');
@@ -275,6 +290,7 @@
                 this.isTranscribing = false;
                 this.startTime = null;
                 this.transcription = '';
+                this.selectedAgentId = this.agentSelect.value;
                 
                 this.initializeEventListeners();
             }
@@ -284,6 +300,19 @@
                 this.audioPlayer.addEventListener('play', () => this.onAudioPlay());
                 this.audioPlayer.addEventListener('pause', () => this.onAudioPause());
                 this.audioPlayer.addEventListener('ended', () => this.onAudioEnd());
+                this.agentSelect.addEventListener('change', () => this.onAgentChange());
+            }
+
+            onAgentChange() {
+                this.selectedAgentId = this.agentSelect.value;
+                const selectedOption = this.agentSelect.options[this.agentSelect.selectedIndex];
+                const provider = selectedOption.getAttribute('data-provider');
+                this.providerName.textContent = provider;
+                
+                // Stop any ongoing transcription when changing agents
+                if (this.isTranscribing) {
+                    this.stopTranscription();
+                }
             }
 
             async togglePlayback() {
@@ -425,8 +454,9 @@
                     
                     // Use the new sync-stream endpoint that handles audio streaming on backend
                     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-                    const wsUrl = `${protocol}//${window.location.host}/api/stt/sync-stream`;
+                    const wsUrl = `${protocol}//${window.location.host}/api/stt/sync-stream?agent_id=${this.selectedAgentId}`;
                     console.log('🔗 Connecting to sync streaming endpoint:', wsUrl);
+                    console.log('🤖 Using agent ID:', this.selectedAgentId);
                     
                     this.websocket = new WebSocket(wsUrl);
                     

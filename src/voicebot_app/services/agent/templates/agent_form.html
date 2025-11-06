@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if action == 'create' %}Create New Agent{% else %}Edit Agent{% endif %} - VoiceBot</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        .form-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border-left: 4px solid #007bff;
+        }
+        .form-section h3 {
+            margin-top: 0;
+            color: #007bff;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 10px;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            transition: background-color 0.3s;
+            margin-right: 10px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+        }
+        .provider-config {
+            display: none;
+        }
+        .provider-config.active {
+            display: block;
+        }
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>{% if action == 'create' %}Create New Agent{% else %}Edit Agent: {{ agent.name }}{% endif %}</h1>
+
+        {% if error %}
+        <div class="error-message">
+            <strong>Error:</strong> {{ error }}
+        </div>
+        {% endif %}
+
+        <form id="agentForm" method="POST" action="{% if action == 'create' %}/api/agent{% else %}/api/agent/{{ agent.id }}{% endif %}" data-method="{% if action == 'create' %}POST{% else %}PUT{% endif %}">
+            <div class="form-section">
+                <h3>Basic Information</h3>
+                
+                <div class="form-group">
+                    <label for="name">Agent Name *</label>
+                    <input type="text" id="name" name="name" required 
+                           value="{% if agent %}{{ agent.name }}{% endif %}"
+                           placeholder="Enter agent name">
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" 
+                              placeholder="Enter agent description">{% if agent %}{{ agent.description or '' }}{% endif %}</textarea>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="is_default" name="is_default" 
+                           {% if agent and agent.is_default %}checked{% endif %}>
+                    <label for="is_default">Set as default agent</label>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>LLM Provider Configuration</h3>
+                
+                <div class="form-group">
+                    <label for="llm_provider_type">LLM Provider Type</label>
+                    <select id="llm_provider_type" name="llm_provider_type">
+                        <option value="">No LLM Provider</option>
+                        <option value="openai" {% if agent and agent.llm_provider and agent.llm_provider.provider_type == 'openai' %}selected{% endif %}>OpenAI</option>
+                        <option value="groq" {% if agent and agent.llm_provider and agent.llm_provider.provider_type == 'groq' %}selected{% endif %}>Groq</option>
+                        <option value="mistral" {% if agent and agent.llm_provider and agent.llm_provider.provider_type == 'mistral' %}selected{% endif %}>Mistral</option>
+                        <option value="openrouter" {% if agent and agent.llm_provider and agent.llm_provider.provider_type == 'openrouter' %}selected{% endif %}>OpenRouter</option>
+                        <option value="llama_cpp" {% if agent and agent.llm_provider and agent.llm_provider.provider_type == 'llama_cpp' %}selected{% endif %}>Llama.cpp</option>
+                    </select>
+                </div>
+
+                <div id="llm_config" class="provider-config {% if agent and agent.llm_provider %}active{% endif %}">
+                    <div class="form-group">
+                        <label for="llm_model_name">Model Name</label>
+                        <input type="text" id="llm_model_name" name="llm_model_name"
+                               value="{% if agent and agent.llm_provider %}{{ agent.llm_provider.model_name or '' }}{% endif %}"
+                               placeholder="e.g., gpt-4, llama2-7b">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="llm_api_key">API Key</label>
+                        <input type="password" id="llm_api_key" name="llm_api_key"
+                               value="{% if agent and agent.llm_provider and agent.llm_provider.api_key %}••••••••{% endif %}"
+                               placeholder="Enter API key">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="llm_base_url">Base URL (Optional)</label>
+                        <input type="text" id="llm_base_url" name="llm_base_url"
+                               value="{% if agent and agent.llm_provider %}{{ agent.llm_provider.base_url or '' }}{% endif %}"
+                               placeholder="e.g., http://localhost:8080">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>TTS Provider Configuration</h3>
+                
+                <div class="form-group">
+                    <label for="tts_provider_type">TTS Provider Type</label>
+                    <select id="tts_provider_type" name="tts_provider_type">
+                        <option value="">No TTS Provider</option>
+                        <option value="elevenlabs" {% if agent and agent.tts_provider and agent.tts_provider.provider_type == 'elevenlabs' %}selected{% endif %}>ElevenLabs</option>
+                        <option value="deepgram" {% if agent and agent.tts_provider and agent.tts_provider.provider_type == 'deepgram' %}selected{% endif %}>Deepgram</option>
+                        <option value="async_ai" {% if agent and agent.tts_provider and agent.tts_provider.provider_type == 'async_ai' %}selected{% endif %}>Async AI</option>
+                        <option value="kokoro_local" {% if agent and agent.tts_provider and agent.tts_provider.provider_type == 'kokoro_local' %}selected{% endif %}>Kokoro Local</option>
+                    </select>
+                </div>
+
+                <div id="tts_config" class="provider-config {% if agent and agent.tts_provider %}active{% endif %}">
+                    <div class="form-group">
+                        <label for="tts_voice_name">Voice Name</label>
+                        <input type="text" id="tts_voice_name" name="tts_voice_name"
+                               value="{% if agent and agent.tts_provider %}{{ agent.tts_provider.voice_name or '' }}{% endif %}"
+                               placeholder="e.g., Rachel, Adam">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tts_api_key">API Key</label>
+                        <input type="password" id="tts_api_key" name="tts_api_key"
+                               value="{% if agent and agent.tts_provider and agent.tts_provider.api_key %}••••••••{% endif %}"
+                               placeholder="Enter API key">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tts_base_url">Base URL (Optional)</label>
+                        <input type="text" id="tts_base_url" name="tts_base_url"
+                               value="{% if agent and agent.tts_provider %}{{ agent.tts_provider.base_url or '' }}{% endif %}"
+                               placeholder="e.g., http://localhost:8080">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>STT Provider Configuration</h3>
+                
+                <div class="form-group">
+                    <label for="stt_provider_type">STT Provider Type</label>
+                    <select id="stt_provider_type" name="stt_provider_type">
+                        <option value="">No STT Provider</option>
+                        <option value="deepgram" {% if agent and agent.stt_provider and agent.stt_provider.provider_type == 'deepgram' %}selected{% endif %}>Deepgram</option>
+                        <option value="whisper_local" {% if agent and agent.stt_provider and agent.stt_provider.provider_type == 'whisper_local' %}selected{% endif %}>Whisper Local</option>
+                    </select>
+                </div>
+
+                <div id="stt_config" class="provider-config {% if agent and agent.stt_provider %}active{% endif %}">
+                    <div class="form-group">
+                        <label for="stt_model_name">Model Name</label>
+                        <input type="text" id="stt_model_name" name="stt_model_name"
+                               value="{% if agent and agent.stt_provider %}{{ agent.stt_provider.model_name or '' }}{% endif %}"
+                               placeholder="e.g., whisper-large-v3">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="stt_api_key">API Key</label>
+                        <input type="password" id="stt_api_key" name="stt_api_key"
+                               value="{% if agent and agent.stt_provider and agent.stt_provider.api_key %}••••••••{% endif %}"
+                               placeholder="Enter API key">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="stt_base_url">Base URL (Optional)</label>
+                        <input type="text" id="stt_base_url" name="stt_base_url"
+                               value="{% if agent and agent.stt_provider %}{{ agent.stt_provider.base_url or '' }}{% endif %}"
+                               placeholder="e.g., http://localhost:8080">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="/agent/admin" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    {% if action == 'create' %}Create Agent{% else %}Update Agent{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Show/hide provider configuration sections based on provider type selection
+        function toggleProviderConfig(providerSelectId, configDivId) {
+            const providerSelect = document.getElementById(providerSelectId);
+            const configDiv = document.getElementById(configDivId);
+            
+            providerSelect.addEventListener('change', function() {
+                if (this.value) {
+                    configDiv.classList.add('active');
+                } else {
+                    configDiv.classList.remove('active');
+                }
+            });
+        }
+
+        // Initialize provider config toggles
+        toggleProviderConfig('llm_provider_type', 'llm_config');
+        toggleProviderConfig('tts_provider_type', 'tts_config');
+        toggleProviderConfig('stt_provider_type', 'stt_config');
+
+        // Form submission handling
+        document.getElementById('agentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = {};
+            for (const [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+
+            // Convert checkbox to boolean
+            data.is_default = data.is_default === 'on';
+
+            // Remove empty API key values if they contain placeholder characters
+            if (data.llm_api_key === '••••••••') delete data.llm_api_key;
+            if (data.tts_api_key === '••••••••') delete data.tts_api_key;
+            if (data.stt_api_key === '••••••••') delete data.stt_api_key;
+
+            try {
+                const url = this.action;
+                const method = this.dataset.method;
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    window.location.href = '/agent/admin';
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + (error.detail || 'Failed to save agent'));
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>

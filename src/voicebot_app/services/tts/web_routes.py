@@ -17,9 +17,9 @@ from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 
 from .config import tts_config
-from ...database.session import get_db
+from database.session import get_db
 from ..agent.agent_service import AgentService
-from ..agent.models import Agent
+from database.models import Agent
 
 logger = logging.getLogger(__name__)
 

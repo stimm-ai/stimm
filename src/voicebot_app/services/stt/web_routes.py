@@ -10,9 +10,12 @@ import os
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException, Depends
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
+
+from database.session import get_db
+from services.agent.agent_service import AgentService
 
 logger = logging.getLogger(__name__)
 
@@ -28,10 +31,31 @@ TEST_AUDIO_PATH = Path(__file__).parent.parent.parent / "services" / "stt" / "te
 
 
 @router.get("/interface", response_class=HTMLResponse)
-async def stt_interface(request: Request):
-    """Serve the STT web interface"""
+async def stt_interface(request: Request, db=Depends(get_db)):
+    """Serve the STT web interface with agent selection"""
     try:
-        return templates.TemplateResponse("stt_interface.html", {"request": request})
+        # Get available agents
+        agent_service = AgentService(db)
+        agents = agent_service.get_all_agents()
+        
+        # Prepare agent data for template
+        agent_list = [
+            {
+                "id": str(agent.id),
+                "name": agent.name,
+                "description": agent.description,
+                "stt_provider": agent.stt_provider
+            }
+            for agent in agents
+        ]
+        
+        return templates.TemplateResponse(
+            "stt_interface.html",
+            {
+                "request": request,
+                "agents": agent_list
+            }
+        )
     except Exception as e:
         logger.error(f"Failed to load STT interface template: {e}")
         raise HTTPException(status_code=500, detail="Failed to load STT interface")

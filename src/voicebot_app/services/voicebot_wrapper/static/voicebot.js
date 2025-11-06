@@ -21,6 +21,7 @@ class VoicebotInterface {
         this.debugInfo = document.getElementById('debugInfo');
         this.audioPlayer = document.getElementById('audioPlayer');
         this.errorContainer = document.getElementById('errorContainer');
+        this.agentSelect = document.getElementById('agentSelect');
         
         // Status tracking elements
         this.statusSection = document.getElementById('statusSection');
@@ -32,6 +33,10 @@ class VoicebotInterface {
         this.latencySection = document.getElementById('latencySection');
         this.firstChunkLatency = document.getElementById('firstChunkLatency');
         this.playbackStartLatency = document.getElementById('playbackStartLatency');
+        
+        // Agent management
+        this.currentAgentId = null;
+        this.availableAgents = [];
         
         // Debug logging removed for production
 
@@ -105,6 +110,7 @@ class VoicebotInterface {
         try {
             await this.initializeAudioContext();
             this.initializeEventListeners();
+            await this.loadAgents(); // Load available agents
             this.updateStatus('ready', 'Ready to connect');
             this.showError(''); // Clear any errors
         } catch (error) {
@@ -116,6 +122,11 @@ class VoicebotInterface {
 
     initializeEventListeners() {
         this.voiceButton.addEventListener('click', () => this.toggleListening());
+        
+        // Handle agent selection change
+        if (this.agentSelect) {
+            this.agentSelect.addEventListener('change', (e) => this.handleAgentChange(e));
+        }
         
         // Handle page visibility changes
         document.addEventListener('visibilitychange', () => {
@@ -751,6 +762,62 @@ class VoicebotInterface {
         this.tokenCount.textContent = `Tokens: ${this.tokenCounter}`;
         this.audioChunkCount.textContent = `Audio Chunks: ${this.audioChunkCounter}`;
         this.streamTime.textContent = `Time: ${elapsedTime}s`;
+    }
+
+    // Agent Management Methods
+    async loadAgents() {
+        try {
+            const response = await fetch('/api/agents/');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const agents = await response.json();
+            this.availableAgents = agents;
+            
+            if (this.agentSelect) {
+                this.agentSelect.innerHTML = '';
+                
+                // Add default option
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = 'Default Agent';
+                this.agentSelect.appendChild(defaultOption);
+                
+                // Add all agents
+                agents.forEach(agent => {
+                    const option = document.createElement('option');
+                    option.value = agent.id;
+                    option.textContent = agent.name;
+                    if (agent.is_default) {
+                        option.textContent += ' (Default)';
+                        this.currentAgentId = agent.id;
+                        this.agentSelect.value = agent.id;
+                    }
+                    this.agentSelect.appendChild(option);
+                });
+            }
+            
+        } catch (error) {
+            console.error('Error loading agents:', error);
+            if (this.agentSelect) {
+                this.agentSelect.innerHTML = '<option value="">Error loading agents</option>';
+            }
+        }
+    }
+
+    handleAgentChange(event) {
+        this.currentAgentId = event.target.value;
+        console.log(`Agent changed to: ${this.currentAgentId}`);
+        
+        // Update WebSocket connection with new agent if connected
+        if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
+            this.websocket.send(JSON.stringify({
+                type: 'agent_change',
+                agent_id: this.currentAgentId || null,
+                conversation_id: this.conversationId
+            }));
+        }
     }
 
     // Cleanup method

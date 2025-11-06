@@ -9,7 +9,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 
-from ..database import get_db, User, Agent, AgentSession
+from database import get_db, User, Agent, AgentSession
 from .models import (
     AgentCreate, 
     AgentUpdate, 

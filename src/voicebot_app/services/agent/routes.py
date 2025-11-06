@@ -13,16 +13,16 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from .agent_service import AgentService
-from .models import Agent, AgentCreate, AgentUpdate, ProviderConfig
+from .models import AgentResponse, AgentCreate, AgentUpdate, ProviderConfig
 from .exceptions import AgentNotFoundError, AgentValidationError
-from ...database.session import get_db
+from database.session import get_db
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/agents", tags=["agents"])
 
 
-@router.get("/", response_model=List[Agent])
+@router.get("/", response_model=List[AgentResponse])
 async def list_agents(
     skip: int = 0,
     limit: int = 100,
@@ -30,11 +30,11 @@ async def list_agents(
 ):
     """List all agents with pagination"""
     agent_service = AgentService(db)
-    agents = agent_service.get_all_agents(skip=skip, limit=limit)
-    return agents
+    agents_result = agent_service.list_agents(skip=skip, limit=limit)
+    return agents_result.agents
 
 
-@router.get("/{agent_id}", response_model=Agent)
+@router.get("/{agent_id}", response_model=AgentResponse)
 async def get_agent(
     agent_id: str,
     db: Session = Depends(get_db)
@@ -51,7 +51,7 @@ async def get_agent(
         )
 
 
-@router.post("/", response_model=Agent, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=AgentResponse, status_code=status.HTTP_201_CREATED)
 async def create_agent(
     agent_data: AgentCreate,
     db: Session = Depends(get_db)
@@ -74,7 +74,7 @@ async def create_agent(
         )
 
 
-@router.put("/{agent_id}", response_model=Agent)
+@router.put("/{agent_id}", response_model=AgentResponse)
 async def update_agent(
     agent_id: str,
     agent_data: AgentUpdate,
@@ -125,7 +125,7 @@ async def delete_agent(
         )
 
 
-@router.get("/default/current", response_model=Agent)
+@router.get("/default/current", response_model=AgentResponse)
 async def get_default_agent(
     db: Session = Depends(get_db)
 ):
@@ -141,7 +141,7 @@ async def get_default_agent(
         )
 
 
-@router.put("/{agent_id}/set-default", response_model=Agent)
+@router.put("/{agent_id}/set-default", response_model=AgentResponse)
 async def set_default_agent(
     agent_id: str,
     db: Session = Depends(get_db)
@@ -181,7 +181,7 @@ async def get_agent_providers(
         )
 
 
-@router.put("/{agent_id}/providers", response_model=Agent)
+@router.put("/{agent_id}/providers", response_model=AgentResponse)
 async def update_agent_providers(
     agent_id: str,
     provider_configs: dict,

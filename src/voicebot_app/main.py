@@ -19,8 +19,8 @@ from services.stt.web_routes import router as stt_web_router
 from services.tts.routes import router as tts_router
 from services.tts.web_routes import router as tts_web_router
 from services.voicebot_wrapper.routes import router as voicebot_router
-# Temporarily comment out agent routes to test imports
-# from services.agent.routes import router as agent_router
+from services.agent.routes import router as agent_router
+from services.agent.web_routes import router as agent_web_router
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +102,8 @@ app.include_router(stt_web_router, prefix="/stt", tags=["stt-web"])
 app.include_router(tts_router, prefix="/api", tags=["tts"])
 app.include_router(tts_web_router, prefix="/tts", tags=["tts-web"])
 app.include_router(voicebot_router, prefix="/api", tags=["voicebot"])
-# app.include_router(agent_router, prefix="/api", tags=["agents"])
+app.include_router(agent_router, prefix="/api", tags=["agents"])
+app.include_router(agent_web_router, tags=["agent-web"])
 
 # Templates for voicebot interface
 templates = Jinja2Templates(directory="services/voicebot_wrapper/templates")

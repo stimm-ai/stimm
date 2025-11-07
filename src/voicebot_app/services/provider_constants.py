@@ -45,7 +45,7 @@ class AsyncAITTSConstants:
 class KokoroLocalTTSConstants:
     """Immutable constants for Kokoro Local TTS provider."""
     URL: str = "ws://kokoro-tts:5000/ws/tts/stream"
-    SAMPLE_RATE: int = 33000
+    SAMPLE_RATE: int = 22050
     ENCODING: str = "pcm_s16le"
     CONTAINER: str = "raw"
     SPEED: float = 0.8

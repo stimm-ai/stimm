@@ -33,45 +33,13 @@ class KokoroLocalProvider:
         # Use immutable constants for provider configuration
         self.websocket_url = KokoroLocalTTSConstants.URL
         self.input_sample_rate = KokoroLocalTTSConstants.SAMPLE_RATE
-        self.output_sample_rate = 44100  # Target for frontend compatibility (kept as implementation choice)
         self.encoding = KokoroLocalTTSConstants.ENCODING
         self.container = KokoroLocalTTSConstants.CONTAINER
         self.speed = KokoroLocalTTSConstants.SPEED  # Immutable constant, not configurable
         
         logger.info(f"KokoroLocalProvider initialized with URL: {self.websocket_url}, voice: {self.voice_id}, language: {self.language}, speed: {self.speed} (constant)")
-        logger.info(f"Audio resampling: {self.input_sample_rate}Hz → {self.output_sample_rate}Hz")
 
-    def _resample_audio_chunk(self, audio_data: bytes) -> bytes:
-        """
-        Resample audio chunk from 24kHz to 44.1kHz without adding latency.
-        Uses linear interpolation for fast, real-time processing.
-        """
-        if not audio_data:
-            return audio_data
-        
-        # Convert bytes to numpy array (16-bit PCM)
-        samples_16bit = np.frombuffer(audio_data, dtype=np.int16)
-        
-        # Convert to float32 for processing
-        samples_float = samples_16bit.astype(np.float32) / 32768.0
-        
-        # Calculate resampling ratio
-        ratio = self.output_sample_rate / self.input_sample_rate  # 44100/24000 = 1.8375
-        
-        # Calculate target number of samples
-        target_length = int(len(samples_float) * ratio)
-        
-        # Use linear interpolation for zero-latency resampling
-        # This is faster than scipy.signal.resample and suitable for real-time
-        x_original = np.arange(len(samples_float))
-        x_target = np.linspace(0, len(samples_float) - 1, target_length)
-        resampled_float = np.interp(x_target, x_original, samples_float)
-        
-        # Convert back to 16-bit PCM
-        resampled_16bit = (resampled_float * 32768.0).astype(np.int16)
-        
-        # Convert back to bytes
-        return resampled_16bit.tobytes()
+    
 
     async def stream_synthesis(self, text_generator: AsyncGenerator[str, None]) -> AsyncGenerator[bytes, None]:
         """Live streaming synthesis using the new Kokoro live streaming endpoint."""
@@ -185,7 +153,7 @@ class KokoroLocalProvider:
                         break
                     
                     # Apply real-time resampling to each audio chunk
-                    resampled_item = self._resample_audio_chunk(item)
+                    resampled_item = item
                     chunk_count += 1
                     
                     logger.debug(f"Resampled audio chunk {chunk_count}: {len(item)} bytes → {len(resampled_item)} bytes")

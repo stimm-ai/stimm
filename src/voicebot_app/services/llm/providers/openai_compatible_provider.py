@@ -67,8 +67,8 @@ class OpenAICompatibleProvider(ABC):
         if not self.config.get("api_key"):
             raise ValueError(f"{self.__class__.__name__}: API key is required")
         
-        if not self.config.get("api_url"):
-            raise ValueError(f"{self.__class__.__name__}: API URL is required")
+        # API URL is now provided by constants, not configuration
+        # The _get_api_url() method should handle URL construction using constants
     
     def _prepare_request_data(self, prompt: str, model: str = None, stream: bool = False, **kwargs) -> Dict[str, Any]:
         """

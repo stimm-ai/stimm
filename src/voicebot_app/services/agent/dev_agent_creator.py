@@ -39,7 +39,11 @@ class DevAgentCreator:
             try:
                 default_agent = self.agent_service.get_default_agent()
                 logger.info(f"Default agent already exists: {default_agent.name} (ID: {default_agent.id})")
-                return True
+                
+                # Delete the existing default agent to recreate it with updated configuration
+                logger.info("Deleting existing default agent to recreate with updated configuration")
+                self.agent_service.delete_agent(default_agent.id)
+                
             except Exception:
                 # Default agent doesn't exist, create it
                 pass
@@ -54,6 +58,9 @@ class DevAgentCreator:
             logger.info(f"  LLM Provider: {agent.llm_provider}")
             logger.info(f"  TTS Provider: {agent.tts_provider}")
             logger.info(f"  STT Provider: {agent.stt_provider}")
+            logger.info(f"  LLM Model: {agent.llm_config.get('model', 'default')}")
+            logger.info(f"  TTS Voice: {agent.tts_config.get('voice', agent.tts_config.get('voice_id', 'default'))}")
+            logger.info(f"  STT Model: {agent.stt_config.get('model', 'default')}")
             
             return True
             
@@ -84,9 +91,15 @@ class DevAgentCreator:
         return AgentCreate(
             name="Development Agent",
             description="Default development agent created from .env configuration",
-            llm_config=ProviderConfig(provider=llm_provider, config=llm_config),
-            tts_config=ProviderConfig(provider=tts_provider, config=tts_config),
-            stt_config=ProviderConfig(provider=stt_provider, config=stt_config),
+            llm_provider=llm_provider,
+            llm_model_name=llm_config.get("model", "default"),
+            llm_api_key=llm_config.get("api_key", ""),
+            tts_provider=tts_provider,
+            tts_voice_name=self._get_tts_voice_name(tts_provider, tts_config),
+            tts_api_key=tts_config.get("api_key", ""),
+            stt_provider=stt_provider,
+            stt_model_name=stt_config.get("model", "default"),
+            stt_api_key=stt_config.get("api_key", ""),
             is_default=True
         )
     
@@ -145,6 +158,7 @@ class DevAgentCreator:
         elif provider == "kokoro.local":
             config.update({
                 "url": os.getenv("KOKORO_LOCAL_TTS_URL", "ws://kokoro-tts:5000/ws/tts/stream"),
+                "voice": os.getenv("KOKORO_TTS_DEFAULT_VOICE", "af_sarah"),
                 "voice_id": os.getenv("KOKORO_TTS_DEFAULT_VOICE", "af_sarah"),
                 "sample_rate": int(os.getenv("KOKORO_TTS_SAMPLE_RATE", "22050")),
                 "encoding": os.getenv("KOKORO_TTS_ENCODING", "pcm_s16le"),
@@ -171,6 +185,23 @@ class DevAgentCreator:
         
         # Remove None values
         return {k: v for k, v in config.items() if v is not None}
+    
+    def _get_tts_voice_name(self, provider: str, tts_config: Dict[str, Any]) -> str:
+        """Get the appropriate voice name/ID based on provider requirements."""
+        if provider == "kokoro.local":
+            # Kokoro uses voice names (e.g., "ff_siwis")
+            return tts_config.get("voice", "default")
+        elif provider == "async.ai":
+            # Async AI uses voice IDs (UUID format)
+            return tts_config.get("voice_id", "default")
+        elif provider == "elevenlabs.io":
+            # ElevenLabs uses voice IDs
+            return tts_config.get("voice_id", "default")
+        elif provider == "deepgram.com":
+            # Deepgram uses model names for voices
+            return tts_config.get("model", "default")
+        else:
+            return "default"
     
     def _build_stt_config(self, provider: str) -> Dict[str, Any]:
         """Build STT provider configuration from environment."""

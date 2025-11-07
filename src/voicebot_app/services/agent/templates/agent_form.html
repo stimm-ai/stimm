@@ -314,6 +314,43 @@
             if (data.tts_api_key === '••••••••') delete data.tts_api_key;
             if (data.stt_api_key === '••••••••') delete data.stt_api_key;
 
+            // Build ProviderConfig objects for API compatibility
+            const updateData = {
+                name: data.name,
+                description: data.description,
+                is_default: data.is_default
+            };
+
+            // Build LLM config if provider is selected
+            if (data.llm_provider) {
+                updateData.llm_config = {
+                    provider: data.llm_provider,
+                    config: {}
+                };
+                if (data.llm_model_name) updateData.llm_config.config.model = data.llm_model_name;
+                if (data.llm_api_key) updateData.llm_config.config.api_key = data.llm_api_key;
+            }
+
+            // Build TTS config if provider is selected
+            if (data.tts_provider) {
+                updateData.tts_config = {
+                    provider: data.tts_provider,
+                    config: {}
+                };
+                if (data.tts_voice_name) updateData.tts_config.config.voice = data.tts_voice_name;
+                if (data.tts_api_key) updateData.tts_config.config.api_key = data.tts_api_key;
+            }
+
+            // Build STT config if provider is selected
+            if (data.stt_provider) {
+                updateData.stt_config = {
+                    provider: data.stt_provider,
+                    config: {}
+                };
+                if (data.stt_model_name) updateData.stt_config.config.model = data.stt_model_name;
+                if (data.stt_api_key) updateData.stt_config.config.api_key = data.stt_api_key;
+            }
+
             try {
                 const url = this.action;
                 const method = this.dataset.method;
@@ -323,7 +360,7 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify(updateData)
                 });
 
                 if (response.ok) {

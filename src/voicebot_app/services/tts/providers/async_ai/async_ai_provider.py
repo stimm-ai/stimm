@@ -10,7 +10,7 @@ from typing import AsyncGenerator
 import websockets
 
 from ...config import tts_config
-from services.provider_constants import AsyncAITTSConstants
+from services.provider_constants import get_provider_constants
 
 logger = logging.getLogger(__name__)
 
@@ -29,10 +29,11 @@ class AsyncAIProvider:
             raise ValueError("Agent configuration is required for AsyncAIProvider")
         
         # Use immutable constants for provider configuration
-        self.websocket_url = AsyncAITTSConstants.URL
-        self.sample_rate = AsyncAITTSConstants.SAMPLE_RATE
-        self.encoding = AsyncAITTSConstants.ENCODING
-        self.container = AsyncAITTSConstants.CONTAINER
+        constants = get_provider_constants()
+        self.websocket_url = constants['tts']['async.ai']['URL']
+        self.sample_rate = constants['tts']['async.ai']['SAMPLE_RATE']
+        self.encoding = constants['tts']['async.ai']['ENCODING']
+        self.container = constants['tts']['async.ai']['CONTAINER']
 
 
     async def stream_synthesis(self, text_generator: AsyncGenerator[str, None]) -> AsyncGenerator[bytes, None]:

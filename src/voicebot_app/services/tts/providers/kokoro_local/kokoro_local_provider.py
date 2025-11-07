@@ -12,7 +12,7 @@ import numpy as np
 from scipy import signal
 
 from ...config import tts_config
-from services.provider_constants import KokoroLocalTTSConstants
+from services.provider_constants import get_provider_constants
 
 logger = logging.getLogger(__name__)
 
@@ -31,11 +31,12 @@ class KokoroLocalProvider:
             raise ValueError("Agent configuration is required for KokoroLocalProvider")
         
         # Use immutable constants for provider configuration
-        self.websocket_url = KokoroLocalTTSConstants.URL
-        self.input_sample_rate = KokoroLocalTTSConstants.SAMPLE_RATE
-        self.encoding = KokoroLocalTTSConstants.ENCODING
-        self.container = KokoroLocalTTSConstants.CONTAINER
-        self.speed = KokoroLocalTTSConstants.SPEED  # Immutable constant, not configurable
+        constants = get_provider_constants()
+        self.websocket_url = constants['tts']['kokoro.local']['URL']
+        self.input_sample_rate = constants['tts']['kokoro.local']['SAMPLE_RATE']
+        self.encoding = constants['tts']['kokoro.local']['ENCODING']
+        self.container = constants['tts']['kokoro.local']['CONTAINER']
+        self.speed = constants['tts']['kokoro.local']['SPEED']  # Immutable constant, not configurable
         
         logger.info(f"KokoroLocalProvider initialized with URL: {self.websocket_url}, voice: {self.voice_id}, language: {self.language}, speed: {self.speed} (constant)")
 

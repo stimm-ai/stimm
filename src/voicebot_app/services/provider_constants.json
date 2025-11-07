@@ -1,0 +1,56 @@
+{
+  "tts": {
+    "deepgram.com": {
+      "BASE_URL": "https://api.deepgram.com",
+      "SAMPLE_RATE": 16000,
+      "ENCODING": "linear16"
+    },
+    "elevenlabs.io": {
+      "SAMPLE_RATE": 22050,
+      "ENCODING": "pcm_s16le",
+      "OUTPUT_FORMAT": "pcm_22050"
+    },
+    "async.ai": {
+      "URL": "wss://api.async.ai/text_to_speech/websocket/ws",
+      "SAMPLE_RATE": 44100,
+      "ENCODING": "pcm_s16le",
+      "CONTAINER": "raw"
+    },
+    "kokoro.local": {
+      "URL": "ws://kokoro-tts:5000/ws/tts/stream",
+      "SAMPLE_RATE": 22050,
+      "ENCODING": "pcm_s16le",
+      "CONTAINER": "raw",
+      "SPEED": 0.8
+    }
+  },
+  "stt": {
+    "deepgram.com": {
+      "BASE_URL": "https://api.deepgram.com",
+      "SAMPLE_RATE": 16000
+    },
+    "whisper.local": {
+      "URL": "ws://whisper-stt:8003",
+      "PATH": "/api/stt/stream",
+      "SAMPLE_RATE": 16000
+    }
+  },
+  "llm": {
+    "groq.com": {
+      "API_URL": "https://api.groq.com",
+      "COMPLETIONS_PATH": "/openai/v1/chat/completions"
+    },
+    "mistral.ai": {
+      "API_URL": "https://api.mistral.ai/v1",
+      "COMPLETIONS_PATH": "/chat/completions"
+    },
+    "openrouter.ai": {
+      "API_URL": "https://openrouter.ai/api/v1",
+      "COMPLETIONS_PATH": "/chat/completions"
+    },
+    "llama-cpp.local": {
+      "API_URL": "http://llama-cpp-server:8002",
+      "COMPLETIONS_PATH": "/v1/chat/completions"
+    }
+  }
+}

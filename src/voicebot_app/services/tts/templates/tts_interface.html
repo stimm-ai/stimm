@@ -416,6 +416,7 @@
 
     <!-- Load shared modules -->
     <script src="/shared-static/audio_streamer.js"></script>
+    <script src="/shared-static/provider_constants.js"></script>
     <script src="/app-static/agent_selector.js"></script>
 
     <script>
@@ -534,33 +535,46 @@
             }
 
             updateProviderDisplay(agent) {
-                if (agent.tts_config) {
-                    const sampleRate = agent.tts_config.sample_rate || 44100;
-                    const encoding = agent.tts_config.encoding || 'pcm_s16le';
-                    
-                    this.providerDisplay.textContent = agent.tts_provider;
-                    this.sampleRateDisplay.textContent = sampleRate;
-                    this.encodingDisplay.textContent = encoding;
-                    this.providerInfo.style.display = 'block';
-                    
-                    console.log(`🎵 Agent TTS configuration: provider=${agent.tts_provider}, sampleRate=${sampleRate}, encoding=${encoding}`);
+                if (agent.tts_provider) {
+                    // Get provider constants - no fallbacks, use immutable constants
+                    const providerConstants = window.ProviderConstants.TTS[agent.tts_provider];
+                    if (providerConstants) {
+                        const sampleRate = providerConstants.SAMPLE_RATE;
+                        const encoding = providerConstants.ENCODING;
+                        
+                        this.providerDisplay.textContent = agent.tts_provider;
+                        this.sampleRateDisplay.textContent = sampleRate;
+                        this.encodingDisplay.textContent = encoding;
+                        this.providerInfo.style.display = 'block';
+                        
+                        console.log(`🎵 Agent TTS configuration: provider=${agent.tts_provider}, sampleRate=${sampleRate}, encoding=${encoding} (from constants)`);
+                    } else {
+                        console.warn(`⚠️ No provider constants found for: ${agent.tts_provider}`);
+                        this.providerInfo.style.display = 'none';
+                    }
                 } else {
                     this.providerInfo.style.display = 'none';
                 }
             }
 
             updateAudioStreamer(agent) {
-                if (agent.tts_config) {
-                    const sampleRate = agent.tts_config.sample_rate || 44100;
-                    const encoding = agent.tts_config.encoding || 'pcm_s16le';
-                    
-                    // Update audio streamer configuration
-                    this.audioStreamer.updateConfig({
-                        sampleRate: sampleRate,
-                        encoding: encoding
-                    });
-                    
-                    console.log(`🎵 Updated AudioStreamer configuration: sampleRate=${sampleRate}, encoding=${encoding}`);
+                if (agent.tts_provider) {
+                    // Get provider constants - no fallbacks, use immutable constants
+                    const providerConstants = window.ProviderConstants.TTS[agent.tts_provider];
+                    if (providerConstants) {
+                        const sampleRate = providerConstants.SAMPLE_RATE;
+                        const encoding = providerConstants.ENCODING;
+                        
+                        // Update audio streamer configuration
+                        this.audioStreamer.updateConfig({
+                            sampleRate: sampleRate,
+                            encoding: encoding
+                        });
+                        
+                        console.log(`🎵 Updated AudioStreamer configuration: sampleRate=${sampleRate}, encoding=${encoding} (from constants)`);
+                    } else {
+                        console.warn(`⚠️ No provider constants found for: ${agent.tts_provider}, cannot update AudioStreamer`);
+                    }
                 }
             }
 

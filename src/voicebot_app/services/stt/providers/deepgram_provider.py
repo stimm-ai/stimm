@@ -13,7 +13,7 @@ import urllib.parse
 from typing import AsyncGenerator, Dict, List, Optional, Any
 
 import aiohttp
-from services.provider_constants import DeepgramSTTConstants
+from services.provider_constants import get_provider_constants
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +39,9 @@ class DeepgramProvider:
                 raise ValueError("DEEPGRAM_STT_API_KEY environment variable is required")
 
             # Use immutable constants for provider configuration
-            base_url = DeepgramSTTConstants.BASE_URL
-            sample_rate = DeepgramSTTConstants.SAMPLE_RATE
+            constants = get_provider_constants()
+            base_url = constants['stt']['deepgram.com']['BASE_URL']
+            sample_rate = constants['stt']['deepgram.com']['SAMPLE_RATE']
 
             # Build WebSocket URL with query parameters
             params = {

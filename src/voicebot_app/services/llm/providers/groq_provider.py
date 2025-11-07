@@ -9,7 +9,7 @@ import json
 from typing import AsyncIterator, Optional, Dict, Any
 from ..config import llm_config
 from .openai_compatible_provider import OpenAICompatibleProvider
-from services.provider_constants import GroqLLMConstants
+from services.provider_constants import get_provider_constants
 
 
 class GroqProvider(OpenAICompatibleProvider):
@@ -22,8 +22,9 @@ class GroqProvider(OpenAICompatibleProvider):
     
     def _get_api_url(self) -> str:
         """Get the full API URL using immutable constants."""
-        base_url = GroqLLMConstants.API_URL
-        completions_path = GroqLLMConstants.COMPLETIONS_PATH
+        constants = get_provider_constants()
+        base_url = constants['llm']['groq.com']['API_URL']
+        completions_path = constants['llm']['groq.com']['COMPLETIONS_PATH']
         if base_url.endswith('/'):
             base_url = base_url[:-1]
         if completions_path.startswith('/'):

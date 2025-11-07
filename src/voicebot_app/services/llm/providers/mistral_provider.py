@@ -12,7 +12,7 @@ import json
 from typing import AsyncIterator, Optional, Dict, Any
 from ..config import llm_config
 from .openai_compatible_provider import OpenAICompatibleProvider
-from services.provider_constants import MistralLLMConstants
+from services.provider_constants import get_provider_constants
 
 
 class MistralProvider(OpenAICompatibleProvider):
@@ -32,8 +32,9 @@ class MistralProvider(OpenAICompatibleProvider):
     
     def _get_api_url(self) -> str:
         """Get the full API URL for Mistral.ai completions using immutable constants."""
-        base_url = MistralLLMConstants.API_URL
-        completions_path = MistralLLMConstants.COMPLETIONS_PATH
+        constants = get_provider_constants()
+        base_url = constants['llm']['mistral.ai']['API_URL']
+        completions_path = constants['llm']['mistral.ai']['COMPLETIONS_PATH']
 
         if base_url.endswith('/'):
             base_url = base_url[:-1]

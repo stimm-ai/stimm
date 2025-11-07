@@ -14,7 +14,7 @@ from typing import AsyncGenerator
 import aiohttp
 
 from ...config import tts_config
-from services.provider_constants import ElevenLabsTTSConstants
+from services.provider_constants import get_provider_constants
 
 logger = logging.getLogger(__name__)
 
@@ -33,9 +33,10 @@ class ElevenLabsProvider:
             raise ValueError("Agent configuration is required for ElevenLabsProvider")
         
         # Use immutable constants for audio parameters
-        self.sample_rate = ElevenLabsTTSConstants.SAMPLE_RATE
-        self.encoding = ElevenLabsTTSConstants.ENCODING
-        self.output_format = ElevenLabsTTSConstants.OUTPUT_FORMAT
+        constants = get_provider_constants()
+        self.sample_rate = constants['tts']['elevenlabs.io']['SAMPLE_RATE']
+        self.encoding = constants['tts']['elevenlabs.io']['ENCODING']
+        self.output_format = constants['tts']['elevenlabs.io']['OUTPUT_FORMAT']
         self.session = None
         self.websocket = None
         logger.info(f"ElevenLabsProvider initialized with voice: {self.voice_id}, model: {self.model_id}, sample_rate: {self.sample_rate}Hz")

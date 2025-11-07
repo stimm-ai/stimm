@@ -12,7 +12,7 @@ from typing import AsyncGenerator, Dict, List, Any
 
 import websockets
 
-from services.provider_constants import WhisperLocalSTTConstants
+from services.provider_constants import get_provider_constants
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +29,9 @@ class WhisperLocalProvider:
         Configuration is now fully code-defined via WhisperLocalSTTConstants and
         does not depend on database-backed global configuration.
         """
-        self.websocket_url = WhisperLocalSTTConstants.URL
-        self.websocket_path = WhisperLocalSTTConstants.PATH
+        constants = get_provider_constants()
+        self.websocket_url = constants['stt']['whisper.local']['URL']
+        self.websocket_path = constants['stt']['whisper.local']['PATH']
         self.full_url = f"{self.websocket_url}{self.websocket_path}"
         self.websocket = None
         self.connected = False

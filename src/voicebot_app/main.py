@@ -21,6 +21,7 @@ from services.tts.web_routes import router as tts_web_router
 from services.voicebot_wrapper.routes import router as voicebot_router
 from services.agent.routes import router as agent_router
 from services.agent.web_routes import router as agent_web_router
+from services.provider_constants import get_provider_constants
 
 logger = logging.getLogger(__name__)
 
@@ -118,6 +119,17 @@ def read_root():
 def health_check():
     """Basic health check"""
     return {"status": "healthy"}
+
+
+@app.get("/api/provider-constants")
+async def get_provider_constants_endpoint():
+    """Serve provider constants to JavaScript frontend"""
+    try:
+        constants = get_provider_constants()
+        return constants
+    except Exception as e:
+        logger.error(f"Failed to load provider constants: {e}")
+        return {"error": "Failed to load provider constants"}
 
 
 @app.get("/health/rag-preloading")

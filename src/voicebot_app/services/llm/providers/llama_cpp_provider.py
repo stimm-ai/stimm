@@ -12,7 +12,7 @@ import json
 from typing import AsyncIterator, Optional, Dict, Any
 from ..config import llm_config
 from .openai_compatible_provider import OpenAICompatibleProvider
-from services.provider_constants import LlamaCppLLMConstants
+from services.provider_constants import get_provider_constants
 
 
 class LlamaCppProvider(OpenAICompatibleProvider):
@@ -33,8 +33,9 @@ class LlamaCppProvider(OpenAICompatibleProvider):
     def _validate_config(self):
         """Validate that required configuration is present (API key is optional for local server)."""
         # Use immutable constants - these values are fixed and not configurable
-        api_url = LlamaCppLLMConstants.API_URL
-        completions_path = LlamaCppLLMConstants.COMPLETIONS_PATH
+        constants = get_provider_constants()
+        api_url = constants['llm']['llama-cpp.local']['API_URL']
+        completions_path = constants['llm']['llama-cpp.local']['COMPLETIONS_PATH']
         if not api_url:
             raise ValueError(f"{self.__class__.__name__}: API URL is required")
         if not completions_path:
@@ -43,8 +44,9 @@ class LlamaCppProvider(OpenAICompatibleProvider):
     
     def _get_api_url(self) -> str:
         """Get the full API URL for llama.cpp completions using immutable constants."""
-        base_url = LlamaCppLLMConstants.API_URL
-        completions_path = LlamaCppLLMConstants.COMPLETIONS_PATH
+        constants = get_provider_constants()
+        base_url = constants['llm']['llama-cpp.local']['API_URL']
+        completions_path = constants['llm']['llama-cpp.local']['COMPLETIONS_PATH']
 
         if base_url.endswith('/'):
             base_url = base_url[:-1]

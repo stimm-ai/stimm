@@ -16,14 +16,16 @@ class AudioStreamer {
     /**
      * Crée une instance d'AudioStreamer
      * @param {Object} options - Options de configuration
-     * @param {number} options.sampleRate - Taux d'échantillonnage par défaut (44100 pour TTS)
+     * @param {number} options.sampleRate - Taux d'échantillonnage par défaut (utilise les constantes du fournisseur)
+     * @param {string} options.encoding - Encodage audio par défaut (utilise les constantes du fournisseur)
      * @param {Function} options.onPlaybackStart - Callback déclenché au début de la lecture
      * @param {Function} options.onPlaybackEnd - Callback déclenché à la fin de la lecture
      * @param {Function} options.onError - Callback pour les erreurs de lecture
      */
     constructor(options = {}) {
         this.options = {
-            sampleRate: 44100, // TTS utilise 44.1kHz par défaut
+            sampleRate: 44100, // Valeur par défaut temporaire, sera remplacée par les constantes du fournisseur
+            encoding: 'pcm_s16le', // Valeur par défaut temporaire
             onPlaybackStart: () => {},
             onPlaybackEnd: () => {},
             onError: () => {},
@@ -52,8 +54,22 @@ class AudioStreamer {
     /**
      * Initialise l'AudioStreamer
      */
-    initialize() {
+    async initialize() {
         console.log('🎵 AudioStreamer initialisé');
+        
+        // Charger les constantes du fournisseur depuis l'API
+        try {
+            const response = await fetch('/api/provider-constants');
+            if (response.ok) {
+                const providerConstants = await response.json();
+                this.providerConstants = providerConstants;
+                console.log('✅ Constantes du fournisseur chargées:', providerConstants);
+            } else {
+                console.warn('⚠️ Impossible de charger les constantes du fournisseur, utilisation des valeurs par défaut');
+            }
+        } catch (error) {
+            console.warn('⚠️ Erreur lors du chargement des constantes du fournisseur:', error);
+        }
     }
 
     /**
@@ -294,6 +310,30 @@ class AudioStreamer {
             ...this.options,
             ...newConfig
         };
+        
+        // Si des constantes de fournisseur sont disponibles, les utiliser pour les valeurs par défaut
+        if (this.providerConstants && newConfig.provider) {
+            const providerType = newConfig.providerType || 'tts'; // 'tts' ou 'stt'
+            const providerName = newConfig.provider;
+            
+            if (this.providerConstants[providerType] && this.providerConstants[providerType][providerName]) {
+                const providerConfig = this.providerConstants[providerType][providerName];
+                
+                // Mettre à jour les valeurs par défaut avec les constantes du fournisseur
+                if (providerConfig.SAMPLE_RATE && !this.options.sampleRate) {
+                    this.options.sampleRate = providerConfig.SAMPLE_RATE;
+                }
+                if (providerConfig.ENCODING && !this.options.encoding) {
+                    this.options.encoding = providerConfig.ENCODING;
+                }
+                
+                console.log(`🎵 Configuration mise à jour avec les constantes de ${providerName}:`, {
+                    sampleRate: this.options.sampleRate,
+                    encoding: this.options.encoding
+                });
+            }
+        }
+        
         console.log('🎵 AudioStreamer configuration updated:', this.options);
     }
 

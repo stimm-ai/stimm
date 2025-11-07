@@ -13,7 +13,7 @@ from typing import AsyncGenerator
 import aiohttp
 
 from ...config import tts_config
-from services.provider_constants import DeepgramTTSDefaults
+from services.provider_constants import DeepgramTTSConstants
 
 logger = logging.getLogger(__name__)
 
@@ -40,10 +40,10 @@ class DeepgramProvider:
         if not api_key:
             raise ValueError("Deepgram API key is required")
 
-        # Use shared global defaults for base URL and audio parameters
-        base_url = DeepgramTTSDefaults.BASE_URL
-        sample_rate = DeepgramTTSDefaults.SAMPLE_RATE
-        encoding = DeepgramTTSDefaults.ENCODING
+        # Use immutable constants for base URL and audio parameters
+        base_url = DeepgramTTSConstants.BASE_URL
+        sample_rate = DeepgramTTSConstants.SAMPLE_RATE
+        encoding = DeepgramTTSConstants.ENCODING
         
         # Build WebSocket URL with query parameters
         url = f"{base_url.replace('https://', 'wss://').replace('http://', 'ws://')}/v1/speak?model={model}&encoding={encoding}&sample_rate={sample_rate}"

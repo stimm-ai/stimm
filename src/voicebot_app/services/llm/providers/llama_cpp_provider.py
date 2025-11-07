@@ -12,7 +12,7 @@ import json
 from typing import AsyncIterator, Optional, Dict, Any
 from ..config import llm_config
 from .openai_compatible_provider import OpenAICompatibleProvider
-from services.provider_constants import LlamaCppLLMDefaults
+from services.provider_constants import LlamaCppLLMConstants
 
 
 class LlamaCppProvider(OpenAICompatibleProvider):
@@ -32,9 +32,9 @@ class LlamaCppProvider(OpenAICompatibleProvider):
     
     def _validate_config(self):
         """Validate that required configuration is present (API key is optional for local server)."""
-        # Use shared defaults as baseline; allow overrides via config/env.
-        api_url = self.config.get("api_url", LlamaCppLLMDefaults.API_URL)
-        completions_path = self.config.get("completions_path", LlamaCppLLMDefaults.COMPLETIONS_PATH)
+        # Use immutable constants - these values are fixed and not configurable
+        api_url = LlamaCppLLMConstants.API_URL
+        completions_path = LlamaCppLLMConstants.COMPLETIONS_PATH
         if not api_url:
             raise ValueError(f"{self.__class__.__name__}: API URL is required")
         if not completions_path:
@@ -42,9 +42,9 @@ class LlamaCppProvider(OpenAICompatibleProvider):
         # API key remains optional for local llama.cpp server
     
     def _get_api_url(self) -> str:
-        """Get the full API URL for llama.cpp completions using shared defaults."""
-        base_url = self.config.get("api_url", LlamaCppLLMDefaults.API_URL)
-        completions_path = self.config.get("completions_path", LlamaCppLLMDefaults.COMPLETIONS_PATH)
+        """Get the full API URL for llama.cpp completions using immutable constants."""
+        base_url = LlamaCppLLMConstants.API_URL
+        completions_path = LlamaCppLLMConstants.COMPLETIONS_PATH
 
         if base_url.endswith('/'):
             base_url = base_url[:-1]

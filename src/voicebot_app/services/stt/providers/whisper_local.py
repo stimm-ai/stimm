@@ -12,7 +12,7 @@ from typing import AsyncGenerator, Dict, List, Any
 
 import websockets
 
-from services.provider_constants import WhisperLocalSTTDefaults
+from services.provider_constants import WhisperLocalSTTConstants
 
 logger = logging.getLogger(__name__)
 
@@ -24,13 +24,13 @@ class WhisperLocalProvider:
 
     def __init__(self):
         """
-        Initialize Whisper Local STT provider using centralized defaults.
+        Initialize Whisper Local STT provider using immutable constants.
 
-        Configuration is now fully code-defined via WhisperLocalSTTDefaults and
+        Configuration is now fully code-defined via WhisperLocalSTTConstants and
         does not depend on database-backed global configuration.
         """
-        self.websocket_url = WhisperLocalSTTDefaults.URL
-        self.websocket_path = WhisperLocalSTTDefaults.PATH
+        self.websocket_url = WhisperLocalSTTConstants.URL
+        self.websocket_path = WhisperLocalSTTConstants.PATH
         self.full_url = f"{self.websocket_url}{self.websocket_path}"
         self.websocket = None
         self.connected = False

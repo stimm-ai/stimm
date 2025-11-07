@@ -9,7 +9,7 @@ import json
 from typing import AsyncIterator, Optional, Dict, Any
 from ..config import llm_config
 from .openai_compatible_provider import OpenAICompatibleProvider
-from services.provider_constants import GroqLLMDefaults
+from services.provider_constants import GroqLLMConstants
 
 
 class GroqProvider(OpenAICompatibleProvider):
@@ -21,9 +21,9 @@ class GroqProvider(OpenAICompatibleProvider):
         super().__init__(config)
     
     def _get_api_url(self) -> str:
-        """Get the full API URL using shared global defaults as baseline."""
-        base_url = self.config.get("api_url", GroqLLMDefaults.API_URL)
-        completions_path = self.config.get("completions_path", GroqLLMDefaults.COMPLETIONS_PATH)
+        """Get the full API URL using immutable constants."""
+        base_url = GroqLLMConstants.API_URL
+        completions_path = GroqLLMConstants.COMPLETIONS_PATH
         if base_url.endswith('/'):
             base_url = base_url[:-1]
         if completions_path.startswith('/'):

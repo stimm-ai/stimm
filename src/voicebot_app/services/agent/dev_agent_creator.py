@@ -8,7 +8,7 @@ from typing import Dict, Any
 from sqlalchemy.orm import Session
 
 from .agent_service import AgentService
-from .models import AgentCreate, ProviderConfig
+from .models import AgentCreate, AgentUpdate, ProviderConfig
 from .exceptions import AgentAlreadyExistsError
 
 logger = logging.getLogger(__name__)
@@ -29,42 +29,79 @@ class DevAgentCreator:
     
     def create_default_dev_agent(self) -> bool:
         """
-        Create development agent from .env configuration.
-        Only set as default if no other default agent exists.
+        Create or update development agent from .env configuration.
+        Always updates existing development agent to match current .env configuration.
         
         Returns:
-            bool: True if agent was created or already exists
+            bool: True if agent was created or updated successfully
         """
         try:
-            # Check if a default agent already exists
+            # Build agent configuration from current environment variables
+            agent_data = self._build_agent_from_env()
+            
+            # Check if a development agent already exists
             try:
-                existing_default = self.agent_service.get_default_agent()
-                logger.info(f"Default agent already exists: {existing_default.name} (ID: {existing_default.id})")
-                logger.info("Development agent will be created but not set as default")
+                # Try to find existing development agent by name
+                agents = self.agent_service.list_agents()
+                existing_dev_agent = None
+                for agent in agents.agents:
+                    if agent.name == "Development Agent":
+                        existing_dev_agent = agent
+                        break
                 
-                # Create agent configuration from environment variables without setting as default
-                agent_data = self._build_agent_from_env()
-                agent_data.is_default = False
-                
-            except Exception:
-                # No default agent exists, create this one as default
-                logger.info("No existing default agent found, creating development agent as default")
-                
-                # Create agent configuration from environment variables as default
-                agent_data = self._build_agent_from_env()
+                if existing_dev_agent:
+                    logger.info(f"Found existing development agent: {existing_dev_agent.name} (ID: {existing_dev_agent.id})")
+                    logger.info("Updating development agent to match current .env configuration")
+                    
+                    # Update the existing agent
+                    update_data = AgentUpdate(
+                        llm_config=ProviderConfig(
+                            provider=agent_data.llm_provider,
+                            config={
+                                "model": agent_data.llm_model_name,
+                                "api_key": agent_data.llm_api_key
+                            }
+                        ),
+                        tts_config=ProviderConfig(
+                            provider=agent_data.tts_provider,
+                            config={
+                                "voice": agent_data.tts_voice_name,
+                                "api_key": agent_data.tts_api_key
+                            }
+                        ),
+                        stt_config=ProviderConfig(
+                            provider=agent_data.stt_provider,
+                            config={
+                                "model": agent_data.stt_model_name,
+                                "api_key": agent_data.stt_api_key
+                            }
+                        ),
+                        is_default=True  # Always set as default for development agent
+                    )
+                    
+                    updated_agent = self.agent_service.update_agent(existing_dev_agent.id, update_data)
+                    logger.info(f"Updated development agent: {updated_agent.name} (ID: {updated_agent.id})")
+                    
+                else:
+                    # No existing development agent found, create new one
+                    logger.info("No existing development agent found, creating new development agent")
+                    agent_data.is_default = True
+                    agent = self.agent_service.create_agent(agent_data)
+                    logger.info(f"Created development agent: {agent.name} (ID: {agent.id})")
+            
+            except Exception as e:
+                logger.warning(f"Could not check for existing development agent: {e}")
+                # Fallback: create new agent
                 agent_data.is_default = True
+                agent = self.agent_service.create_agent(agent_data)
+                logger.info(f"Created development agent: {agent.name} (ID: {agent.id})")
             
-            # Create the agent
-            agent = self.agent_service.create_agent(agent_data)
-            
-            logger.info(f"Created development agent: {agent.name} (ID: {agent.id})")
-            logger.info(f"  Is Default: {agent.is_default}")
-            logger.info(f"  LLM Provider: {agent.llm_provider}")
-            logger.info(f"  TTS Provider: {agent.tts_provider}")
-            logger.info(f"  STT Provider: {agent.stt_provider}")
-            logger.info(f"  LLM Model: {agent.llm_config.get('model', 'default')}")
-            logger.info(f"  TTS Voice: {self._get_tts_voice_name(agent.tts_provider, agent.tts_config)}")
-            logger.info(f"  STT Model: {agent.stt_config.get('model', 'default')}")
+            logger.info(f"  LLM Provider: {agent_data.llm_provider}")
+            logger.info(f"  TTS Provider: {agent_data.tts_provider}")
+            logger.info(f"  STT Provider: {agent_data.stt_provider}")
+            logger.info(f"  LLM Model: {agent_data.llm_model_name}")
+            logger.info(f"  TTS Voice: {agent_data.tts_voice_name}")
+            logger.info(f"  STT Model: {agent_data.stt_model_name}")
             
             return True
             
@@ -72,7 +109,7 @@ class DevAgentCreator:
             logger.info("Development agent already exists")
             return True
         except Exception as e:
-            logger.error(f"Failed to create development agent: {e}")
+            logger.error(f"Failed to create/update development agent: {e}")
             return False
     
     def _build_agent_from_env(self) -> AgentCreate:

@@ -20,18 +20,25 @@ logger = logging.getLogger(__name__)
 class KokoroLocalProvider:
     """Kokoro Local TTS Provider with zero-latency audio resampling."""
 
-    def __init__(self):
-        self.config = tts_config
+    def __init__(self, provider_config: dict = None):
+        # Use agent configuration for non-constant values (voice, language)
+        # Speed is NOT configurable - it's an immutable provider constant
+        if provider_config:
+            self.voice_id = provider_config.get("voice_id")
+            self.language = provider_config.get("language")
+        else:
+            # No fallback - agent configuration is required
+            raise ValueError("Agent configuration is required for KokoroLocalProvider")
+        
         # Use immutable constants for provider configuration
         self.websocket_url = KokoroLocalTTSConstants.URL
-        self.voice_id = self.config.kokoro_local_voice_id
         self.input_sample_rate = KokoroLocalTTSConstants.SAMPLE_RATE
         self.output_sample_rate = 44100  # Target for frontend compatibility (kept as implementation choice)
         self.encoding = KokoroLocalTTSConstants.ENCODING
         self.container = KokoroLocalTTSConstants.CONTAINER
-        self.language = getattr(self.config, "kokoro_local_language", "fr-fr")
-        self.speed = KokoroLocalTTSConstants.SPEED
-        logger.info(f"KokoroLocalProvider initialized with URL: {self.websocket_url}, voice: {self.voice_id}, language: {self.language}, speed: {self.speed}")
+        self.speed = KokoroLocalTTSConstants.SPEED  # Immutable constant, not configurable
+        
+        logger.info(f"KokoroLocalProvider initialized with URL: {self.websocket_url}, voice: {self.voice_id}, language: {self.language}, speed: {self.speed} (constant)")
         logger.info(f"Audio resampling: {self.input_sample_rate}Hz → {self.output_sample_rate}Hz")
 
     def _resample_audio_chunk(self, audio_data: bytes) -> bytes:

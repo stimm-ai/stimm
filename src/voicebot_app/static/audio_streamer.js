@@ -286,6 +286,18 @@ class AudioStreamer {
     }
 
     /**
+     * Met à jour la configuration de l'AudioStreamer
+     * @param {Object} newConfig - Nouvelle configuration
+     */
+    updateConfig(newConfig) {
+        this.options = {
+            ...this.options,
+            ...newConfig
+        };
+        console.log('🎵 AudioStreamer configuration updated:', this.options);
+    }
+
+    /**
      * Récupère les métriques de performance
      * @returns {Object} Métriques de performance
      */

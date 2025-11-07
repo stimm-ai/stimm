@@ -18,13 +18,18 @@ logger = logging.getLogger(__name__)
 class AsyncAIProvider:
     """Thin passthrough provider for Async.AI WebSocket TTS API."""
 
-    def __init__(self):
-        self.config = tts_config
+    def __init__(self, provider_config: dict = None):
+        # Use agent configuration for non-constant values (API keys, voice/model IDs)
+        if provider_config:
+            self.api_key = provider_config.get("api_key")
+            self.voice_id = provider_config.get("voice_id")
+            self.model_id = provider_config.get("model_id")
+        else:
+            # No fallback - agent configuration is required
+            raise ValueError("Agent configuration is required for AsyncAIProvider")
+        
         # Use immutable constants for provider configuration
         self.websocket_url = AsyncAITTSConstants.URL
-        self.api_key = self.config.async_ai_api_key
-        self.voice_id = self.config.async_ai_voice_id
-        self.model_id = self.config.async_ai_model_id
         self.sample_rate = AsyncAITTSConstants.SAMPLE_RATE
         self.encoding = AsyncAITTSConstants.ENCODING
         self.container = AsyncAITTSConstants.CONTAINER

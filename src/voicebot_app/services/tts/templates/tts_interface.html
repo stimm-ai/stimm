@@ -321,7 +321,7 @@
         }
     </style>
 </head>
-<body data-tts-text="{{ tts_interface_text | e }}" data-tts-provider="{{ tts_provider | e }}" data-tts-sample-rate="{{ tts_sample_rate | e }}" data-tts-encoding="{{ tts_encoding | e }}">
+<body data-tts-text="{{ tts_interface_text | e }}">
     <div class="tts-container">
         <div class="tts-header">
             <h1>TTS Live Streaming Interface</h1>
@@ -353,8 +353,8 @@
                         Stop
                     </button>
                 </div>
-                <div class="control-info">
-                    Provider: {{ tts_provider }} | Sample Rate: {{ tts_sample_rate }}Hz | Encoding: {{ tts_encoding }}
+                <div class="control-info" id="providerInfo" style="display: none;">
+                    Provider: <span id="providerDisplay">None</span> | Sample Rate: <span id="sampleRateDisplay">-</span>Hz | Encoding: <span id="encodingDisplay">-</span>
                 </div>
                 <div class="control-info">
                     Text: "{{ tts_interface_text | e }}"
@@ -424,6 +424,10 @@
                 this.streamButton = document.getElementById('streamButton');
                 this.stopButton = document.getElementById('stopButton');
                 this.providerName = document.getElementById('providerName');
+                this.providerInfo = document.getElementById('providerInfo');
+                this.providerDisplay = document.getElementById('providerDisplay');
+                this.sampleRateDisplay = document.getElementById('sampleRateDisplay');
+                this.encodingDisplay = document.getElementById('encodingDisplay');
                 this.textOutput = document.getElementById('textOutput');
                 this.statusDot = document.getElementById('statusDot');
                 this.statusText = document.getElementById('statusText');
@@ -443,6 +447,7 @@
                 this.streamCompleted = false;
                 this.audioTimeout = null;
                 this.selectedAgentId = null;
+                this.currentAudioConfig = null;
 
                 // Frontend pre-connection optimization
                 this.preConnectedWebSocket = null;
@@ -460,10 +465,10 @@
                 // Hard-coded text from the test file
                 this.hardCodedText = document.body.dataset.ttsText;
 
-                // Initialize shared AudioStreamer with dynamic configuration
+                // Initialize AudioStreamer with default configuration (will be updated when agent is selected)
                 this.audioStreamer = new AudioStreamer({
-                    sampleRate: parseInt(document.body.dataset.ttsSampleRate), // Dynamic backend configuration
-                    encoding: document.body.dataset.ttsEncoding, // Dynamic backend configuration
+                    sampleRate: 44100, // Default, will be updated
+                    encoding: 'pcm_s16le', // Default, will be updated
                     onPlaybackStart: () => {
                         this.playbackStarted = true;
                         this.playbackStartTime = Date.now();
@@ -500,9 +505,6 @@
 
                 this.initializeEventListeners();
                 this.initializePreConnection();
-                
-                // Audio configuration already defined via template variables
-                console.log(`🎵 Audio configuration: provider=${document.body.dataset.ttsProvider}, sampleRate=${document.body.dataset.ttsSampleRate}, encoding=${document.body.dataset.ttsEncoding}`);
             }
 
             initializeEventListeners() {
@@ -514,13 +516,51 @@
                 this.selectedAgentId = agentId;
                 if (agent) {
                     this.providerName.textContent = agent.tts_provider;
+                    
+                    // Update provider configuration display
+                    this.updateProviderDisplay(agent);
+                    
+                    // Update audio streamer configuration
+                    this.updateAudioStreamer(agent);
                 } else {
                     this.providerName.textContent = 'None';
+                    this.providerInfo.style.display = 'none';
                 }
                 
                 // Stop any ongoing streaming when changing agents
                 if (this.isStreaming) {
                     this.stopStreaming();
+                }
+            }
+
+            updateProviderDisplay(agent) {
+                if (agent.tts_config) {
+                    const sampleRate = agent.tts_config.sample_rate || 44100;
+                    const encoding = agent.tts_config.encoding || 'pcm_s16le';
+                    
+                    this.providerDisplay.textContent = agent.tts_provider;
+                    this.sampleRateDisplay.textContent = sampleRate;
+                    this.encodingDisplay.textContent = encoding;
+                    this.providerInfo.style.display = 'block';
+                    
+                    console.log(`🎵 Agent TTS configuration: provider=${agent.tts_provider}, sampleRate=${sampleRate}, encoding=${encoding}`);
+                } else {
+                    this.providerInfo.style.display = 'none';
+                }
+            }
+
+            updateAudioStreamer(agent) {
+                if (agent.tts_config) {
+                    const sampleRate = agent.tts_config.sample_rate || 44100;
+                    const encoding = agent.tts_config.encoding || 'pcm_s16le';
+                    
+                    // Update audio streamer configuration
+                    this.audioStreamer.updateConfig({
+                        sampleRate: sampleRate,
+                        encoding: encoding
+                    });
+                    
+                    console.log(`🎵 Updated AudioStreamer configuration: sampleRate=${sampleRate}, encoding=${encoding}`);
                 }
             }
 

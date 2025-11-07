@@ -22,11 +22,16 @@ logger = logging.getLogger(__name__)
 class ElevenLabsProvider:
     """ElevenLabs TTS Provider with WebSocket streaming support."""
 
-    def __init__(self):
-        self.config = tts_config
-        self.api_key = self.config.elevenlabs_api_key
-        self.voice_id = self.config.elevenlabs_voice_id
-        self.model_id = self.config.elevenlabs_model_id
+    def __init__(self, provider_config: dict = None):
+        # Use agent configuration for non-constant values (API keys, voice/model IDs)
+        if provider_config:
+            self.api_key = provider_config.get("api_key")
+            self.voice_id = provider_config.get("voice_id")
+            self.model_id = provider_config.get("model_id")
+        else:
+            # No fallback - agent configuration is required
+            raise ValueError("Agent configuration is required for ElevenLabsProvider")
+        
         # Use immutable constants for audio parameters
         self.sample_rate = ElevenLabsTTSConstants.SAMPLE_RATE
         self.encoding = ElevenLabsTTSConstants.ENCODING

@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 class DeepgramProvider:
     """Deepgram TTS Provider with WebSocket streaming support."""
 
-    def __init__(self):
-        self.config = tts_config
+    def __init__(self, provider_config: dict = None):
+        self.provider_config = provider_config or {}
         self.session = None
         self.websocket = None
         logger.info("DeepgramProvider initialized")
@@ -32,10 +32,13 @@ class DeepgramProvider:
         
         Uses hard-coded global defaults from DeepgramTTSDefaults plus agent/env config.
         """
-        # Get agent-specific settings (api_key, model, etc.)
-        agent_config = self.config.get_agent_config() if hasattr(self.config, 'get_agent_config') else {}
-        api_key = agent_config.get("api_key") or self.config.deepgram_tts_api_key
-        model = agent_config.get("model") or self.config.deepgram_model
+        # Use agent configuration for non-constant values (API keys, model)
+        if self.provider_config:
+            api_key = self.provider_config.get("api_key")
+            model = self.provider_config.get("model")
+        else:
+            # No fallback - agent configuration is required
+            raise ValueError("Agent configuration is required for DeepgramProvider")
         
         if not api_key:
             raise ValueError("Deepgram API key is required")

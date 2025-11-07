@@ -37,8 +37,10 @@ class TTSService:
         provider_config = agent_config.tts_config
         logger.info(f"Initializing TTS provider from agent configuration: {provider_name}")
         
+        # Initialize providers based on their constructor requirements
         if provider_name == "async.ai":
-            self.provider = AsyncAIProvider(provider_config)
+            # AsyncAIProvider uses global configuration and constants, no config parameter needed
+            self.provider = AsyncAIProvider()
         elif provider_name == "kokoro.local":
             self.provider = KokoroLocalProvider(provider_config)
         elif provider_name == "deepgram.com":

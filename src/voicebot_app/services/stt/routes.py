@@ -34,11 +34,21 @@ async def stt_websocket(websocket: WebSocket, agent_id: str = None):
     - Supports agent-based configuration via agent_id parameter
     """
     await websocket.accept()
-    logger.info(f"STT WebSocket connection established (agent_id: {agent_id})")
+    
+    # Validate and normalize agent_id
+    normalized_agent_id = None
+    if agent_id and agent_id != "null" and agent_id != "undefined":
+        try:
+            from uuid import UUID
+            normalized_agent_id = UUID(agent_id)
+        except ValueError:
+            logger.warning(f"Invalid agent_id format: {agent_id}, using default agent")
+    
+    logger.info(f"STT WebSocket connection established (agent_id: {normalized_agent_id})")
     
     try:
         # Create STT service instance with agent configuration
-        stt_service = STTService(agent_id=agent_id)
+        stt_service = STTService(agent_id=normalized_agent_id)
         
         # Create an async generator for audio chunks
         async def audio_chunk_generator():
@@ -105,11 +115,21 @@ async def stt_streaming_websocket(websocket: WebSocket, agent_id: str = None):
     Supports agent-based configuration via agent_id parameter
     """
     await websocket.accept()
-    logger.info(f"STT streaming WebSocket connection established (agent_id: {agent_id})")
+    
+    # Validate and normalize agent_id
+    normalized_agent_id = None
+    if agent_id and agent_id != "null" and agent_id != "undefined":
+        try:
+            from uuid import UUID
+            normalized_agent_id = UUID(agent_id)
+        except ValueError:
+            logger.warning(f"Invalid agent_id format: {agent_id}, using default agent")
+    
+    logger.info(f"STT streaming WebSocket connection established (agent_id: {normalized_agent_id})")
     
     try:
         # Create STT service instance with agent configuration
-        stt_service = STTService(agent_id=agent_id)
+        stt_service = STTService(agent_id=normalized_agent_id)
         
         # Create an async generator for audio chunks
         async def audio_chunk_generator():
@@ -165,7 +185,17 @@ async def stt_sync_streaming_websocket(websocket: WebSocket, agent_id: str = Non
     - Supports agent-based configuration via agent_id parameter
     """
     await websocket.accept()
-    logger.info(f"STT sync streaming WebSocket connection established (agent_id: {agent_id})")
+    
+    # Validate and normalize agent_id
+    normalized_agent_id = None
+    if agent_id and agent_id != "null" and agent_id != "undefined":
+        try:
+            from uuid import UUID
+            normalized_agent_id = UUID(agent_id)
+        except ValueError:
+            logger.warning(f"Invalid agent_id format: {agent_id}, using default agent")
+    
+    logger.info(f"STT sync streaming WebSocket connection established (agent_id: {normalized_agent_id})")
     
     # Constants for WebRTC-like streaming
     STREAM_SAMPLE_RATE = 16000
@@ -219,7 +249,7 @@ async def stt_sync_streaming_websocket(websocket: WebSocket, agent_id: str = Non
                 await asyncio.sleep(chunk_duration)
         
         # Create STT service instance with agent configuration
-        stt_service = STTService(agent_id=agent_id)
+        stt_service = STTService(agent_id=normalized_agent_id)
         
         # Use real streaming with the audio chunk generator
         async for transcript in stt_service.transcribe_streaming(audio_chunk_generator()):

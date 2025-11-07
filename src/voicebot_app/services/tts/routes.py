@@ -19,13 +19,23 @@ async def tts_websocket(websocket: WebSocket, agent_id: str = None):
     Supports agent-based configuration via agent_id parameter
     """
     await websocket.accept()
-    logger.info(f"✅ TTS WebSocket connected (agent_id: {agent_id})")
+    
+    # Validate and normalize agent_id
+    normalized_agent_id = None
+    if agent_id and agent_id != "null" and agent_id != "undefined":
+        try:
+            from uuid import UUID
+            normalized_agent_id = UUID(agent_id)
+        except ValueError:
+            logger.warning(f"Invalid agent_id format: {agent_id}, using default agent")
+    
+    logger.info(f"✅ TTS WebSocket connected (agent_id: {normalized_agent_id})")
     
     session_id = f"tts_session_{id(websocket)}"
     
     try:
         # Create TTS service instance with agent configuration
-        tts_service = TTSService(agent_id=agent_id)
+        tts_service = TTSService(agent_id=normalized_agent_id)
         
         async def text_generator():
             while True:
@@ -67,13 +77,23 @@ async def tts_streaming_websocket(websocket: WebSocket, agent_id: str = None):
     Supports agent-based configuration via agent_id parameter
     """
     await websocket.accept()
-    logger.info(f"✅ TTS Streaming WebSocket connected (agent_id: {agent_id})")
+    
+    # Validate and normalize agent_id
+    normalized_agent_id = None
+    if agent_id and agent_id != "null" and agent_id != "undefined":
+        try:
+            from uuid import UUID
+            normalized_agent_id = UUID(agent_id)
+        except ValueError:
+            logger.warning(f"Invalid agent_id format: {agent_id}, using default agent")
+    
+    logger.info(f"✅ TTS Streaming WebSocket connected (agent_id: {normalized_agent_id})")
     
     session_id = f"tts_streaming_{id(websocket)}"
     
     try:
         # Create TTS service instance with agent configuration
-        tts_service = TTSService(agent_id=agent_id)
+        tts_service = TTSService(agent_id=normalized_agent_id)
         
         # Wait for initial setup message
         init_message = await websocket.receive_text()

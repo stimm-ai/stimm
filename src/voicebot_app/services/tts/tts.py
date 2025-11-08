@@ -4,7 +4,6 @@ Text-to-Speech Service Module with provider-based streaming support.
 
 import logging
 from typing import AsyncGenerator, Optional, Dict, Any
-from .config import tts_config
 from .providers.async_ai.async_ai_provider import AsyncAIProvider
 from .providers.kokoro_local.kokoro_local_provider import KokoroLocalProvider
 from .providers.deepgram.deepgram_provider import DeepgramProvider

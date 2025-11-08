@@ -11,7 +11,6 @@ import websockets
 import numpy as np
 from scipy import signal
 
-from ...config import tts_config
 from services.provider_constants import get_provider_constants
 
 logger = logging.getLogger(__name__)

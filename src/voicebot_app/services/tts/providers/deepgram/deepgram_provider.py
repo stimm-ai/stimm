@@ -12,7 +12,6 @@ import base64
 from typing import AsyncGenerator
 import aiohttp
 
-from ...config import tts_config
 from services.provider_constants import get_provider_constants
 
 logger = logging.getLogger(__name__)

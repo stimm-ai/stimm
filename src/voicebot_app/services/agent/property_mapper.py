@@ -25,7 +25,7 @@ class PropertyMapper:
                 "model": "model_id"     # Async.ai uses model_id
             },
             "kokoro.local": {
-                "voice": "speaker",     # Kokoro uses speaker
+                "voice": "voice_id",    # Kokoro uses voice_id
                 "model": "model"        # Kokoro uses model directly
             },
             "deepgram.com": {

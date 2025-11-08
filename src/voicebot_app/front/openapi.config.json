@@ -1,0 +1,7 @@
+{
+  "schema": "http://localhost:8001/openapi.json",
+  "output": "./types/api.d.ts",
+  "exportType": true,
+  "alphabetize": true,
+  "enum": true
+}

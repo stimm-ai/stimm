@@ -27,7 +27,7 @@ async def tts_websocket(websocket: WebSocket, agent_id: str = None):
             from uuid import UUID
             normalized_agent_id = UUID(agent_id)
         except ValueError:
-            logger.warning(f"Invalid agent_id format: {agent_id}, using default agent")
+            logger.warning(f"Invalid agent_id format: {agent_id}")
     
     logger.info(f"✅ TTS WebSocket connected (agent_id: {normalized_agent_id})")
     
@@ -85,7 +85,7 @@ async def tts_streaming_websocket(websocket: WebSocket, agent_id: str = None):
             from uuid import UUID
             normalized_agent_id = UUID(agent_id)
         except ValueError:
-            logger.warning(f"Invalid agent_id format: {agent_id}, using default agent")
+            logger.warning(f"Invalid agent_id format: {agent_id}")
     
     logger.info(f"✅ TTS Streaming WebSocket connected (agent_id: {normalized_agent_id})")
     

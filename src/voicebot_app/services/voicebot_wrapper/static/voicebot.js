@@ -534,6 +534,12 @@ class VoicebotInterface {
                 this.updateStatus(data.status, data.message || data.status);
                 break;
                 
+            case 'agent_changed':
+                console.log(`✅ Agent changed successfully: ${data.agent_id}`);
+                this.showError(''); // Clear any errors
+                this.updateStatus('connected', `Agent: ${data.agent_id || 'Default'}`);
+                break;
+                
             case 'error':
                 // Debug logging removed for production
                 this.showError(data.message);

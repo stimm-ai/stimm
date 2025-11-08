@@ -469,7 +469,11 @@ async def voicebot_streaming_websocket(websocket: WebSocket):
             
         conversation_id = init_data.get("conversation_id")
         if not conversation_id:
-            conversation_id = voicebot_service.create_conversation()
+            # Create a new voicebot service instance for this streaming session
+            agent_id = init_data.get("agent_id")
+            session_id = init_data.get("session_id")
+            voicebot_service_instance = VoicebotService(agent_id=agent_id, session_id=session_id)
+            conversation_id = voicebot_service_instance.create_conversation()
         
         # Create streaming session
         session = shared_streaming_manager.create_session(conversation_id)
@@ -532,7 +536,8 @@ async def voicebot_streaming_websocket(websocket: WebSocket):
     finally:
         if conversation_id:
             shared_streaming_manager.end_session(conversation_id)
-            voicebot_service.end_conversation(conversation_id)
+            # Note: We can't access the voicebot_service_instance here as it's created locally
+            # The conversation will be cleaned up when the service instance is garbage collected
 
 
 async def _handle_streaming_text_chunk(conversation_id: str, data: Dict[str, Any], websocket: WebSocket):

@@ -309,10 +309,11 @@
             // Convert checkbox to boolean
             data.is_default = data.is_default === 'on';
 
-            // Remove empty API key values if they contain placeholder characters
-            if (data.llm_api_key === '••••••••') delete data.llm_api_key;
-            if (data.tts_api_key === '••••••••') delete data.tts_api_key;
-            if (data.stt_api_key === '••••••••') delete data.stt_api_key;
+            // Handle API key fields - only include them if they were actually modified
+            // If the field contains placeholder characters, it means the user didn't change the existing key
+            if (data.llm_api_key === '••••••••' || data.llm_api_key === '') delete data.llm_api_key;
+            if (data.tts_api_key === '••••••••' || data.tts_api_key === '') delete data.tts_api_key;
+            if (data.stt_api_key === '••••••••' || data.stt_api_key === '') delete data.stt_api_key;
 
             // Build ProviderConfig objects for API compatibility
             const updateData = {

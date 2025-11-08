@@ -205,6 +205,13 @@
                                placeholder="e.g., Rachel, Adam">
                     </div>
 
+                    <div class="form-group" id="tts_model_id_group">
+                        <label for="tts_model_id" id="tts_model_id_label">Model ID</label>
+                        <input type="text" id="tts_model_id" name="tts_model_id"
+                               value="{% if agent and agent.tts_config %}{{ agent.tts_config.model_id or '' }}{% endif %}"
+                               placeholder="e.g., eleven_monolingual_v1, tts-1">
+                    </div>
+
                     <div class="form-group">
                         <label for="tts_api_key">API Key</label>
                         <input type="password" id="tts_api_key" name="tts_api_key"
@@ -274,21 +281,33 @@
         toggleProviderConfig('tts_provider', 'tts_config');
         toggleProviderConfig('stt_provider', 'stt_config');
 
-        // Update voice field label based on TTS provider
+        // Update voice field label and model ID visibility based on TTS provider
         function updateVoiceFieldLabel() {
             const ttsProvider = document.getElementById('tts_provider');
             const voiceLabel = document.getElementById('tts_voice_label');
             const voiceInput = document.getElementById('tts_voice_name');
+            const modelIdGroup = document.getElementById('tts_model_id_group');
+            const modelIdLabel = document.getElementById('tts_model_id_label');
+            const modelIdInput = document.getElementById('tts_model_id');
             
             if (ttsProvider.value === 'async.ai' || ttsProvider.value === 'elevenlabs.io') {
                 voiceLabel.textContent = 'Voice ID';
                 voiceInput.placeholder = 'e.g., e7b694f8-d277-47ff-82bf-cb48e7662647';
+                modelIdGroup.style.display = 'block';
+                modelIdLabel.textContent = 'Model ID';
+                if (ttsProvider.value === 'elevenlabs.io') {
+                    modelIdInput.placeholder = 'e.g., eleven_monolingual_v1';
+                } else {
+                    modelIdInput.placeholder = 'e.g., tts-1';
+                }
             } else if (ttsProvider.value === 'deepgram.com') {
                 voiceLabel.textContent = 'Model Name';
                 voiceInput.placeholder = 'e.g., aura-asteria-en';
+                modelIdGroup.style.display = 'none';
             } else {
                 voiceLabel.textContent = 'Voice Name';
                 voiceInput.placeholder = 'e.g., Rachel, Adam, ff_siwis';
+                modelIdGroup.style.display = 'none';
             }
         }
 

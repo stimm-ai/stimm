@@ -25,8 +25,17 @@ class ElevenLabsProvider:
         # Use agent configuration for non-constant values (API keys, voice/model IDs)
         if provider_config:
             self.api_key = provider_config.get("api_key")
-            self.voice_id = provider_config.get("voice_id")
+            # Handle both 'voice' and 'voice_id' keys for compatibility
+            self.voice_id = provider_config.get("voice_id") or provider_config.get("voice")
             self.model_id = provider_config.get("model_id")
+            
+            # Validate required configuration
+            if not self.api_key:
+                raise ValueError("API key is required for ElevenLabsProvider")
+            if not self.voice_id:
+                raise ValueError("Voice ID is required for ElevenLabsProvider")
+            if not self.model_id:
+                raise ValueError("Model ID is required for ElevenLabsProvider")
         else:
             # No fallback - agent configuration is required
             raise ValueError("Agent configuration is required for ElevenLabsProvider")

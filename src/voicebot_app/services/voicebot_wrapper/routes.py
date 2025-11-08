@@ -394,15 +394,16 @@ async def _handle_agent_change(conversation_id: str, data: Dict[str, Any], webso
     try:
         logger.info(f"🔍 Agent change requested for conversation {conversation_id}: {agent_id}")
         
-        # Update the voicebot service with the new agent configuration
-        # Note: This would require access to the voicebot service instance
-        # For now, we'll acknowledge the change and let the frontend handle reconnection if needed
+        # For now, we'll acknowledge the change but note that the agent change
+        # will only take effect for new conversations. The current conversation
+        # will continue using the original agent configuration.
+        # To properly switch agents, the frontend should reconnect with the new agent ID.
         
         await websocket.send_json({
             "type": "agent_changed",
             "conversation_id": conversation_id,
             "agent_id": agent_id,
-            "message": f"Agent changed to {agent_id}"
+            "message": f"Agent changed to {agent_id}. Note: This change will take effect for new conversations. Current conversation continues with original agent."
         })
         
         logger.info(f"✅ Agent changed for conversation {conversation_id}: {agent_id}")

@@ -270,10 +270,11 @@ class VoicebotInterface {
                 this.isConnected = true;
                 this.updateStatus('connected', 'Connected');
                 
-                // Start conversation
+                // Start conversation with current agent ID
                 this.websocket.send(JSON.stringify({
                     type: 'start_conversation',
-                    conversation_id: this.conversationId
+                    conversation_id: this.conversationId,
+                    agent_id: this.currentAgentId || null
                 }));
                 
                 resolve();
@@ -784,17 +785,20 @@ class VoicebotInterface {
         }
     }
 
-    handleAgentChange(agentId) {
+    async handleAgentChange(agentId) {
         this.currentAgentId = agentId;
         console.log(`Agent changed to: ${agentId}`);
         
-        // Update WebSocket connection with new agent if connected
-        if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
-            this.websocket.send(JSON.stringify({
-                type: 'agent_change',
-                agent_id: this.currentAgentId || null,
-                conversation_id: this.conversationId
-            }));
+        // If we're currently connected, we need to reconnect with the new agent
+        if (this.isConnected && this.isListening) {
+            console.log(`🔄 Agent changed while connected - reconnecting with new agent: ${agentId}`);
+            
+            // Stop current connection and reconnect with new agent
+            await this.stopListening();
+            await this.startListening();
+        } else {
+            // Just update the agent ID for future connections
+            console.log(`📝 Agent updated to: ${agentId} (will be used for next connection)`);
         }
     }
 

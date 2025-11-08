@@ -10,7 +10,7 @@ export interface Agent {
   tts_provider?: string
   tts_config?: {
     voice?: string
-    model_id?: string
+    model?: string
     api_key?: string
   }
   stt_provider?: string

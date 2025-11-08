@@ -38,7 +38,7 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
     tts_provider: '',
     stt_provider: '',
     llm_config: { model: '', api_key: '' },
-    tts_config: { voice: '', api_key: '', model_id: '' },
+    tts_config: { voice: '', api_key: '', model: '' },
     stt_config: { model: '', api_key: '' }
   })
   const [providers, setProviders] = useState<AvailableProviders | null>(null)
@@ -307,11 +307,11 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="tts_model_id">Model ID</Label>
+                    <Label htmlFor="tts_model">Model</Label>
                     <Input
-                      id="tts_model_id"
-                      value={agent.tts_config?.model_id || ''}
-                      onChange={(e) => handleConfigChange('tts_config', 'model_id', e.target.value)}
+                      id="tts_model"
+                      value={agent.tts_config?.model || ''}
+                      onChange={(e) => handleConfigChange('tts_config', 'model', e.target.value)}
                       placeholder="e.g., eleven_multilingual_v2"
                     />
                   </div>

@@ -90,33 +90,32 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
       setSaving(true)
       setError(null)
 
-      // Filter out read-only fields that backend doesn't expect
-      // Ensure no undefined values are sent and include required provider fields
+      // Build payload with proper ProviderConfig structure
       const payload = {
         name: agent.name || '',
         description: agent.description || '',
-        llm_provider: agent.llm_provider || '',
-        tts_provider: agent.tts_provider || '',
-        stt_provider: agent.stt_provider || '',
-        llm_config: {
-          ...agent.llm_config,
-          provider: agent.llm_provider || '',
-          model: agent.llm_config?.model || '',
-          api_key: agent.llm_config?.api_key || ''
-        },
-        tts_config: {
-          ...agent.tts_config,
-          provider: agent.tts_provider || '',
-          voice: agent.tts_config?.voice || '',
-          api_key: agent.tts_config?.api_key || '',
-          model_id: agent.tts_config?.model_id || ''
-        },
-        stt_config: {
-          ...agent.stt_config,
-          provider: agent.stt_provider || '',
-          model: agent.stt_config?.model || '',
-          api_key: agent.stt_config?.api_key || ''
-        }
+        llm_config: agent.llm_provider ? {
+          provider: agent.llm_provider,
+          config: {
+            model: agent.llm_config?.model || '',
+            api_key: agent.llm_config?.api_key || ''
+          }
+        } : undefined,
+        tts_config: agent.tts_provider ? {
+          provider: agent.tts_provider,
+          config: {
+            voice: agent.tts_config?.voice || '',
+            model: agent.tts_config?.model || '',
+            api_key: agent.tts_config?.api_key || ''
+          }
+        } : undefined,
+        stt_config: agent.stt_provider ? {
+          provider: agent.stt_provider,
+          config: {
+            model: agent.stt_config?.model || '',
+            api_key: agent.stt_config?.api_key || ''
+          }
+        } : undefined
       }
 
       const url = agentId 

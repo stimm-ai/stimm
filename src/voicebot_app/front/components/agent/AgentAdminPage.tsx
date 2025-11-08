@@ -24,7 +24,7 @@ export function AgentAdminPage() {
       setError(null)
       
       // Fetch agents from FastAPI backend
-      const response = await fetch('/api/agents')
+      const response = await fetch('http://localhost:8001/api/agents/')
       if (!response.ok) {
         throw new Error(`Failed to load agents: ${response.statusText}`)
       }
@@ -33,7 +33,7 @@ export function AgentAdminPage() {
       setAgents(agents || [])
       
       // Fetch default agent separately
-      const defaultResponse = await fetch('/api/agents/default/current')
+      const defaultResponse = await fetch('http://localhost:8001/api/agents/default/current/')
       if (defaultResponse.ok) {
         const defaultAgent = await defaultResponse.json()
         setDefaultAgent(defaultAgent)
@@ -49,7 +49,7 @@ export function AgentAdminPage() {
 
   const handleSetDefault = async (agentId: string) => {
     try {
-      const response = await fetch(`/api/agents/${agentId}/set-default`, {
+      const response = await fetch(`http://localhost:8001/api/agents/${agentId}/set-default/`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -72,7 +72,7 @@ export function AgentAdminPage() {
     }
 
     try {
-      const response = await fetch(`/api/agents/${agentId}`, {
+      const response = await fetch(`http://localhost:8001/api/agents/${agentId}/`, {
         method: 'DELETE',
       })
 

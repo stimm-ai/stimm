@@ -7,7 +7,6 @@ import logging
 from typing import AsyncIterator, Optional
 from uuid import UUID
 
-from .config import llm_config
 from .providers import create_groq_provider, create_mistral_provider, create_openrouter_provider, create_llama_cpp_provider
 from ..agent.agent_manager import get_agent_manager
 from ..agent.models import AgentConfig

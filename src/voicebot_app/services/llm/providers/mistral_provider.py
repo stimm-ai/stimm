@@ -10,7 +10,6 @@ import asyncio
 import aiohttp
 import json
 from typing import AsyncIterator, Optional, Dict, Any
-from ..config import llm_config
 from .openai_compatible_provider import OpenAICompatibleProvider
 from services.provider_constants import get_provider_constants
 
@@ -25,9 +24,7 @@ class MistralProvider(OpenAICompatibleProvider):
     - Authentication: Bearer token in Authorization header
     """
     
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
-        if config is None:
-            config = llm_config.get_mistral_config()
+    def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
     
     def _get_api_url(self) -> str:

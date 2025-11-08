@@ -9,6 +9,7 @@ from .providers.kokoro_local.kokoro_local_provider import KokoroLocalProvider
 from .providers.deepgram.deepgram_provider import DeepgramProvider
 from .providers.elevenlabs.elevenlabs_provider import ElevenLabsProvider
 from services.agent.agent_manager import get_agent_manager
+from services.agent.property_mapper import PropertyMapper
 
 logger = logging.getLogger(__name__)
 

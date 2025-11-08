@@ -30,13 +30,44 @@ class AgentSelector {
         this.selectElement.innerHTML = '<option value="">Loading agents...</option>';
         this.selectElement.disabled = true;
         
+        // Set up event listener first
+        this.selectElement.addEventListener('change', (e) => this.handleAgentChange(e));
+        
         // Load agents
         await this.loadAgents();
         
-        // Set up event listener
-        this.selectElement.addEventListener('change', (e) => this.handleAgentChange(e));
+        // Automatically select the default agent after loading and rendering
+        this.selectDefaultAgent();
         
         this.selectElement.disabled = false;
+    }
+
+    /**
+     * Automatically select the default agent
+     */
+    selectDefaultAgent() {
+        console.log('🔍 Searching for default agent...');
+        console.log('📋 Available agents:', this.availableAgents);
+        
+        const defaultAgent = this.availableAgents.find(agent => agent.is_default);
+        if (defaultAgent) {
+            this.currentAgentId = defaultAgent.id;
+            this.selectElement.value = defaultAgent.id;
+            
+            console.log(`✅ Default agent found and selected: ${defaultAgent.name} (ID: ${defaultAgent.id})`);
+            console.log(`🔧 TTS Provider: ${defaultAgent.tts_provider}`);
+            console.log(`🔧 LLM Provider: ${defaultAgent.llm_provider}`);
+            console.log(`🔧 STT Provider: ${defaultAgent.stt_provider}`);
+            
+            // Trigger change event to notify other components
+            const event = new Event('change');
+            this.selectElement.dispatchEvent(event);
+            
+            console.log(`🎯 Change event dispatched for agent: ${defaultAgent.name}`);
+        } else {
+            console.warn('⚠️ No default agent found in available agents');
+            console.log('📋 Available agents:', this.availableAgents);
+        }
     }
     
     async loadAgents() {
@@ -58,13 +89,7 @@ class AgentSelector {
     renderAgentOptions() {
         this.selectElement.innerHTML = '';
         
-        // Add default option
-        const defaultOption = document.createElement('option');
-        defaultOption.value = '';
-        defaultOption.textContent = 'Default Agent';
-        this.selectElement.appendChild(defaultOption);
-        
-        // Add all agents
+        // Add all agents - no "Default Agent" option, just the actual agents
         this.availableAgents.forEach(agent => {
             const option = document.createElement('option');
             option.value = agent.id;
@@ -76,7 +101,6 @@ class AgentSelector {
             if (agent.is_default) {
                 option.textContent += ' (Default)';
                 this.currentAgentId = agent.id;
-                this.selectElement.value = agent.id;
             }
             
             this.selectElement.appendChild(option);
@@ -87,8 +111,14 @@ class AgentSelector {
         this.currentAgentId = event.target.value;
         const selectedAgent = this.availableAgents.find(agent => agent.id === this.currentAgentId);
         
+        console.log(`🔄 Agent change event: selectedAgentId=${this.currentAgentId}`);
+        console.log(`🔍 Selected agent:`, selectedAgent);
+        
         if (this.onAgentChange) {
+            console.log(`🎯 Calling onAgentChange callback with agent:`, selectedAgent);
             this.onAgentChange(selectedAgent, this.currentAgentId);
+        } else {
+            console.warn('⚠️ No onAgentChange callback registered');
         }
         
         // Dispatch custom event for other components to listen to
@@ -99,6 +129,7 @@ class AgentSelector {
             }
         });
         document.dispatchEvent(agentChangeEvent);
+        console.log(`📢 Dispatched agentChanged event for agent:`, selectedAgent);
     }
     
     getCurrentAgent() {

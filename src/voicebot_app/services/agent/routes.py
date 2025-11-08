@@ -34,7 +34,33 @@ async def list_agents(
     """List all agents with pagination"""
     agent_service = AgentService(db)
     agents_result = agent_service.list_agents(skip=skip, limit=limit)
-    return agents_result.agents
+    
+    # Convert provider-specific configs back to standardized format for frontend
+    standardized_agents = []
+    for agent in agents_result.agents:
+        agent_dict = agent.model_dump()
+        
+        # Convert LLM config
+        if agent_dict.get('llm_config') and agent_dict.get('llm_provider'):
+            agent_dict['llm_config'] = PropertyMapper.from_provider_format(
+                "llm", agent_dict['llm_provider'], agent_dict['llm_config']
+            )
+        
+        # Convert TTS config
+        if agent_dict.get('tts_config') and agent_dict.get('tts_provider'):
+            agent_dict['tts_config'] = PropertyMapper.from_provider_format(
+                "tts", agent_dict['tts_provider'], agent_dict['tts_config']
+            )
+        
+        # Convert STT config
+        if agent_dict.get('stt_config') and agent_dict.get('stt_provider'):
+            agent_dict['stt_config'] = PropertyMapper.from_provider_format(
+                "stt", agent_dict['stt_provider'], agent_dict['stt_config']
+            )
+        
+        standardized_agents.append(AgentResponse(**agent_dict))
+    
+    return standardized_agents
 
 
 @router.get("/{agent_id}", response_model=AgentResponse)
@@ -46,7 +72,29 @@ async def get_agent(
     agent_service = AgentService(db)
     try:
         agent = agent_service.get_agent(agent_id)
-        return agent
+        
+        # Convert provider-specific configs back to standardized format for frontend
+        agent_dict = agent.model_dump()
+        
+        # Convert LLM config
+        if agent_dict.get('llm_config') and agent_dict.get('llm_provider'):
+            agent_dict['llm_config'] = PropertyMapper.from_provider_format(
+                "llm", agent_dict['llm_provider'], agent_dict['llm_config']
+            )
+        
+        # Convert TTS config
+        if agent_dict.get('tts_config') and agent_dict.get('tts_provider'):
+            agent_dict['tts_config'] = PropertyMapper.from_provider_format(
+                "tts", agent_dict['tts_provider'], agent_dict['tts_config']
+            )
+        
+        # Convert STT config
+        if agent_dict.get('stt_config') and agent_dict.get('stt_provider'):
+            agent_dict['stt_config'] = PropertyMapper.from_provider_format(
+                "stt", agent_dict['stt_provider'], agent_dict['stt_config']
+            )
+        
+        return AgentResponse(**agent_dict)
     except AgentNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -87,7 +135,29 @@ async def update_agent(
     agent_service = AgentService(db)
     try:
         agent = agent_service.update_agent(agent_id, agent_data)
-        return agent
+        
+        # Convert provider-specific configs back to standardized format for frontend
+        agent_dict = agent.model_dump()
+        
+        # Convert LLM config
+        if agent_dict.get('llm_config') and agent_dict.get('llm_provider'):
+            agent_dict['llm_config'] = PropertyMapper.from_provider_format(
+                "llm", agent_dict['llm_provider'], agent_dict['llm_config']
+            )
+        
+        # Convert TTS config
+        if agent_dict.get('tts_config') and agent_dict.get('tts_provider'):
+            agent_dict['tts_config'] = PropertyMapper.from_provider_format(
+                "tts", agent_dict['tts_provider'], agent_dict['tts_config']
+            )
+        
+        # Convert STT config
+        if agent_dict.get('stt_config') and agent_dict.get('stt_provider'):
+            agent_dict['stt_config'] = PropertyMapper.from_provider_format(
+                "stt", agent_dict['stt_provider'], agent_dict['stt_config']
+            )
+        
+        return AgentResponse(**agent_dict)
     except AgentNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

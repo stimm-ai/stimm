@@ -11,8 +11,8 @@ from sqlalchemy import and_, or_
 
 from database import get_db, User, Agent, AgentSession
 from .models import (
-    AgentCreate, 
-    AgentUpdate, 
+    AgentCreate,
+    AgentUpdate,
     AgentResponse,
     AgentListResponse,
     AgentSessionCreate
@@ -23,6 +23,7 @@ from .exceptions import (
     AgentValidationError,
     DefaultAgentConflictError
 )
+from .property_mapper import PropertyMapper
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +107,7 @@ class AgentService:
                 )
             ).update({'is_default': False})
         
-        # Create new agent
+        # Create new agent with standardized field names
         agent = Agent(
             user_id=user_id,
             name=agent_data.name,
@@ -115,16 +116,16 @@ class AgentService:
             tts_provider=agent_data.tts_provider,
             stt_provider=agent_data.stt_provider,
             llm_config={
-                "model": agent_data.llm_model_name,
+                "model": agent_data.llm_model,
                 "api_key": agent_data.llm_api_key
             },
             tts_config={
-                "voice": agent_data.tts_voice_name,
-                "model_id": agent_data.tts_model_id,
+                "voice": agent_data.tts_voice,
+                "model": agent_data.tts_model,
                 "api_key": agent_data.tts_api_key
             },
             stt_config={
-                "model": agent_data.stt_model_name,
+                "model": agent_data.stt_model,
                 "api_key": agent_data.stt_api_key
             },
             is_default=agent_data.is_default,

@@ -275,37 +275,26 @@ class AgentService:
             update_fields['is_active'] = agent_data.is_active
         
         # Update provider configurations - merge with existing configs to preserve API keys
+        # Mapping is now handled within each provider implementation
         if agent_data.llm_config is not None:
             update_fields['llm_provider'] = agent_data.llm_config.provider
-            # Convert standardized config to provider-specific format
-            provider_llm_config = PropertyMapper.to_provider_format(
-                "llm", agent_data.llm_config.provider, agent_data.llm_config.config
-            )
             # Merge new config with existing config to preserve API keys if not provided
             merged_llm_config = agent.llm_config.copy()
-            merged_llm_config.update(provider_llm_config)
+            merged_llm_config.update(agent_data.llm_config.config)
             update_fields['llm_config'] = merged_llm_config
         
         if agent_data.tts_config is not None:
             update_fields['tts_provider'] = agent_data.tts_config.provider
-            # Convert standardized config to provider-specific format
-            provider_tts_config = PropertyMapper.to_provider_format(
-                "tts", agent_data.tts_config.provider, agent_data.tts_config.config
-            )
             # Merge new config with existing config to preserve API keys if not provided
             merged_tts_config = agent.tts_config.copy()
-            merged_tts_config.update(provider_tts_config)
+            merged_tts_config.update(agent_data.tts_config.config)
             update_fields['tts_config'] = merged_tts_config
         
         if agent_data.stt_config is not None:
             update_fields['stt_provider'] = agent_data.stt_config.provider
-            # Convert standardized config to provider-specific format
-            provider_stt_config = PropertyMapper.to_provider_format(
-                "stt", agent_data.stt_config.provider, agent_data.stt_config.config
-            )
             # Merge new config with existing config to preserve API keys if not provided
             merged_stt_config = agent.stt_config.copy()
-            merged_stt_config.update(provider_stt_config)
+            merged_stt_config.update(agent_data.stt_config.config)
             update_fields['stt_config'] = merged_stt_config
         
         # Apply updates

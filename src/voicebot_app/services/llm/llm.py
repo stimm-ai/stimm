@@ -43,22 +43,18 @@ class LLMService:
         provider_name = agent_config.llm_provider
         provider_config = agent_config.llm_config
         
-        # Apply property mapping to convert standardized fields to provider-specific format
-        mapped_config = PropertyMapper.to_provider_format("llm", provider_name, provider_config)
-        
         logger.info(f"Initializing LLM provider: {provider_name} with agent configuration")
         logger.info(f"🔍 LLM provider config for {provider_name}: {provider_config}")
-        logger.info(f"🔍 Mapped LLM provider config for {provider_name}: {mapped_config}")
         
-        # Initialize provider with mapped configuration
+        # Initialize provider - mapping is now handled within each provider
         if provider_name == "groq.com":
-            return create_groq_provider(mapped_config)
+            return create_groq_provider(provider_config)
         elif provider_name == "mistral.ai":
-            return create_mistral_provider(mapped_config)
+            return create_mistral_provider(provider_config)
         elif provider_name == "openrouter.ai":
-            return create_openrouter_provider(mapped_config)
+            return create_openrouter_provider(provider_config)
         elif provider_name == "llama-cpp.local":
-            return create_llama_cpp_provider(mapped_config)
+            return create_llama_cpp_provider(provider_config)
         else:
             raise ValueError(f"Unsupported LLM provider: {provider_name}")
 

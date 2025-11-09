@@ -27,7 +27,7 @@ class KokoroLocalProvider:
         Returns:
             List of property names that this provider expects
         """
-        return ["voice"]
+        return ["voice", "language"]
 
     @classmethod
     def get_field_definitions(cls) -> dict:
@@ -43,14 +43,21 @@ class KokoroLocalProvider:
                 "label": "Voice",
                 "required": True,
                 "description": "Voice identifier for Kokoro TTS"
+            },
+            "language": {
+                "type": "text",
+                "label": "Language",
+                "required": True,
+                "description": "Language code for Kokoro TTS"
             }
+            
         }
 
     def __init__(self, provider_config: dict = None):
         # Use agent configuration for non-constant values (voice, language)
         # Speed is NOT configurable - it's an immutable provider constant
         if provider_config:
-            self.voice_id = provider_config.get("voice_id")
+            self.voice_id = provider_config.get("voice")
             self.language = provider_config.get("language")
         else:
             # No fallback - agent configuration is required

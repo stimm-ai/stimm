@@ -111,22 +111,12 @@ class AgentService:
             user_id=user_id,
             name=agent_data.name,
             description=agent_data.description,
-            llm_provider=agent_data.llm_provider,
-            tts_provider=agent_data.tts_provider,
-            stt_provider=agent_data.stt_provider,
-            llm_config={
-                "model": agent_data.llm_model,
-                "api_key": agent_data.llm_api_key
-            },
-            tts_config={
-                "voice": agent_data.tts_voice,
-                "model": agent_data.tts_model,
-                "api_key": agent_data.tts_api_key
-            },
-            stt_config={
-                "model": agent_data.stt_model,
-                "api_key": agent_data.stt_api_key
-            },
+            llm_provider=agent_data.llm_config.provider,
+            tts_provider=agent_data.tts_config.provider,
+            stt_provider=agent_data.stt_config.provider,
+            llm_config=agent_data.llm_config.config,
+            tts_config=agent_data.tts_config.config,
+            stt_config=agent_data.stt_config.config,
             is_default=agent_data.is_default,
             is_active=True
         )

@@ -30,7 +30,18 @@ class WhisperLocalProvider:
         Returns:
             List of property names that this provider expects
         """
-        return ["model", "api_key"]
+        return []
+
+    @classmethod
+    def get_field_definitions(cls) -> Dict[str, Dict[str, Any]]:
+        """
+        Get the field definitions for this provider.
+        
+        Returns:
+            Dictionary mapping field names to field metadata
+        """
+        return {
+        }
 
     def __init__(self):
         """

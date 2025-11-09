@@ -33,10 +33,46 @@ class DeepgramProvider:
         """
         return ["model", "api_key"]
 
-    def __init__(self):
-        self.api_key = os.getenv("DEEPGRAM_STT_API_KEY")
-        self.model = os.getenv("DEEPGRAM_MODEL", "nova-2")
-        self.language = os.getenv("DEEPGRAM_LANGUAGE", "fr")
+    @classmethod
+    def get_field_definitions(cls) -> dict:
+        """Get field definitions for Deepgram STT provider."""
+        return {
+            "model": {
+                "type": "text",
+                "label": "Model",
+                "required": True,
+                "description": "Deepgram model name (e.g., nova-2)"
+            },
+            "api_key": {
+                "type": "password",
+                "label": "API Key",
+                "required": True,
+                "description": "Deepgram API key"
+            },
+            "language": {
+                "type": "text",
+                "label": "Language",
+                "required": False,
+                "description": "Language code (e.g., fr, en, es)"
+            }
+        }
+
+    def __init__(self, provider_config: dict = None):
+        # Use agent configuration for non-constant values (API keys, model, language)
+        if provider_config:
+            self.api_key = provider_config.get("api_key")
+            self.model = provider_config.get("model", "nova-2")
+            self.language = provider_config.get("language", "fr")
+            
+            # Validate required configuration
+            if not self.api_key:
+                raise ValueError("API key is required for DeepgramProvider")
+            if not self.model:
+                raise ValueError("Model is required for DeepgramProvider")
+        else:
+            # No fallback - agent configuration is required
+            raise ValueError("Agent configuration is required for DeepgramProvider")
+            
         self.websocket = None
         self.connected = False
         self.transcripts: List[Dict[str, Any]] = []

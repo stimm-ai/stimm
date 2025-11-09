@@ -7,8 +7,8 @@ import json
 import logging
 from typing import AsyncGenerator, Dict, Any, Optional
 
-from .providers.whisper_local import WhisperLocalProvider
-from .providers.deepgram_provider import DeepgramProvider
+from .providers.whisper_local.whisper_local import WhisperLocalProvider
+from .providers.deepgram.deepgram_provider import DeepgramProvider
 from services.agent.agent_manager import get_agent_manager
 
 logger = logging.getLogger(__name__)

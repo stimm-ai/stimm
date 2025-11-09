@@ -23,6 +23,7 @@ from .exceptions import (
     AgentValidationError,
     DefaultAgentConflictError
 )
+from .provider_registry import get_provider_registry
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +68,107 @@ class AgentService:
         
         return system_user.id
     
+    def _validate_provider_config(self, provider_type: str, provider_name: str, config: Dict[str, Any]) -> None:
+        """
+        Validate provider configuration against expected properties.
+        
+        Args:
+            provider_type: Type of provider ('llm', 'tts', 'stt')
+            provider_name: Name of provider (e.g., 'groq.com', 'kokoro.local')
+            config: Provider configuration to validate
+            
+        Raises:
+            AgentValidationError: If validation fails
+        """
+        registry = get_provider_registry()
+        
+        # Get expected properties for this provider
+        expected_properties = registry.get_expected_properties(provider_type, provider_name)
+        
+        if not expected_properties:
+            logger.warning(f"No expected properties defined for {provider_type}.{provider_name}")
+            return
+        
+        # Check for required properties
+        for prop in expected_properties:
+            if prop not in config:
+                raise AgentValidationError(
+                    f"Missing required property '{prop}' for {provider_type} provider '{provider_name}'"
+                )
+        
+        # Check for unknown properties
+        for prop in config.keys():
+            if prop not in expected_properties:
+                logger.warning(f"Unknown property '{prop}' for {provider_type} provider '{provider_name}'")
+    
+    def _validate_agent_configurations(self, agent_data: AgentCreate) -> None:
+        """
+        Validate all provider configurations for an agent.
+        
+        Args:
+            agent_data: Agent creation data
+            
+        Raises:
+            AgentValidationError: If any validation fails
+        """
+        # Validate LLM configuration
+        if agent_data.llm_config:
+            self._validate_provider_config(
+                'llm',
+                agent_data.llm_config.provider,
+                agent_data.llm_config.config
+            )
+        
+        # Validate TTS configuration
+        if agent_data.tts_config:
+            self._validate_provider_config(
+                'tts',
+                agent_data.tts_config.provider,
+                agent_data.tts_config.config
+            )
+        
+        # Validate STT configuration
+        if agent_data.stt_config:
+            self._validate_provider_config(
+                'stt',
+                agent_data.stt_config.provider,
+                agent_data.stt_config.config
+            )
+    
+    def _validate_agent_update_configurations(self, agent_data: AgentUpdate) -> None:
+        """
+        Validate provider configurations for an agent update.
+        
+        Args:
+            agent_data: Agent update data
+            
+        Raises:
+            AgentValidationError: If any validation fails
+        """
+        # Validate LLM configuration if provided
+        if agent_data.llm_config:
+            self._validate_provider_config(
+                'llm',
+                agent_data.llm_config.provider,
+                agent_data.llm_config.config
+            )
+        
+        # Validate TTS configuration if provided
+        if agent_data.tts_config:
+            self._validate_provider_config(
+                'tts',
+                agent_data.tts_config.provider,
+                agent_data.tts_config.config
+            )
+        
+        # Validate STT configuration if provided
+        if agent_data.stt_config:
+            self._validate_provider_config(
+                'stt',
+                agent_data.stt_config.provider,
+                agent_data.stt_config.config
+            )
+     
     def create_agent(self, agent_data: AgentCreate, user_id: Optional[UUID] = None) -> AgentResponse:
         """
         Create a new agent.
@@ -95,6 +197,9 @@ class AgentService:
         
         if existing_agent:
             raise AgentAlreadyExistsError(name=agent_data.name)
+        
+        # Validate provider configurations
+        self._validate_agent_configurations(agent_data)
         
         # Handle default agent logic
         if agent_data.is_default:
@@ -250,8 +355,11 @@ class AgentService:
             
             if existing_agent:
                 raise AgentAlreadyExistsError(name=agent_data.name)
-        
-        # Handle default agent logic
+            
+            # Validate provider configurations if provided
+            self._validate_agent_update_configurations(agent_data)
+            
+            # Handle default agent logic
         if agent_data.is_default is True and not agent.is_default:
             # Unset any existing default agent for this user
             session.query(Agent).filter(

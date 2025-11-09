@@ -185,3 +185,23 @@ class OpenAICompatibleProvider(ABC):
         if self._session:
             await self._session.close()
             self._session = None
+
+    @classmethod
+    def get_expected_properties(cls) -> list:
+        """
+        Get the list of expected properties for this provider.
+
+        Returns:
+            List of property names that this provider expects
+        """
+        return ["model", "api_key"]
+
+    @classmethod
+    def get_expected_properties(cls) -> list:
+        """
+        Get the list of expected properties for this provider.
+
+        Returns:
+            List of property names that this provider expects
+        """
+        return ["model", "api_key"]

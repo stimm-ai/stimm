@@ -27,7 +27,7 @@ class KokoroLocalProvider:
         Returns:
             List of property names that this provider expects
         """
-        return ["voice", "model", "api_key"]
+        return ["voice"]
 
     def __init__(self, provider_config: dict = None):
         # Use agent configuration for non-constant values (voice, language)

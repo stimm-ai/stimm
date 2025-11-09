@@ -10,7 +10,7 @@ import asyncio
 import json
 import logging
 import base64
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Dict, Any
 import aiohttp
 
 from services.provider_constants import get_provider_constants
@@ -24,10 +24,12 @@ class ElevenLabsProvider:
     def __init__(self, provider_config: dict = None):
         # Use agent configuration for non-constant values (API keys, voice/model IDs)
         if provider_config:
-            self.api_key = provider_config.get("api_key")
-            # Handle both 'voice' and 'voice_id' keys for compatibility
-            self.voice_id = provider_config.get("voice_id") or provider_config.get("voice")
-            self.model_id = provider_config.get("model_id")
+            # Apply provider-specific mapping
+            mapped_config = self.to_provider_format(provider_config)
+            self.api_key = mapped_config.get("api_key")
+            # ElevenLabs expects voice_id and model_id
+            self.voice_id = mapped_config.get("voice_id")
+            self.model_id = mapped_config.get("model_id")
             
             # Validate required configuration
             if not self.api_key:
@@ -48,6 +50,49 @@ class ElevenLabsProvider:
         self.session = None
         self.websocket = None
         logger.info(f"ElevenLabsProvider initialized with voice: {self.voice_id}, model: {self.model_id}, sample_rate: {self.sample_rate}Hz")
+
+    @classmethod
+    def get_expected_properties(cls) -> list:
+        """Get the list of expected properties for ElevenLabs provider."""
+        return ["voice", "model", "api_key"]
+
+    @classmethod
+    def to_provider_format(cls, config: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Convert standardized frontend config to provider-specific format.
+        
+        ElevenLabs uses voice_id and model_id instead of voice and model.
+        """
+        provider_config = config.copy()
+        
+        # Map standardized 'voice' to 'voice_id'
+        if "voice" in provider_config:
+            provider_config["voice_id"] = provider_config.pop("voice")
+        
+        # Map standardized 'model' to 'model_id'
+        if "model" in provider_config:
+            provider_config["model_id"] = provider_config.pop("model")
+        
+        return provider_config
+
+    @classmethod
+    def from_provider_format(cls, config: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Convert provider-specific config to standardized frontend format.
+        
+        ElevenLabs uses voice_id and model_id, map to standardized voice and model.
+        """
+        standardized_config = config.copy()
+        
+        # Map 'voice_id' to standardized 'voice'
+        if "voice_id" in standardized_config:
+            standardized_config["voice"] = standardized_config.pop("voice_id")
+        
+        # Map 'model_id' to standardized 'model'
+        if "model_id" in standardized_config:
+            standardized_config["model"] = standardized_config.pop("model_id")
+        
+        return standardized_config
 
     async def stream_synthesis(self, text_generator: AsyncGenerator[str, None]) -> AsyncGenerator[bytes, None]:
         """Stream synthesis using ElevenLabs TTS WebSocket API with aiohttp."""

@@ -29,6 +29,23 @@ class KokoroLocalProvider:
         """
         return ["voice"]
 
+    @classmethod
+    def get_field_definitions(cls) -> dict:
+        """
+        Get field definitions for this provider.
+        
+        Returns:
+            Dictionary of field definitions with type, label, and required status
+        """
+        return {
+            "voice": {
+                "type": "text",
+                "label": "Voice",
+                "required": True,
+                "description": "Voice identifier for Kokoro TTS"
+            }
+        }
+
     def __init__(self, provider_config: dict = None):
         # Use agent configuration for non-constant values (voice, language)
         # Speed is NOT configurable - it's an immutable provider constant

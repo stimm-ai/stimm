@@ -67,6 +67,30 @@ class ElevenLabsProvider:
         return ["voice", "model", "api_key"]
 
     @classmethod
+    def get_field_definitions(cls) -> dict:
+        """Get field definitions for ElevenLabs provider."""
+        return {
+            "voice": {
+                "type": "text",
+                "label": "Voice ID",
+                "required": True,
+                "description": "ElevenLabs voice identifier"
+            },
+            "model": {
+                "type": "text",
+                "label": "Model ID",
+                "required": True,
+                "description": "ElevenLabs model identifier"
+            },
+            "api_key": {
+                "type": "password",
+                "label": "API Key",
+                "required": True,
+                "description": "ElevenLabs API key"
+            }
+        }
+
+    @classmethod
     def to_provider_format(cls, config: Dict[str, Any]) -> Dict[str, Any]:
         """
         Convert standardized frontend config to provider-specific format.

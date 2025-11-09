@@ -9,7 +9,7 @@ import asyncio
 import json
 import logging
 import base64
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Dict, Any
 import aiohttp
 
 from services.provider_constants import get_provider_constants
@@ -19,6 +19,39 @@ logger = logging.getLogger(__name__)
 
 class DeepgramProvider:
     """Deepgram TTS Provider with WebSocket streaming support."""
+
+    @classmethod
+    def get_expected_properties(cls) -> list:
+        """
+        Get the list of expected properties for this provider.
+
+        Returns:
+            List of property names that this provider expects
+        """
+        return ["model", "api_key"]
+
+    @classmethod
+    def get_field_definitions(cls) -> Dict[str, Dict[str, Any]]:
+        """
+        Get the field definitions for this provider.
+        
+        Returns:
+            Dictionary mapping field names to field metadata
+        """
+        return {
+            "model": {
+                "type": "text",
+                "label": "Model",
+                "required": True,
+                "description": "Deepgram TTS model name"
+            },
+            "api_key": {
+                "type": "password",
+                "label": "API Key",
+                "required": True,
+                "description": "Deepgram API key"
+            }
+        }
 
     def __init__(self, provider_config: dict = None):
         self.provider_config = provider_config or {}

@@ -6,7 +6,7 @@ import asyncio
 import json
 import logging
 import base64
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Dict, Any
 import websockets
 
 from services.provider_constants import get_provider_constants
@@ -26,6 +26,35 @@ class AsyncAIProvider:
             List of property names that this provider expects
         """
         return ["voice", "model", "api_key"]
+
+    @classmethod
+    def get_field_definitions(cls) -> Dict[str, Dict[str, Any]]:
+        """
+        Get the field definitions for this provider.
+        
+        Returns:
+            Dictionary mapping field names to field metadata
+        """
+        return {
+            "voice": {
+                "type": "text",
+                "label": "Voice ID",
+                "required": True,
+                "description": "AsyncAI voice identifier"
+            },
+            "model": {
+                "type": "text",
+                "label": "Model ID",
+                "required": True,
+                "description": "AsyncAI model identifier (e.g., tts-1)"
+            },
+            "api_key": {
+                "type": "password",
+                "label": "API Key",
+                "required": True,
+                "description": "AsyncAI API key"
+            }
+        }
 
     def __init__(self, provider_config: dict = None):
         # Use agent configuration for non-constant values (API keys, voice/model IDs)

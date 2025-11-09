@@ -38,12 +38,6 @@ class AgentCreate(BaseModel):
             raise ValueError("Agent name cannot be empty")
         return v.strip()
 
-    @validator('llm_api_key', 'tts_api_key', 'stt_api_key')
-    def validate_api_key(cls, v):
-        """Validate API keys."""
-        if not v or not v.strip():
-            raise ValueError("API key cannot be empty")
-        return v.strip()
 
 
 class AgentUpdate(BaseModel):

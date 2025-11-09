@@ -220,59 +220,46 @@ async def update_agent_providers(
 
 @router.get("/providers/available", response_model=Dict[str, Any])
 async def get_available_providers():
-    """Get available providers from provider_constants.json"""
+    """Get available providers with their expected properties"""
     try:
-        # Load provider constants from JSON file
-        provider_constants_path = Path(__file__).parent.parent / "provider_constants.json"
-        with open(provider_constants_path, 'r') as f:
-            provider_constants = json.load(f)
+        from .provider_registry import get_provider_registry
         
-        # Define standardized field definitions for each provider type
-        field_definitions = {
-            "llm": {
-                "model": {"type": "text", "label": "Model", "required": True},
-                "api_key": {"type": "password", "label": "API Key", "required": True}
-            },
-            "tts": {
-                "voice": {"type": "text", "label": "Voice", "required": True},
-                "model": {"type": "text", "label": "Model", "required": False},
-                "api_key": {"type": "password", "label": "API Key", "required": True}
-            },
-            "stt": {
-                "model": {"type": "text", "label": "Model", "required": True},
-                "api_key": {"type": "password", "label": "API Key", "required": True}
-            }
-        }
+        # Use the provider registry to get all available providers
+        registry = get_provider_registry()
+        providers_data = registry.get_available_providers()
         
-        # Transform the data to match the frontend format
-        providers = {
-            "llm": {
-                "providers": [
-                    {"value": provider, "label": provider.replace('.com', '').replace('.ai', '').replace('.local', '').title()}
-                    for provider in provider_constants.get("llm", {}).keys()
-                ],
-                "configurable_fields": field_definitions["llm"]
-            },
-            "tts": {
-                "providers": [
-                    {"value": provider, "label": provider.replace('.com', '').replace('.io', '').replace('.local', '').replace('.ai', '').title()}
-                    for provider in provider_constants.get("tts", {}).keys()
-                ],
-                "configurable_fields": field_definitions["tts"]
-            },
-            "stt": {
-                "providers": [
-                    {"value": provider, "label": provider.replace('.com', '').replace('.local', '').title()}
-                    for provider in provider_constants.get("stt", {}).keys()
-                ],
-                "configurable_fields": field_definitions["stt"]
+        # Transform to match frontend format
+        providers = {}
+        for provider_type, data in providers_data.items():
+            providers[provider_type] = {
+                "providers": data["providers"],
+                "configurable_fields": data["field_definitions"]
             }
-        }
         
         return providers
     except Exception as e:
-        logger.error(f"Failed to load provider constants: {e}")
+        logger.error(f"Failed to load available providers: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to load available providers"
+        )
+
+
+@router.get("/providers/{provider_type}/{provider_name}/fields", response_model=Dict[str, Any])
+async def get_provider_fields(provider_type: str, provider_name: str):
+    """Get field definitions for a specific provider"""
+    try:
+        from .provider_registry import get_provider_registry
+        
+        registry = get_provider_registry()
+        field_definitions = registry.get_provider_field_definitions(provider_type, provider_name)
+        
+        # Return empty dict if provider has no configurable fields
+        # This is valid for providers that use constants or don't require user configuration
+        return field_definitions or {}
+    except Exception as e:
+        logger.error(f"Failed to get provider fields for {provider_type}.{provider_name}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get field definitions for provider {provider_type}.{provider_name}"
         )

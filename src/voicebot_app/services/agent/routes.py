@@ -34,32 +34,8 @@ async def list_agents(
     agent_service = AgentService(db)
     agents_result = agent_service.list_agents(skip=skip, limit=limit)
     
-    # Convert provider-specific configs back to standardized format for frontend
-    standardized_agents = []
-    for agent in agents_result.agents:
-        agent_dict = agent.model_dump()
-        
-        # Convert LLM config
-        if agent_dict.get('llm_config') and agent_dict.get('llm_provider'):
-            agent_dict['llm_config'] = PropertyMapper.from_provider_format(
-                "llm", agent_dict['llm_provider'], agent_dict['llm_config']
-            )
-        
-        # Convert TTS config
-        if agent_dict.get('tts_config') and agent_dict.get('tts_provider'):
-            agent_dict['tts_config'] = PropertyMapper.from_provider_format(
-                "tts", agent_dict['tts_provider'], agent_dict['tts_config']
-            )
-        
-        # Convert STT config
-        if agent_dict.get('stt_config') and agent_dict.get('stt_provider'):
-            agent_dict['stt_config'] = PropertyMapper.from_provider_format(
-                "stt", agent_dict['stt_provider'], agent_dict['stt_config']
-            )
-        
-        standardized_agents.append(AgentResponse(**agent_dict))
-    
-    return standardized_agents
+    # Configs are now stored in standardized format, no conversion needed
+    return agents_result.agents
 
 
 @router.get("/{agent_id}", response_model=AgentResponse)

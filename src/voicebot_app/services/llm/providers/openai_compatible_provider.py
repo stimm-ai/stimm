@@ -15,16 +15,17 @@ from typing import AsyncIterator, Optional, Dict, Any
 from .base_provider import BaseProvider
 
 
-class OpenAICompatibleProvider(BaseProvider, ABC):
+class OpenAICompatibleProvider(ABC):
     """
     Abstract base class for OpenAI-compatible LLM providers
-    
+
     This class provides common functionality for providers that use the
     OpenAI API format, including:
     - HTTP session management
     - API request formatting
     - Response parsing
     - Streaming support
+    - Property mapping
     """
     
     def __init__(self, config: Dict[str, Any]):

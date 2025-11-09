@@ -93,12 +93,12 @@ class DevAgentCreator:
                 agent = self.agent_service.create_agent(agent_data)
                 logger.info(f"Created development agent: {agent.name} (ID: {agent.id})")
             
-            logger.info(f"  LLM Provider: {agent_data.llm_provider}")
-            logger.info(f"  TTS Provider: {agent_data.tts_provider}")
-            logger.info(f"  STT Provider: {agent_data.stt_provider}")
-            logger.info(f"  LLM Model: {agent_data.llm_model_name}")
-            logger.info(f"  TTS Voice: {agent_data.tts_voice_name}")
-            logger.info(f"  STT Model: {agent_data.stt_model_name}")
+            logger.info(f"  LLM Provider: {agent_data.llm_config.provider}")
+            logger.info(f"  TTS Provider: {agent_data.tts_config.provider}")
+            logger.info(f"  STT Provider: {agent_data.stt_config.provider}")
+            logger.info(f"  LLM Model: {agent_data.llm_config.config.get('model', 'default')}")
+            logger.info(f"  TTS Voice: {agent_data.tts_config.config.get('voice_id', agent_data.tts_config.config.get('voice', 'default'))}")
+            logger.info(f"  STT Model: {agent_data.stt_config.config.get('model', 'default')}")
             
             return True
             

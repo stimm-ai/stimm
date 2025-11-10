@@ -210,15 +210,16 @@ async def test_tts_live_streaming(agent_id=None, agent_name=None, tokens_per_chu
     audio_chunks = []
     chunk_count = 0
     words = text.split()
-    total_send_chunks = (len(words) + 2 - 1) // 2  # tokens_per_chunk=2, ceiling division
+    total_send_chunks = (len(words) + tokens_per_chunk - 1) // tokens_per_chunk  # ceiling division
     send_progress = 0
     # Create a shared counter for sending progress
     send_counter = 0
-    text_gen = llm_token_generator(text)
+    text_gen = llm_token_generator(text, tokens_per_chunk=tokens_per_chunk)
 
     print("🎵 Starting LLM token streaming test...")
     print("🔄 LLM Sending | 🔊 TTS Receiving")
     print("-" * 60)
+    print(f"Text length: {len(words)} words, Tokens per chunk: {tokens_per_chunk}, Total chunks: {total_send_chunks}")
 
     # Use the same recording system as the web interface
     record_chunks = os.getenv('TTS_RECORD_CHUNKS', 'false').lower() == 'true'

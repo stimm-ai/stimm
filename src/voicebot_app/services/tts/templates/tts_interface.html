@@ -15,9 +15,6 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             padding: 20px;
         }
 
@@ -27,10 +24,11 @@
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             width: 100%;
             max-width: 800px;
-            height: 80vh;
+            margin: 0 auto;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            min-height: 600px;
+            max-height: 90vh;
         }
 
         .tts-header {
@@ -38,6 +36,7 @@
             color: white;
             padding: 20px;
             text-align: center;
+            flex-shrink: 0;
         }
 
         .tts-header h1 {
@@ -55,6 +54,7 @@
             padding: 20px;
             background: #f8fafc;
             border-bottom: 1px solid #e5e7eb;
+            flex-shrink: 0;
         }
 
         .stream-controls {
@@ -114,6 +114,8 @@
             flex-direction: column;
             padding: 20px;
             background: white;
+            min-height: 200px;
+            overflow: hidden;
         }
 
         .text-header {
@@ -170,6 +172,7 @@
             font-family: inherit;
             overflow-y: auto;
             transition: all 0.2s ease;
+            min-height: 150px;
         }
 
         .text-output:focus {
@@ -192,6 +195,7 @@
             padding: 16px 20px;
             background: #f8fafc;
             border-top: 1px solid #e5e7eb;
+            flex-shrink: 0;
         }
 
         .progress-bars {
@@ -318,6 +322,146 @@
             color: #059669;
             background: #d1fae5;
             animation: fadeIn 0.5s ease;
+        }
+
+        /* Responsive design for mobile devices */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .tts-container {
+                border-radius: 16px;
+                max-height: 95vh;
+                min-height: 500px;
+            }
+
+            .tts-header {
+                padding: 16px;
+            }
+
+            .tts-header h1 {
+                font-size: 1.3rem;
+            }
+
+            .tts-header p {
+                font-size: 0.85rem;
+            }
+
+            .controls-section,
+            .text-section,
+            .progress-section {
+                padding: 16px;
+            }
+
+            .control-buttons {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .stream-button {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .text-output {
+                min-height: 120px;
+                font-size: 0.95rem;
+            }
+
+            .progress-bars {
+                gap: 12px;
+            }
+
+            .progress-bar {
+                flex-direction: column;
+                gap: 8px;
+                align-items: flex-start;
+            }
+
+            .progress-label {
+                min-width: auto;
+            }
+
+            .progress-track {
+                width: 100%;
+            }
+
+            .progress-stats {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .latency-section {
+                margin-top: 12px;
+                padding: 10px;
+            }
+
+            .latency-bars {
+                gap: 6px;
+            }
+
+            .latency-bar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
+
+            .latency-value {
+                align-self: flex-start;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 8px;
+            }
+
+            .tts-container {
+                border-radius: 12px;
+                max-height: 98vh;
+            }
+
+            .tts-header {
+                padding: 12px 16px;
+            }
+
+            .tts-header h1 {
+                font-size: 1.2rem;
+            }
+
+            .controls-section,
+            .text-section,
+            .progress-section {
+                padding: 12px;
+            }
+
+            .text-output {
+                min-height: 100px;
+                font-size: 0.9rem;
+                padding: 12px;
+            }
+
+            .agent-selection select {
+                font-size: 13px;
+            }
+
+            .control-info {
+                font-size: 0.85rem;
+            }
+        }
+
+        /* Ensure content is always visible on very small screens */
+        @media (max-height: 600px) {
+            .tts-container {
+                max-height: none;
+                height: auto;
+            }
+
+            .text-output {
+                min-height: 80px;
+                max-height: 200px;
+            }
         }
     </style>
 </head>

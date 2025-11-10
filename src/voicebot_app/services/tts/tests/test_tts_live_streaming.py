@@ -384,8 +384,8 @@ async def test_tts_live_streaming(agent_id=None, agent_name=None, tokens_per_chu
         assert sending_complete, f"Sending not complete: {send_progress}/{total_send_chunks}"
         assert receiving_complete, f"Receiving not complete: {chunk_count} chunks"
     else:
-        print(f"\n⚠️ Test failed - Sending: {send_progress}/{total_send_chunks}, Receiving: {chunk_count} chunks")
-        assert False, f"Streaming incomplete - Sending: {send_progress}/{total_send_chunks}, Receiving: {chunk_count} chunks"
+        print(f"\n⚠️ Test failed - Sending: {actual_send_count}/{total_send_chunks}, Receiving: {chunk_count} chunks")
+        assert False, f"Streaming incomplete - Sending: {actual_send_count}/{total_send_chunks}, Receiving: {chunk_count} chunks"
 
 @pytest.mark.asyncio
 async def test_tts_service_initialization(agent_id=None, agent_name=None):

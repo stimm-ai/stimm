@@ -15,3 +15,4 @@ models
 tts_chunks_analysis/
 tts_chunks_web_analysis/
 tts_chunks_test_analysis/
+src/voicebot_app/services/tts/tests/audio_chunks

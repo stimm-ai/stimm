@@ -133,24 +133,23 @@ class AsyncAIProvider:
                             text_content = payload.get("text", "")
                             if text_content and not text_content.endswith(" "):
                                 text_content += " "
-                            
-                            # Convert our standard format to AsyncAI format
-                            asyncai_payload = {
-                                "transcript": text_content,
-                                "voice": {"mode": "id", "id": self.voice_id}
-                            }
-                            await ws.send(json.dumps(asyncai_payload))
-                            logger.info(f"Sent text chunk {text_count}: {text_content.strip()}")
                         except json.JSONDecodeError:
                             # Fallback: if it's plain text, use it directly
-                            if not chunk.endswith(" "):
-                                chunk += " "
-                            asyncai_payload = {
-                                "transcript": chunk,
-                                "voice": {"mode": "id", "id": self.voice_id}
-                            }
-                            await ws.send(json.dumps(asyncai_payload))
-                            logger.info(f"Sent text chunk {text_count}: {chunk.strip()} (converted from plain text)")
+                            text_content = chunk
+                            if text_content and not text_content.endswith(" "):
+                                text_content += " "
+                        
+                        # Convert our standard format to AsyncAI format
+                        asyncai_payload = {
+                            "transcript": text_content,
+                            "voice": {"mode": "id", "id": self.voice_id}
+                        }
+                        await ws.send(json.dumps(asyncai_payload))
+                        logger.info(f"🔧 DEBUG: Sent text chunk {text_count}: '{text_content.strip()}'")
+                        
+                        # Add detailed logging for first few chunks to debug missing text
+                        if text_count <= 3:
+                            logger.info(f"🔍 DEBUG: First {text_count} chunks sent - text: '{text_content.strip()}'")
                     
                     # Send close connection message with voice parameter
                     close_payload = {

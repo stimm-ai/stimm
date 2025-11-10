@@ -356,7 +356,9 @@ async def test_tts_live_streaming(agent_id=None, agent_name=None, tokens_per_chu
     print(f"\r{send_bar} | {receive_bar}")
 
     # Verify both sending and receiving completed successfully
-    sending_complete = (send_progress == total_send_chunks)
+    # Use the actual counter from shared_gen instead of send_progress
+    actual_send_count = shared_gen.get_count()
+    sending_complete = (actual_send_count == total_send_chunks)
     receiving_complete = (chunk_count > 0)
 
     if audio_chunks and sending_complete and receiving_complete:

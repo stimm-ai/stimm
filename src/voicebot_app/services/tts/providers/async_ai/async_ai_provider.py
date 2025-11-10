@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 import base64
+import uuid
 from typing import AsyncGenerator, Dict, Any
 import websockets
 

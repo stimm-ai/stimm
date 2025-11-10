@@ -161,8 +161,14 @@ def create_audio_playback_instructions(chunks_dir):
     return instructions_file
 
 @pytest.mark.asyncio
-async def test_tts_live_streaming(agent_id=None, agent_name=None):
-    """Test TTS live streaming with optional agent selection."""
+async def test_tts_live_streaming(agent_id=None, agent_name=None, tokens_per_chunk=2):
+    """Test TTS live streaming with optional agent selection.
+    
+    Args:
+        agent_id: Optional agent ID to use for testing
+        agent_name: Optional agent name to use for testing
+        tokens_per_chunk: Number of tokens to send per chunk (default: 2)
+    """
     
     # Get agent configuration
     agent_response, agent_config = get_agent_config(agent_id, agent_name)

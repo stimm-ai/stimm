@@ -431,12 +431,16 @@ Examples:
 
   # Test with custom text
   python test_tts_live_streaming.py --text "Hello, this is a test"
+
+  # Test with different chunk size
+  python test_tts_live_streaming.py --tokens-per-chunk 5
         """
     )
     parser.add_argument("--agent-id", help="Test with specific agent ID")
     parser.add_argument("--agent-name", help="Test with specific agent name")
     parser.add_argument("--list-agents", action="store_true", help="List available agents and exit")
     parser.add_argument("--text", help="Custom text for TTS (overrides TTS_INTERFACE_TEXT env var)")
+    parser.add_argument("--tokens-per-chunk", type=int, default=2, help="Number of tokens per chunk (default: 2)")
     return parser.parse_args()
 
 async def main():

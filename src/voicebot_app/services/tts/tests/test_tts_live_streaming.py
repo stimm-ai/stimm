@@ -41,13 +41,20 @@ def get_agent_config(agent_id=None, agent_name=None):
             sys.exit(1)
     elif agent_name:
         try:
-            return agent_manager.get_agent_config_by_name(agent_name)
+            # Get the full agent response to get the ID
+            agent_service = AgentService()
+            agents = agent_service.list_agents(active_only=True)
+            for agent in agents.agents:
+                if agent.name == agent_name:
+                    # Return both the agent response and the config
+                    return agent, agent_manager.get_agent_config(agent.id)
+            raise Exception(f"Agent with name '{agent_name}' not found")
         except Exception as e:
             print(f"❌ Error getting agent by name '{agent_name}': {e}")
             sys.exit(1)
     else:
         # Use default agent
-        return agent_manager.get_agent_config()
+        return None, agent_manager.get_agent_config()
 
 def list_available_agents():
     """List all available agents for selection."""

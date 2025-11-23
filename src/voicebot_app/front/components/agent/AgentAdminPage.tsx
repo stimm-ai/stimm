@@ -105,9 +105,14 @@ export function AgentAdminPage() {
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle>Agent Management</CardTitle>
-            <Button asChild>
-              <a href="/agent/create">Create New Agent</a>
-            </Button>
+            <div className="flex gap-2">
+              <Button asChild variant="outline">
+                <a href="/voicebot">🎤 Voicebot Interface</a>
+              </Button>
+              <Button asChild>
+                <a href="/agent/create">Create New Agent</a>
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>

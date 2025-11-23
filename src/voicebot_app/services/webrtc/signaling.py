@@ -4,8 +4,29 @@ import asyncio
 import json
 from fastapi import APIRouter, Request, HTTPException
 from pydantic import BaseModel
-from aiortc import RTCPeerConnection, RTCSessionDescription
-from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRecorder
+
+# Make WebRTC imports optional
+try:
+    from aiortc import RTCPeerConnection, RTCSessionDescription
+    from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRecorder
+    WEBRTC_AVAILABLE = True
+except ImportError as e:
+    WEBRTC_AVAILABLE = False
+    print(f"Warning: WebRTC dependencies not available: {e}")
+    # Create dummy classes to avoid import errors
+    class RTCPeerConnection:
+        def __init__(self, *args, **kwargs): pass
+        def addTrack(self, *args): pass
+        def setRemoteDescription(self, *args): pass
+        def setLocalDescription(self, *args): pass
+        def createOffer(self, *args, **kwargs): pass
+        def createAnswer(self, *args, **kwargs): pass
+        def on(self, *args): pass
+        
+    class RTCSessionDescription:
+        def __init__(self, sdp=None, type=None):
+            self.sdp = sdp
+            self.type = type
 
 from services.webrtc.media_handler import WebRTCMediaHandler
 from services.voicebot_wrapper.event_loop import VoicebotEventLoop
@@ -42,10 +63,13 @@ async def webrtc_offer(request: OfferRequest):
     
     logger.info(f"Starting WebRTC session: {session_id}")
     
+    # Initialize services - use agent_id or default to a valid agent
+    agent_id = request.agent_id if request.agent_id and request.agent_id != 'default' else '0d6e6332-384a-45e7-bd75-842fe6b3149e'  # Default agent ID from logs
+    
     # Initialize services
     vad_service = SileroVADService()
-    stt_service = STTService(agent_id=request.agent_id, session_id=session_id)
-    tts_service = TTSService(agent_id=request.agent_id, session_id=session_id)
+    stt_service = STTService(agent_id=agent_id, session_id=session_id)
+    tts_service = TTSService(agent_id=agent_id, session_id=session_id)
     
     # Initialize Event Loop
     # We need an output queue for the event loop to push audio/events to
@@ -58,7 +82,7 @@ async def webrtc_offer(request: OfferRequest):
         chatbot_service=chatbot_service,
         tts_service=tts_service,
         vad_service=vad_service,
-        agent_id=request.agent_id,
+        agent_id=agent_id,
         session_id=session_id
     )
     

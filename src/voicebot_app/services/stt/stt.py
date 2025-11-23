@@ -27,10 +27,10 @@ class STTService:
         """Initialize the configured STT provider"""
         # Always use agent-based configuration
         agent_manager = get_agent_manager()
-        if self.session_id:
-            agent_config = agent_manager.get_session_agent(self.session_id)
-        elif self.agent_id:
+        if self.agent_id:
             agent_config = agent_manager.get_agent_config(self.agent_id)
+        elif self.session_id:
+            agent_config = agent_manager.get_session_agent(self.session_id)
         else:
             agent_config = agent_manager.get_agent_config()
             

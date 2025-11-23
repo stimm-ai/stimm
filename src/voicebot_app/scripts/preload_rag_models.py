@@ -56,7 +56,7 @@ def preload_models():
         # Print model information for verification
         logger.info(f"Embedding model dimensions: {embed_model.get_sentence_embedding_dimension()}")
         if retrieval_config.enable_reranker:
-            logger.info(f"Reranker model ready: {reranker.model_name}")
+            logger.info(f"Reranker model ready: {retrieval_config.reranker_model}")
             
         return True
         

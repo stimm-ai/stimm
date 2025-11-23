@@ -163,42 +163,45 @@ async def voicebot_websocket_endpoint(websocket: WebSocket):
         await connection_manager.connect(websocket, conversation_id)
         
         # Get TTS provider configuration from agent if available
-        logger.info(f"🔍 Voicebot WebSocket - Using agent-based TTS configuration for agent_id: {agent_id}")
+        tts_sample_rate = 44100
+        tts_encoding = "pcm_s16le"
+        current_provider = "unknown"
         
-        # Use agent-based TTS configuration instead of environment variables
-        from services.tts.tts import TTSService
-        tts_service = TTSService(agent_id=agent_id)
-        
-        # Get provider-specific audio configuration from agent
-        current_provider = tts_service.provider.__class__.__name__
-        logger.info(f"🔍 Voicebot WebSocket - Agent TTS provider: {current_provider}")
-        
-        # Get provider-specific audio configuration from constants
-        from services.provider_constants import get_provider_constants
-        provider_constants = get_provider_constants()
-        
-        if hasattr(tts_service.provider, 'sample_rate'):
-            tts_sample_rate = tts_service.provider.sample_rate
-            tts_encoding = tts_service.provider.encoding
-        else:
-            # Fallback to provider constants
-            provider_key = None
-            if "AsyncAIProvider" in current_provider:
-                provider_key = "async.ai"
-            elif "KokoroLocalProvider" in current_provider:
-                provider_key = "kokoro.local"
-            elif "DeepgramProvider" in current_provider:
-                provider_key = "deepgram.com"
-            elif "ElevenLabsProvider" in current_provider:
-                provider_key = "elevenlabs.io"
+        try:
+            logger.info(f"🔍 Voicebot WebSocket - Using agent-based TTS configuration for agent_id: {agent_id}")
             
-            if provider_key and provider_key in provider_constants['tts']:
-                tts_sample_rate = provider_constants['tts'][provider_key]['SAMPLE_RATE']
-                tts_encoding = provider_constants['tts'][provider_key]['ENCODING']
+            # Use agent-based TTS configuration instead of environment variables
+            from services.tts.tts import TTSService
+            tts_service = TTSService(agent_id=agent_id)
+            
+            # Get provider-specific audio configuration from agent
+            current_provider = tts_service.provider.__class__.__name__
+            logger.info(f"🔍 Voicebot WebSocket - Agent TTS provider: {current_provider}")
+            
+            # Get provider-specific audio configuration from constants
+            from services.provider_constants import get_provider_constants
+            provider_constants = get_provider_constants()
+            
+            if hasattr(tts_service.provider, 'sample_rate'):
+                tts_sample_rate = tts_service.provider.sample_rate
+                tts_encoding = tts_service.provider.encoding
             else:
-                # Default values
-                tts_sample_rate = 44100
-                tts_encoding = "pcm_s16le"
+                # Fallback to provider constants
+                provider_key = None
+                if "AsyncAIProvider" in current_provider:
+                    provider_key = "async.ai"
+                elif "KokoroLocalProvider" in current_provider:
+                    provider_key = "kokoro.local"
+                elif "DeepgramProvider" in current_provider:
+                    provider_key = "deepgram.com"
+                elif "ElevenLabsProvider" in current_provider:
+                    provider_key = "elevenlabs.io"
+                
+                if provider_key and provider_key in provider_constants['tts']:
+                    tts_sample_rate = provider_constants['tts'][provider_key]['SAMPLE_RATE']
+                    tts_encoding = provider_constants['tts'][provider_key]['ENCODING']
+        except Exception as e:
+            logger.warning(f"Failed to load TTS configuration (using defaults): {e}")
 
         await websocket.send_json({
             "type": "conversation_started",
@@ -222,10 +225,17 @@ async def voicebot_websocket_endpoint(websocket: WebSocket):
         
         # Main message processing loop
         while True:
-            message = await websocket.receive_text()
-            data = json.loads(message)
+            # Use receive() to handle both text (JSON control) and binary (Audio) frames
+            message = await websocket.receive()
             
-            await _handle_websocket_message(conversation_id, data, websocket)
+            if "text" in message:
+                data = json.loads(message["text"])
+                await _handle_websocket_message(conversation_id, data, websocket)
+                
+            elif "bytes" in message:
+                # Handle raw binary audio chunk (16kHz PCM16 Mono)
+                # This avoids Base64 overhead (~33%)
+                await connection_manager.add_audio_chunk(conversation_id, message["bytes"])
             
     except WebSocketDisconnect:
         logger.info(f"WebSocket disconnected for conversation: {conversation_id}")

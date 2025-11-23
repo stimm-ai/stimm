@@ -1,0 +1,24 @@
+# Task: Modernize Voicebot with Custom LiveKit-Inspired Architecture
+
+- [x] Explore existing [voicebot](file:///home/etienne/repos/voicebot/src/voicebot_app/main.py#178-182) repository structure and implementation <!-- id: 0 -->
+- [x] Analyze [voicebot](file:///home/etienne/repos/voicebot/src/voicebot_app/main.py#178-182) audio pipeline (WebSocket, buffering, processing) <!-- id: 4 -->
+- [x] Deep dive into LiveKit Agents source code (VAD, Worker Loop, Audio Pipeline) <!-- id: 5 -->
+- [x] Create "Voicebot vs LiveKit Agents" Feature Diff & Analysis <!-- id: 6 -->
+- [x] Research SIP Echo Cancellation standards and LiveKit's approach <!-- id: 8 -->
+- [x] Compare Silero VAD vs WebRTC VAD (Benchmarks/Pros/Cons) <!-- id: 9 -->
+- [x] Verify Silero VAD latency specifics (Inference vs Chunk size) <!-- id: 11 -->
+- [x] Update Implementation Plan with SIP AEC strategy and VAD justification <!-- id: 10 -->
+- [x] Implement Silero VAD Service (Phase 1) <!-- id: 15 -->
+    - [x] Add dependencies (`onnxruntime`, `numpy`)
+    - [x] Create [SileroVADService](file:///home/etienne/repos/voicebot/src/voicebot_app/services/vad/silero_service.py#17-212) class
+    - [x] Add unit tests
+    - [x] Rebuild Docker container and run tests <!-- id: 16 -->
+- [x] Pipeline Integration (WebSocket) (Phase 2) <!-- id: 17 -->
+    - [x] Modify [VoicebotService](file:///home/etienne/repos/voicebot/src/voicebot_app/services/voicebot_wrapper/voicebot_service.py#87-682) to use [SileroVADService](file:///home/etienne/repos/voicebot/src/voicebot_app/services/vad/silero_service.py#17-212) (via [vad_service.py](file:///home/etienne/repos/voicebot/src/voicebot_app/services/voicebot_wrapper/vad_service.py) refactor)
+    - [x] Verify VAD performance (via integration tests)
+- [/] Central Event Loop & Audio Harmonization (Phase 3) <!-- id: 18 -->
+    - [x] **Audio Optimization**: Switch to Binary WebSocket & Standardize 16kHz <!-- id: 19 -->
+    - [/] **Event Loop**: Implement `VoicebotEventLoop` class <!-- id: 20 -->
+    - [ ] **VAD-Gated STT**: Optimize STT usage <!-- id: 21 -->
+- [x] Design Audio Harmonization strategy (Binary WS, Sample Rate Standardization) <!-- id: 13 -->
+- [x] Analyze Orchestration patterns (Flag-based vs Event-loop) <!-- id: 14 -->

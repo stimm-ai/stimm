@@ -11,7 +11,7 @@ import uuid
 from typing import AsyncGenerator, Dict, Any, Optional
 
 from .config import voicebot_config
-from .vad_service import vad_processor, WebRTCVADService
+from .vad_service import vad_processor
 from services.stt.stt import STTService
 from services.tts.tts import TTSService
 from services.rag.chatbot_service import ChatbotService

@@ -93,70 +93,93 @@ class VoicebotEventLoop:
                     pass
                     
     async def process_audio_chunk(self, chunk: bytes):
-        """Process incoming audio chunk."""
-        # 1. Run VAD
-        # Silero VAD processing (assumes vad_service is SileroVADService)
-        # We need to convert bytes to float32 for Silero if not done inside service
-        # But SileroVADService.process_audio_chunk handles bytes -> float32 conversion
+        """
+        Process incoming audio chunk through VAD and gate STT accordingly.
         
-        # Note: VoicebotService currently uses VADProcessor which wraps SileroVADService
-        # We should use VADProcessor's logic or access Silero directly.
-        # Let's assume we pass VADProcessor instance.
-        
-        # Actually, VADProcessor.start_vad_processing is a generator.
-        # Here we want frame-by-frame processing.
-        # We might need to expose process_frame on VADProcessor or use SileroVADService directly.
-        
-        # For now, let's assume we use SileroVADService directly for low-level control
+        This implements the VAD-gated STT pattern:
+        1. All audio goes through VAD first
+        2. Pre-speech buffer maintains context (500ms)
+        3. Only speech segments are sent to STT
+        4. VAD events trigger state transitions
+        """
+        # Process chunk through Silero VAD
+        # SileroVADService.process_audio_chunk returns a list of events
         events = self.vad_service.process_audio_chunk(chunk)
         
+        # Check current VAD state
         is_speech = self.vad_service.triggered
+        probability = self.vad_service.current_probability
         
-        # 2. Handle VAD State
-        if is_speech:
-            if not self.is_recording:
-                # Speech Start
-                self.is_recording = True
-                await self.push_event("vad_start")
-                
-                # Flush pre-speech buffer to STT
-                for buffered_chunk in self.audio_buffer:
-                    await self.stt_audio_queue.put(buffered_chunk)
-                self.audio_buffer = []
-            
-            # Send current chunk to STT
+        # Handle VAD events (speech_start, speech_end)
+        for event in events:
+            if event["type"] == "speech_start":
+                # Speech detected - transition to recording
+                if not self.is_recording:
+                    self.is_recording = True
+                    logger.info(f"VAD: Speech started (prob={probability:.2f})")
+                    await self.push_event("vad_start")
+                    
+                    # Flush pre-speech buffer to STT for context
+                    # This ensures STT catches the first syllable
+                    for buffered_chunk in self.audio_buffer:
+                        await self.stt_audio_queue.put(buffered_chunk)
+                    self.audio_buffer = []
+                    
+            elif event["type"] == "speech_end":
+                # Speech ended - stop recording
+                if self.is_recording:
+                    self.is_recording = False
+                    logger.info(f"VAD: Speech ended (prob={probability:.2f})")
+                    await self.push_event("vad_end")
+                    # Note: We don't send post-speech padding to avoid STT hallucinations
+        
+        # Route audio based on VAD state
+        if is_speech and self.is_recording:
+            # Active speech - send to STT
             await self.stt_audio_queue.put(chunk)
             
-        else:
-            if self.is_recording:
-                # Speech End (handled by Silero's internal hysteresis, but we check 'triggered')
-                # If triggered goes False, speech ended.
-                self.is_recording = False
-                await self.push_event("vad_end")
-                # Send end-of-speech signal to STT if needed, or just stop sending
-                # We might want to keep sending for a bit (post-speech padding)
+        elif not is_speech and not self.is_recording:
+            # Silence - maintain pre-speech buffer (circular buffer)
+            self.audio_buffer.append(chunk)
+            if len(self.audio_buffer) > self.max_pre_speech_buffer_size:
+                self.audio_buffer.pop(0)  # Remove oldest chunk
                 
-            else:
-                # Silence - add to pre-speech buffer
-                self.audio_buffer.append(chunk)
-                if len(self.audio_buffer) > self.max_pre_speech_buffer_size:
-                    self.audio_buffer.pop(0)
+        # If is_recording but not is_speech, we're in the transition period
+        # (VAD hysteresis). Keep sending to STT until triggered goes False.
 
     async def _process_stt_stream(self):
-        """Process audio queue and send to STT service."""
+        """
+        Process audio queue and send to STT service.
+        
+        This task continuously reads from stt_audio_queue and feeds it to STT.
+        Only audio that passes VAD gating reaches this queue.
+        """
         async def audio_generator():
+            """Generator that yields audio chunks from the queue."""
             while True:
-                chunk = await self.stt_audio_queue.get()
-                yield chunk
-                self.stt_audio_queue.task_done()
-                
+                try:
+                    # Wait for audio chunk with timeout to allow cancellation
+                    chunk = await asyncio.wait_for(
+                        self.stt_audio_queue.get(),
+                        timeout=5.0  # 5 second timeout
+                    )
+                    yield chunk
+                    self.stt_audio_queue.task_done()
+                except asyncio.TimeoutError:
+                    # No audio for 5 seconds - continue waiting
+                    # This allows the task to be cancelled cleanly
+                    continue
+                except asyncio.CancelledError:
+                    # Task cancelled - stop generator
+                    break
+                    
         try:
             # This assumes STTService.transcribe_streaming takes a generator
             # and yields transcripts.
             async for transcript in self.stt_service.transcribe_streaming(audio_generator()):
                 await self.push_event("transcript_update", transcript)
         except asyncio.CancelledError:
-            pass
+            logger.info("STT stream processing cancelled")
         except Exception as e:
             logger.error(f"STT stream error: {e}")
 

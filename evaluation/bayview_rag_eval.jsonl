@@ -1,4 +1,0 @@
-# Simple evaluation set to verify key facts remain retrievable.
-{"question": "What are the reward rates for the Skyline Rewards Visa?", "must_include": ["1.5% cash back", "3% on travel"], "namespace": null, "top_k": 4}
-{"question": "Summarize the delivery options for a replacement card.", "must_include": ["standard (5–7 business days)", "expedited (2 business days, $15 fee)"], "namespace": null, "top_k": 4}
-{"question": "What APY is offered on the Sunrise High-Yield Savings account?", "must_include": ["4.35% APY"], "namespace": null, "top_k": 4}

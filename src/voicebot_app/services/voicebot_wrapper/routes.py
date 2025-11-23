@@ -235,6 +235,7 @@ async def voicebot_websocket_endpoint(websocket: WebSocket):
             elif "bytes" in message:
                 # Handle raw binary audio chunk (16kHz PCM16 Mono)
                 # This avoids Base64 overhead (~33%)
+                logger.debug(f"Received audio chunk: {len(message['bytes'])} bytes")
                 await connection_manager.add_audio_chunk(conversation_id, message["bytes"])
             
     except WebSocketDisconnect:
@@ -350,7 +351,7 @@ async def _process_audio_continuous(conversation_id: str, websocket: WebSocket, 
             return
             
         # Start continuous processing (STT + VAD monitoring)
-        await voicebot_service_instance.start_continuous_processing(conversation_id, audio_generator)
+        await voicebot_service_instance.start_event_driven_processing(conversation_id, audio_generator)
             
     except asyncio.CancelledError:
         logger.info(f"Continuous audio processing cancelled for conversation: {conversation_id}")

@@ -152,6 +152,7 @@ class VoicebotService:
                     break
                     
                 # Feed audio to event loop
+                logger.debug(f"Processing audio chunk in event loop: {len(audio_chunk)} bytes")
                 await conversation.event_loop.process_audio_chunk(audio_chunk)
                 
         except asyncio.CancelledError:

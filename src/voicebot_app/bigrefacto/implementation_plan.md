@@ -64,9 +64,9 @@ Modernize the [voicebot](file:///home/etienne/repos/voicebot/src/voicebot_app/ma
 - [ ] Verify VAD performance (latency/accuracy) via WebSocket logs.
 
 ### Phase 3: Central Event Loop & Audio Harmonization
-- [ ] **Audio Optimization**:
-    - Switch WebSocket from JSON (Base64) to **Binary Mode** for audio chunks.
-    - Standardize internal audio passing to `16kHz / 16-bit Mono`.
+- [x] **Audio Optimization**:
+    - [x] Switch WebSocket from JSON (Base64) to **Binary Mode** for audio chunks.
+    - [x] Standardize internal audio passing to `16kHz / 16-bit Mono`.
 - [ ] **Event Loop Implementation**:
     - Create `VoicebotEventLoop` class.
     - Implement `async for event in vad_stream:` pattern.

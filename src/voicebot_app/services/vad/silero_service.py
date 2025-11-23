@@ -168,6 +168,10 @@ class SileroVADService:
             probability = out[0][0]
             self._current_probability = float(probability)
             
+            # Debug log for high probability or periodic check
+            # if probability > 0.1:
+            logger.debug(f"VAD Prob: {probability:.4f}")
+            
             # Apply VAD logic (hysteresis)
             event = self._update_state(probability)
             if event:

@@ -96,7 +96,9 @@ export function VoicebotInterface() {
 
   const loadAgents = async () => {
     try {
-      const response = await fetch('http://localhost:8001/api/agents/')
+      // WSL2 IP for Docker networking
+      const WSL2_IP = '172.23.126.232'
+      const response = await fetch(`http://${WSL2_IP}:8001/api/agents/`)
       if (response.ok) {
         const agents = await response.json()
         setAgents(agents)

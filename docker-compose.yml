@@ -20,6 +20,11 @@ services:
       service: voicebot-app
     networks:
       - voicebot-network
+    # Expose UDP ports for WebRTC ICE connectivity
+    ports:
+      - "8001:8001"          # HTTP API
+      - "3478:3478/udp"      # STUN
+      - "49160-49200:49160-49200/udp"  # UDP range for ICE candidates
     env_file:
       - ./src/voicebot_app/.env
     labels:

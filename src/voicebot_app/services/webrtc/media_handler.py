@@ -3,6 +3,7 @@ import logging
 import time
 import fractions
 import av
+import numpy as np
 from aiortc import MediaStreamTrack
 from services.voicebot_wrapper.event_loop import VoicebotEventLoop
 
@@ -129,12 +130,23 @@ class WebRTCMediaHandler:
                     # Silero VAD supports 8k and 16k. 
                     # If the browser sends 48k (Opus default), we MUST resample.
                     
-                    # av.AudioResampler can help
+                    # Create resampler for 48kHz -> 16kHz with audio gain
                     resampler = av.AudioResampler(format='s16', layout='mono', rate=16000)
                     resampled_frames = resampler.resample(frame)
                     
                     for resampled_frame in resampled_frames:
-                        audio_bytes = resampled_frame.to_ndarray().tobytes()
+                        # Extract audio data
+                        audio_array = resampled_frame.to_ndarray()
+                        
+                        # Apply audio gain to make VAD more sensitive
+                        # Scale up the audio by factor of 3 to improve speech detection
+                        audio_array = audio_array * 3
+                        
+                        # Ensure we don't clip (keep within int16 range)
+                        audio_array = np.clip(audio_array, -32768, 32767)
+                        
+                        # Convert back to bytes
+                        audio_bytes = audio_array.tobytes()
                         await self.event_loop.process_audio_chunk(audio_bytes)
                         
                 except av.AudioError as e:

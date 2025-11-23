@@ -99,6 +99,22 @@ export class WebRTCVoiceClient {
     }
 
     try {
+      // WSL2 IP for Docker networking
+      const WSL2_IP = '172.23.126.232'
+      
+      // Configure ICE servers with WSL2 IP for Docker environment
+      this.peerConnection = new RTCPeerConnection({
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun2.l.google.com:19302' },
+          { urls: 'stun:stun3.l.google.com:19302' },
+          { urls: 'stun:stun4.l.google.com:19302' }
+        ],
+        iceCandidatePoolSize: 10,
+        bundlePolicy: 'max-bundle'
+      })
+
       // Get user media
       this.localStream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -126,8 +142,8 @@ export class WebRTCVoiceClient {
 
       await this.peerConnection.setLocalDescription(offer)
 
-      // Send offer to backend
-      const response = await fetch('http://localhost:8001/api/voicebot/webrtc/offer', {
+      // Send offer to backend using WSL2 IP
+      const response = await fetch(`http://${WSL2_IP}:8001/api/voicebot/webrtc/offer`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

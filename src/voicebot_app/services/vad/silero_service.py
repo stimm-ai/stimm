@@ -11,7 +11,7 @@ class SileroVADService:
     """
     Silero VAD Service using ONNX Runtime.
     """
-    def __init__(self, model_path: str = None, threshold: float = 0.5, sampling_rate: int = 16000):
+    def __init__(self, model_path: str = None, threshold: float = 0.3, sampling_rate: int = 16000):
         self.threshold = threshold
         self.sampling_rate = sampling_rate
         self.min_speech_duration_ms = 250

@@ -20,7 +20,7 @@ from services.vad.silero_service import SileroVADService
 logger = logging.getLogger(__name__)
 
 
-class ConversationStateV2:
+class ConversationState:
     """Simplified conversation state for event-driven architecture."""
     
     def __init__(self, conversation_id: str):
@@ -42,7 +42,7 @@ class ConversationStateV2:
                 pass
 
 
-class VoicebotServiceV2:
+class VoicebotService:
     """
     Event-driven voicebot service inspired by LiveKit Agents.
     
@@ -56,7 +56,7 @@ class VoicebotServiceV2:
     def __init__(self, agent_id: str = None, session_id: str = None):
         self.agent_id = agent_id
         self.session_id = session_id
-        self.active_conversations: Dict[str, ConversationStateV2] = {}
+        self.active_conversations: Dict[str, ConversationState] = {}
         
         # Initialize services
         self.stt_service: Optional[STTService] = None
@@ -87,7 +87,7 @@ class VoicebotServiceV2:
     def create_conversation(self) -> str:
         """Create a new conversation session."""
         conversation_id = str(uuid.uuid4())
-        self.active_conversations[conversation_id] = ConversationStateV2(conversation_id)
+        self.active_conversations[conversation_id] = ConversationState(conversation_id)
         logger.info(f"Created conversation: {conversation_id}")
         return conversation_id
     
@@ -222,5 +222,5 @@ class VoicebotServiceV2:
         return None
 
 
-# Global service instance (V2)
-voicebot_service_v2 = VoicebotServiceV2()
+# Global service instance
+voicebot_service = VoicebotService()

@@ -45,12 +45,13 @@ class AgentRunner:
             async with self.session.post(url, json=payload) as response:
                 if response.status == 200:
                     result = await response.json()
-                    token = result.get("token")
+                    token = result.get("access_token")
                     if token:
                         self.logger.info(f"Created LiveKit room: {self.room_name}")
                         return token
                     else:
                         self.logger.error("No token received from LiveKit API")
+                        self.logger.error(f"Response: {result}")
                         return None
                 else:
                     error_text = await response.text()

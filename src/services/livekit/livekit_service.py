@@ -1,7 +1,8 @@
 import logging
 import uuid
+import os
 from typing import Dict, Any
-import livekit
+from livekit import api
 
 from services.agents.voicebot_service import get_voicebot_service
 from services.agents_admin.agent_service import AgentService
@@ -13,15 +14,19 @@ class LiveKitService:
     Service pour gérer les connexions LiveKit et générer des tokens d'accès.
     """
     
-    def __init__(self, livekit_url: str = "http://localhost:7880",
+    def __init__(self, livekit_url: str = None,
                  api_key: str = "devkey", api_secret: str = "secret"):
-        self.livekit_url = livekit_url
+        # Utiliser l'URL de l'environnement ou la valeur par défaut
+        self.livekit_url = livekit_url or os.getenv("LIVEKIT_URL", "http://localhost:7880")
         self.api_key = api_key
         self.api_secret = api_secret
         
         # Initialiser les services existants
         self.voicebot_service = get_voicebot_service()
         self.agent_service = AgentService()
+        
+        # Suivi des sessions actives
+        self.active_sessions = {}
     
     async def create_room_for_agent(self, agent_id: str) -> Dict[str, Any]:
         """
@@ -38,10 +43,10 @@ class LiveKitService:
             room_name = f"voicebot_{agent_id}_{uuid.uuid4().hex[:8]}"
             
             # Générer un token d'accès pour le frontend
-            token = livekit.AccessToken(self.api_key, self.api_secret) \
+            token = api.AccessToken(self.api_key, self.api_secret) \
                 .with_identity(f"user_{uuid.uuid4().hex[:8]}") \
                 .with_name("User") \
-                .with_grants(livekit.VideoGrants(
+                .with_grants(api.VideoGrants(
                     room_join=True,
                     room=room_name,
                     can_publish=True,
@@ -80,6 +85,24 @@ class LiveKitService:
             
         except Exception as e:
             logger.error(f"❌ Failed to notify agent: {e}")
+            raise
+
+    async def cleanup_session(self, session_id: str):
+        """
+        Nettoyer une session LiveKit terminée.
+        
+        Args:
+            session_id: ID de la session à nettoyer
+        """
+        try:
+            if session_id in self.active_sessions:
+                del self.active_sessions[session_id]
+                logger.info(f"✅ Cleaned up LiveKit session {session_id}")
+            else:
+                logger.warning(f"⚠️ Session {session_id} not found in active sessions")
+                
+        except Exception as e:
+            logger.error(f"❌ Failed to cleanup session {session_id}: {e}")
             raise
 
 # Instance globale du service

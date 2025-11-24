@@ -87,9 +87,10 @@ async def livekit_health():
     try:
         # Vérifier que le service est opérationnel
         # Pour l'instant, nous retournons simplement un statut basique
+        # sans dépendre de active_sessions qui n'est pas encore implémenté
         return {
             "status": "healthy",
-            "active_sessions": len(livekit_service.active_sessions),
+            "active_sessions": 0,  # Temporairement 0 jusqu'à implémentation complète
             "livekit_url": livekit_service.livekit_url
         }
     except Exception as e:

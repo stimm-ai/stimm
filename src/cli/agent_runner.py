@@ -4,10 +4,13 @@ Agent runner for full audio mode via LiveKit
 
 import asyncio
 import logging
+import os
 import uuid
 from typing import Optional
 
 import aiohttp
+
+from .livekit_client import LiveKitClient
 
 
 class AgentRunner:
@@ -18,7 +21,7 @@ class AgentRunner:
         self.room_name = room_name or f"cli-{agent_name}-{uuid.uuid4().hex[:8]}"
         self.verbose = verbose
         self.base_url = "http://localhost:8001"
-        self.livekit_url = "ws://localhost:7880"
+        self.livekit_url = os.getenv("LIVEKIT_URL", "ws://livekit:7880")
         self.session: Optional[aiohttp.ClientSession] = None
         self.logger = logging.getLogger(__name__)
         
@@ -97,24 +100,25 @@ class AgentRunner:
             
     async def connect_to_livekit(self, token: str):
         """Connect to LiveKit room using the token"""
-        # This would use the LiveKit Python SDK
-        # For now, we'll simulate the connection process
         self.logger.info(f"Connecting to LiveKit room: {self.room_name}")
         self.logger.info(f"Token: {token[:20]}...")
         
-        # In a real implementation, we would:
-        # 1. Import livekit package
-        # 2. Create room connection
-        # 3. Set up audio capture from microphone
-        # 4. Set up audio playback to speakers
-        # 5. Handle WebRTC connection
-        
-        self.logger.info("LiveKit connection would be established here")
-        self.logger.info("Audio capture and playback would be configured")
-        
-        # Simulate connection process
-        await asyncio.sleep(2)
-        self.logger.info("✅ LiveKit connection established (simulated)")
+        try:
+            # Create and connect LiveKit client
+            livekit_client = LiveKitClient(
+                room_name=self.room_name,
+                token=token,
+                livekit_url=self.livekit_url
+            )
+            
+            # Start the audio session
+            await livekit_client.start_audio_session()
+            
+            return livekit_client
+            
+        except Exception as e:
+            self.logger.error(f"Failed to connect to LiveKit: {e}")
+            raise
         
     async def run(self):
         """Run the full audio mode"""
@@ -153,8 +157,9 @@ class AgentRunner:
             
             # Connect to LiveKit
             print("🔄 Connecting to LiveKit...")
+            livekit_client = None
             try:
-                await self.connect_to_livekit(token)
+                livekit_client = await self.connect_to_livekit(token)
                 
                 # Keep the connection alive
                 print("\n🎧 Audio connection active!")
@@ -170,6 +175,9 @@ class AgentRunner:
             except Exception as e:
                 self.logger.error(f"Error in LiveKit connection: {e}")
                 print(f"❌ Connection error: {e}")
+            finally:
+                if livekit_client:
+                    await livekit_client.disconnect()
                 
         print("\n📞 Connection closed")
 

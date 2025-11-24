@@ -11,6 +11,7 @@ router = APIRouter()
 
 class CreateRoomRequest(BaseModel):
     agent_id: str
+    room_name: str = None
 
 class CreateRoomResponse(BaseModel):
     room_name: str
@@ -34,7 +35,10 @@ async def create_livekit_room(request: CreateRoomRequest):
         logger.info(f"🎯 Creating LiveKit room for agent {request.agent_id}")
         
         # Créer la salle LiveKit
-        room_info = await livekit_service.create_room_for_agent(request.agent_id)
+        room_info = await livekit_service.create_room_for_agent(
+            request.agent_id,
+            request.room_name
+        )
         
         # Générer un ID de session
         session_id = str(uuid.uuid4())

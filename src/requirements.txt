@@ -25,3 +25,4 @@ psycopg2-binary>=2.9.0
 aiortc>=1.8.0
 av>=11.0.0
 livekit-api>=1.0.0
+livekit-rtc>=1.0.0

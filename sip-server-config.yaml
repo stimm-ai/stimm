@@ -1,0 +1,40 @@
+# LiveKit SIP Server Configuration for WSL2 Local Testing
+# Using local development credentials for testing
+
+api_key: devkey
+api_secret: secret
+ws_url: ws://localhost:7880
+redis:
+  address: localhost:6379
+sip_port: 5060
+rtp_port_range: 10000-20000
+use_external_ip: false  # Use local WSL2 IP for internal testing
+logging:
+  level: debug
+
+# WSL2 network configuration
+# Zoiper on Windows will connect to this local IP
+bind_address: "0.0.0.0"  # Listen on all interfaces
+public_ip: "172.23.126.232"   # Your WSL2 Ubuntu machine local IP
+
+# SIP authentication for local testing
+# You can set up authentication or use anonymous for testing
+allow_anonymous: true
+
+# Media handling
+enable_ice: true
+stun_servers:
+  - "stun:stun.l.google.com:19302"
+  - "stun:stun1.l.google.com:19302"
+
+# WSL2 specific settings
+# Handle WSL2 network bridge properly
+nat_detection: true
+
+# Logging
+log_level: "debug"
+log_format: "json"
+
+# SIP server settings
+max_call_duration: 3600  # 1 hour max call duration
+enable_recording: false

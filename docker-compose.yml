@@ -1,10 +1,4 @@
 services:
-  # riva-builder:
-  #   extends:
-  #     file: ./docker/riva-builder/docker-compose.yml
-  #     service: riva-builder
-  #   networks:
-  #     - voicebot-network
   postgres:
     extends:
       file: ./docker/postgres/docker-compose.yml
@@ -13,7 +7,6 @@ services:
       - voicebot-network
     env_file:
       - ./src/.env
-
   voicebot-app:
     extends:
       file: ./docker/voicebot-app/docker-compose.yml
@@ -22,9 +15,9 @@ services:
       - voicebot-network
     # Expose UDP ports for WebRTC ICE connectivity
     ports:
-      - "8001:8001"          # HTTP API
-      - "3478:3478/udp"      # STUN
-      - "49160-49200:49160-49200/udp"  # UDP range for ICE candidates
+      - "8001:8001" # HTTP API
+      - "3478:3478/udp" # STUN
+      - "49160-49200:49160-49200/udp" # UDP range for ICE candidates
     env_file:
       - ./src/.env
     labels:
@@ -32,7 +25,6 @@ services:
       - "traefik.http.routers.api.rule=Host(`api.localhost`)"
       - "traefik.http.routers.api.entrypoints=web"
       - "traefik.http.services.api.loadbalancer.server.port=8001"
-
   voicebot-app-front:
     extends:
       file: ./docker/voicebot-app-front/docker-compose.yml
@@ -46,102 +38,12 @@ services:
       - "traefik.http.routers.front.rule=Host(`front.localhost`)"
       - "traefik.http.routers.front.entrypoints=web"
       - "traefik.http.services.front.loadbalancer.server.port=3000"
-
   qdrant:
     extends:
       file: ./docker/qdrant/docker-compose.yml
       service: qdrant
     networks:
       - voicebot-network
-
-  model-prep:
-    extends:
-      file: ./docker/llama-cpp/docker-compose.yml
-      service: model-prep
-    networks:
-      - voicebot-network
-    env_file:
-      - ./src/llama_cpp/.env
-
-  llama-cpp-server:
-    extends:
-      file: ./docker/llama-cpp/docker-compose.yml
-      service: llm-server
-    networks:
-      - voicebot-network
-    env_file:
-      - ./src/llama_cpp/.env
-
-  # coqui-xtts:
-  #   extends:
-  #     file: ./docker/coqui-xtts/docker-compose.yml
-  #     service: coqui-xtts
-  #   networks:
-  #     - voicebot-network
-
-  kokoro-tts:
-    extends:
-      file: ./docker/kokoro-tts/docker-compose.yml
-      service: kokoro-tts
-    networks:
-      - voicebot-network
-
-  whisper-stt:
-    extends:
-      file: ./docker/whisper-stt/docker-compose.yml
-      service: whisper-stt
-    networks:
-      - voicebot-network
-
-  # otel-collector:
-  #   image: otel/opentelemetry-collector-contrib:latest
-  #   container_name: otel-collector
-  #   command: ["--config=/etc/otelcol-contrib/config.yaml"]
-  #   volumes:
-  #     - ./observability/otel-collector/config.yaml:/etc/otelcol-contrib/config.yaml
-  #   ports:
-  #     - "4317:4317"  # OTLP gRPC
-  #     - "4318:4318"  # OTLP HTTP
-  #     - "8889:8889"  # Prometheus metrics
-  #   networks:
-  #     - observability-network
-  #     - voicebot-network
-  #   restart: unless-stopped
-
-  # prometheus:
-  #   image: prom/prometheus:latest
-  #   container_name: prometheus
-  #   command:
-  #     - '--config.file=/etc/prometheus/prometheus.yml'
-  #     - '--storage.tsdb.path=/prometheus'
-  #     - '--web.console.libraries=/etc/prometheus/console_libraries'
-  #     - '--web.console.templates=/etc/prometheus/consoles'
-  #     - '--storage.tsdb.retention.time=200h'
-  #     - '--web.enable-lifecycle'
-  #   volumes:
-  #     - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-  #     - prometheus_data:/prometheus
-  #   ports:
-  #     - "9090:9090"
-  #   networks:
-  #     - observability-network
-  #   restart: unless-stopped
-
-  # grafana:
-  #   image: grafana/grafana:latest
-  #   container_name: grafana
-  #   environment:
-  #     - GF_SECURITY_ADMIN_PASSWORD=admin
-  #     - GF_USERS_ALLOW_SIGN_UP=false
-  #   volumes:
-  #     - grafana_data:/var/lib/grafana
-  #     - ./observability/grafana/provisioning:/etc/grafana/provisioning
-  #   ports:
-  #     - "3000:3000"
-  #   networks:
-  #     - observability-network
-  #   restart: unless-stopped
-
   traefik:
     image: traefik:v3.2
     container_name: traefik
@@ -154,7 +56,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "8080:8080"  # Dashboard
+      - "8080:8080" # Dashboard
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
     networks:
@@ -166,19 +68,8 @@ networks:
   voicebot-network:
     name: voicebot-network
     driver: bridge
-  observability-network:
-    name: observability-network
-    driver: bridge
 
 volumes:
   llm-models:
   qdrant_storage:
-  whisper_models:
-  kokoro_models:
-  riva_models:
-  coqui_speech_models:
-  prometheus_data:
-  grafana_data:
   postgres_storage:
-
-

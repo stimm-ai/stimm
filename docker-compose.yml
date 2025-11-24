@@ -6,7 +6,7 @@ services:
     networks:
       - voicebot-network
     env_file:
-      - ./src/.env
+      - .env
   voicebot-app:
     extends:
       file: ./docker/voicebot-app/docker-compose.yml
@@ -19,7 +19,7 @@ services:
       - "3478:3478/udp" # STUN
       - "49160-49200:49160-49200/udp" # UDP range for ICE candidates
     env_file:
-      - ./src/.env
+      - .env
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api.rule=Host(`api.localhost`)"

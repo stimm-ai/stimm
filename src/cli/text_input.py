@@ -53,20 +53,29 @@ class TextInterface:
                     if response.status == 200:
                         # RAG returns streaming response, we need to collect it
                         full_response = ""
+                        error_detected = False
                         async for line in response.content:
                             line = line.decode('utf-8').strip()
                             if line.startswith('data: '):
                                 try:
                                     data = json.loads(line[6:])  # Remove 'data: ' prefix
-                                    if data.get('type') in ['chunk', 'complete'] and 'content' in data:
+                                    if data.get('type') == 'error':
+                                        error_detected = True
+                                        error_content = data.get('content', 'Unknown error')
+                                        self.logger.error(f"RAG API error: {error_content}")
+                                        return f"❌ RAG Error: {error_content}"
+                                    elif data.get('type') in ['chunk', 'complete'] and 'content' in data:
                                         full_response += data['content']
                                 except json.JSONDecodeError:
                                     continue
-                        return full_response if full_response else "No response received"
+                        
+                        if error_detected:
+                            return "❌ Error processing request (see logs for details)"
+                        return full_response if full_response else "⚠️ No response content received"
                     else:
                         error_text = await response.text()
                         self.logger.error(f"API error {response.status}: {error_text}")
-                        return f"Error: {response.status} - {error_text}"
+                        return f"❌ API Error {response.status}: {error_text}"
             else:
                 # Use direct LLM endpoint
                 url = f"{self.base_url}/api/llm/generate"

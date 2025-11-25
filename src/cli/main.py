@@ -129,6 +129,13 @@ Examples:
         help="Test microphone by recording N seconds to test_recording.wav"
     )
     
+    parser.add_argument(
+        "--test-livekit-mic",
+        type=float,
+        metavar="SECONDS",
+        help="Test LiveKit microphone capture by recording N seconds to test_livekit_recording.wav"
+    )
+    
     return parser.parse_args()
 
 
@@ -204,6 +211,9 @@ def test_microphone(duration: float):
         return 1
 
 
+from cli.test_livekit_microphone import test_livekit_microphone
+
+
 async def main():
     """Main entry point - synchronous wrapper for async code"""
     return await async_main()
@@ -217,6 +227,11 @@ async def async_main():
     if args.test_mic:
         logging.info(f"Testing microphone for {args.test_mic} seconds")
         return test_microphone(args.test_mic)
+    
+    # Handle LiveKit microphone test mode
+    if args.test_livekit_mic:
+        logging.info(f"Testing LiveKit microphone for {args.test_livekit_mic} seconds")
+        return await test_livekit_microphone(args.test_livekit_mic)
     
     if args.list_agents:
         logging.info("Listing available agents")

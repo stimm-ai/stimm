@@ -8,6 +8,9 @@ to capture microphone audio and play back agent responses.
 import asyncio
 import logging
 import json
+import subprocess
+import threading
+import queue
 from typing import Optional
 from livekit import rtc
 
@@ -32,6 +35,11 @@ class LiveKitClient:
         # Audio components
         self.audio_source = None
         self.audio_track = None
+        
+        # Real audio capture
+        self.audio_queue = queue.Queue()
+        self.audio_thread = None
+        self.is_capturing = False
         
     async def connect(self):
         """
@@ -115,6 +123,7 @@ class LiveKitClient:
         try:
             if self.is_connected:
                 logger.info("🔌 Disconnecting from LiveKit...")
+                self.stop_audio_capture()
                 # TODO: Implement actual disconnection
                 self.is_connected = False
                 logger.info("✅ Disconnected from LiveKit")
@@ -129,6 +138,9 @@ class LiveKitClient:
         if not self.is_connected:
             await self.connect()
         
+        # Start real audio capture
+        await self.start_audio_capture()
+        
         logger.info("🎧 Starting audio session...")
         logger.info("🎤 Speak into your microphone to interact with the agent")
         logger.info("🔊 Agent responses will be played through your speakers")
@@ -137,7 +149,7 @@ class LiveKitClient:
         try:
             # Keep the session active and monitor room state
             session_counter = 0
-            while self.is_connected:
+            while self.is_connected and self.is_capturing:
                 await asyncio.sleep(1)
                 session_counter += 1
                 
@@ -158,6 +170,7 @@ class LiveKitClient:
                 
         except Exception as e:
             logger.error(f"❌ Audio session error: {e}")
+            self.stop_audio_capture()
             raise
     
     async def send_audio_chunk(self, audio_data: bytes):
@@ -201,6 +214,94 @@ class LiveKitClient:
         # TODO: Implement actual audio receiving
         # This would receive audio data from the LiveKit connection
         return None
+
+
+    def _capture_audio_thread(self):
+        """Background thread to capture audio from PulseAudio using ffmpeg"""
+        try:
+            logger.info("🎤 Starting real audio capture from PulseAudio...")
+            
+            # Use ffmpeg to capture raw audio from PulseAudio
+            cmd = [
+                "ffmpeg",
+                "-f", "pulse",
+                "-i", "default",
+                "-ac", "1",  # Mono
+                "-ar", "48000",  # 48kHz sample rate
+                "-f", "s16le",  # 16-bit signed little-endian PCM
+                "-"  # Output to stdout
+            ]
+            
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                bufsize=0
+            )
+            
+            # Read audio data in chunks (20ms at 48kHz = 960 samples * 2 bytes = 1920 bytes)
+            chunk_size = 1920  # 20ms chunks
+            
+            while self.is_capturing:
+                audio_data = process.stdout.read(chunk_size)
+                if audio_data:
+                    self.audio_queue.put(audio_data)
+                else:
+                    break
+                    
+            process.terminate()
+            process.wait()
+            
+        except Exception as e:
+            logger.error(f"❌ Error in audio capture thread: {e}")
+    
+    async def start_audio_capture(self):
+        """Start capturing real audio from microphone"""
+        if self.is_capturing:
+            logger.warning("⚠️ Audio capture already running")
+            return
+            
+        self.is_capturing = True
+        self.audio_thread = threading.Thread(target=self._capture_audio_thread)
+        self.audio_thread.daemon = True
+        self.audio_thread.start()
+        
+        # Start sending audio to LiveKit
+        asyncio.create_task(self._send_audio_to_livekit())
+        
+        logger.info("✅ Real audio capture started")
+    
+    def stop_audio_capture(self):
+        """Stop capturing audio"""
+        self.is_capturing = False
+        if self.audio_thread and self.audio_thread.is_alive():
+            self.audio_thread.join(timeout=2.0)
+        logger.info("🛑 Audio capture stopped")
+    
+    async def _send_audio_to_livekit(self):
+        """Send captured audio to LiveKit"""
+        while self.is_capturing:
+            try:
+                # Get audio data from queue (non-blocking)
+                try:
+                    audio_data = self.audio_queue.get_nowait()
+                except queue.Empty:
+                    await asyncio.sleep(0.01)  # 10ms
+                    continue
+                
+                # Send to LiveKit
+                if self.audio_source and len(audio_data) > 0:
+                    frame = rtc.AudioFrame(
+                        data=audio_data,
+                        sample_rate=48000,
+                        num_channels=1,
+                        samples_per_channel=len(audio_data) // 2  # 16-bit samples
+                    )
+                    await self.audio_source.capture_frame(frame)
+                    
+            except Exception as e:
+                logger.error(f"❌ Error sending audio to LiveKit: {e}")
+                await asyncio.sleep(0.1)
 
 
 async def create_livekit_client(room_name: str, token: str, livekit_url: str) -> LiveKitClient:

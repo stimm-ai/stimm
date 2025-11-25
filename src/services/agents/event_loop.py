@@ -140,6 +140,9 @@ class VoicebotEventLoop:
             logger.error(f"❌ Failed to send audio to STT queue: {e}")
         
         # Handle VAD events (speech_start, speech_end) for state management
+        if events:
+            logger.info(f"🎯 VAD: Received {len(events)} events: {[e['type'] for e in events]}")
+        
         for event in events:
             event_type = event["type"]
             self.vad_events_logged.append({

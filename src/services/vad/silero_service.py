@@ -18,6 +18,9 @@ class SileroVADService:
         self.min_silence_duration_ms = 100
         self.window_size_samples = 512 if sampling_rate == 16000 else 256
         
+        # Audio buffering - accumulate chunks until we have window_size_samples
+        self.audio_buffer = np.array([], dtype=np.float32)
+        
         # State
         self.triggered = False
         self.current_probability = 0.0
@@ -63,48 +66,76 @@ class SileroVADService:
         self.temp_end = 0
         self.current_speech = {}
         self._state = np.zeros((2, 1, 128)).astype('float32')
+        self.audio_buffer = np.array([], dtype=np.float32)  # Clear audio buffer
 
     def process_audio_chunk(self, audio_chunk: bytes) -> List[Dict[str, Any]]:
         """
         Process an audio chunk and return events (speech_start, speech_end).
         Assumes audio_chunk is 16-bit PCM.
+        
+        Buffers incoming audio until we have exactly window_size_samples (512 for 16kHz)
+        before running inference, similar to LiveKit's implementation.
         """
         # Convert bytes to float32 numpy array
         audio_int16 = np.frombuffer(audio_chunk, dtype=np.int16)
         audio_float32 = audio_int16.astype(np.float32) / 32768.0
         
-        # Add dimension for batch
-        input_tensor = audio_float32[np.newaxis, :]
-        
-        # Run inference
-        ort_inputs = {
-            'input': input_tensor,
-            'state': self._state,
-            'sr': np.array(self.sampling_rate, dtype=np.int64)
-        }
-        ort_outs = self.session.run(None, ort_inputs)
-        out, self._state = ort_outs
-        
-        self.current_probability = out[0][0]
+        # Accumulate audio in buffer
+        self.audio_buffer = np.concatenate([self.audio_buffer, audio_float32])
         
         events = []
+        windows_processed = 0
         
-        # Logic for triggering
-        if self.current_probability >= self.threshold and self.temp_end:
-            self.temp_end = 0
+        # Process all complete windows in the buffer
+        while len(self.audio_buffer) >= self.window_size_samples:
+            # Extract exactly window_size_samples
+            window = self.audio_buffer[:self.window_size_samples]
             
-        if self.current_probability >= self.threshold and not self.triggered:
-            self.triggered = True
-            events.append({"type": "speech_start", "prob": float(self.current_probability)})
+            # Keep remaining samples for next iteration
+            self.audio_buffer = self.audio_buffer[self.window_size_samples:]
             
-        if self.current_probability < (self.threshold - 0.15) and self.triggered:
-            if not self.temp_end:
-                self.temp_end = 1 # Start silence counter (simplified)
-            else:
-                # In a real implementation we'd count frames. 
-                # For now, immediate switch off with hysteresis
-                self.triggered = False
+            # Add batch dimension for ONNX model
+            input_tensor = window[np.newaxis, :]
+            
+            # Run inference
+            ort_inputs = {
+                'input': input_tensor,
+                'state': self._state,
+                'sr': np.array(self.sampling_rate, dtype=np.int64)
+            }
+            ort_outs = self.session.run(None, ort_inputs)
+            out, self._state = ort_outs
+            
+            self.current_probability = out[0][0]
+            windows_processed += 1
+            
+            # TEMPORARY: Log every window for diagnosis
+            logger.info(f"🎯 VAD window #{windows_processed}: prob={self.current_probability:.4f}, threshold={self.threshold:.3f}, triggered={self.triggered}")
+            
+            # Logic for triggering with hysteresis
+            if self.current_probability >= self.threshold and self.temp_end:
                 self.temp_end = 0
-                events.append({"type": "speech_end", "prob": float(self.current_probability)})
+                logger.debug(f"🔄 VAD: Continuing speech (prob={self.current_probability:.3f})")
                 
+            if self.current_probability >= self.threshold and not self.triggered:
+                self.triggered = True
+                events.append({"type": "speech_start", "prob": float(self.current_probability)})
+                logger.info(f"🗣️ VAD: Speech START detected! (prob={self.current_probability:.3f})")
+                
+            if self.current_probability < (self.threshold - 0.15) and self.triggered:
+                if not self.temp_end:
+                    self.temp_end = 1  # Start silence counter (simplified)
+                    logger.debug(f"🤫 VAD: Silence detected, starting counter (prob={self.current_probability:.3f})")
+                else:
+                    # In a real implementation we'd count frames. 
+                    # For now, immediate switch off with hysteresis
+                    self.triggered = False
+                    self.temp_end = 0
+                    events.append({"type": "speech_end", "prob": float(self.current_probability)})
+                    logger.info(f"🛑 VAD: Speech END detected! (prob={self.current_probability:.3f})")
+        
+        # Log buffer state periodically
+        if windows_processed > 0:
+            logger.debug(f"📊 VAD: Processed {windows_processed} windows, buffer remaining: {len(self.audio_buffer)} samples, events: {len(events)}")
+                    
         return events

@@ -149,14 +149,19 @@ class LiveKitAgentBridge:
             track: Audio track from user participant
             participant: Remote participant who published the track
         """
+        # CRITICAL: Only process audio from actual users, not from other agents
+        if participant.identity.startswith('agent_'):
+            logger.debug(f"⏭️ Skipping audio from agent participant: {participant.identity}")
+            return
+            
         if not self.voicebot_service:
             logger.warning("⚠️ Voicebot service not connected, cannot process user audio")
             return
             
         logger.info(f"🎤 Setting up audio processing for user {participant.identity}")
         
-        # Create audio stream for this track
-        stream = rtc.AudioStream(track)
+        # Create audio stream for this track with 16kHz sample rate (required for VAD/STT)
+        stream = rtc.AudioStream(track, sample_rate=16000)
         
         async def process_audio_stream():
             try:

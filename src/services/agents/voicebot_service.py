@@ -123,6 +123,7 @@ class VoicebotService:
             return False
             
         event_loop = self.active_sessions[conversation_id]
+        # logger.debug(f"Processing audio chunk for session {conversation_id}: {len(audio_chunk)} bytes")
         await event_loop.process_audio_chunk(audio_chunk)
         return True
         

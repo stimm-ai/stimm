@@ -118,6 +118,7 @@ class ElevenLabsProvider:
         self.session = aiohttp.ClientSession()
         try:
             self.websocket = await self.session.ws_connect(url, headers=headers, params=params)
+            logger.info(f"✅ ElevenLabs TTS WebSocket connected to {url}")
             logger.info("ElevenLabs TTS WebSocket connected, sending initialization...")
             
             # Send initialization message
@@ -228,6 +229,7 @@ class ElevenLabsProvider:
                                         
                                         # For now, accept all audio chunks to see what we receive
                                         # We'll add filtering later based on actual observation
+                                        logger.info(f"🔊 Queuing audio chunk {chunk_count} ({chunk_size} bytes)")
                                         await queue.put(audio_bytes)
                                     
                                     # Handle isFinal flag - ElevenLabs sends this with each audio chunk

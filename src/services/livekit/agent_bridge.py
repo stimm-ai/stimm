@@ -164,6 +164,11 @@ class LiveKitAgentBridge:
                     # AudioStream yields AudioFrameEvent
                     frame = event.frame
                     
+                    # Log sample rate once per stream
+                    if not hasattr(self, '_logged_sample_rate'):
+                        logger.info(f"🎤 Audio frame format: {frame.sample_rate}Hz, {frame.num_channels}ch, {frame.samples_per_channel} samples")
+                        self._logged_sample_rate = True
+                    
                     # Convert audio frame to bytes
                     if hasattr(frame, 'data'):
                         audio_data = frame.data.tobytes() if hasattr(frame.data, 'tobytes') else frame.data
@@ -267,6 +272,7 @@ class LiveKitAgentBridge:
         try:
             audio_chunk = event.get("data")
             if audio_chunk and isinstance(audio_chunk, bytes):
+                logger.debug(f"🔊 Received agent audio chunk: {len(audio_chunk)} bytes")
                 await self.send_agent_audio(audio_chunk)
             else:
                 logger.warning("⚠️ Invalid audio chunk in agent response event")

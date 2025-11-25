@@ -166,7 +166,42 @@ async def run_full_mode(agent_name: str, room_name: Optional[str] = None, verbos
 
 
 def test_microphone(duration: float):
-    return null  # Placeholder for microphone testing logic
+    """Test microphone by recording to a WAV file using PulseAudio"""
+    print(f"\n🎤 Testing Microphone")
+    print("=" * 80)
+    print(f"Recording {duration} seconds to test_recording.wav...")
+    print("Speak into your microphone now!")
+    print()
+    
+    try:
+        # Use the working PulseAudio method from test_mic.py
+        from cli.test_mic import test_pulseaudio_recording
+        
+        success = test_pulseaudio_recording(duration, "test_recording.wav")
+        
+        if success:
+            print()
+            print("✅ Recording complete!")
+            print(f"📁 Saved to: test_recording.wav")
+            print("🔊 Play it back to verify your microphone works:")
+            print("   aplay test_recording.wav  (Linux)")
+            print("   afplay test_recording.wav  (Mac)")
+            print()
+            print("📥 To copy the file from Docker to your repo:")
+            print("   docker cp voicebot-app:/app/test_recording.wav ./test_recording.wav")
+            print()
+            return 0
+        else:
+            print(f"\n❌ Microphone test failed")
+            return 1
+            
+    except Exception as e:
+        print(f"\n❌ Microphone test failed: {e}")
+        print("\nTroubleshooting:")
+        print("• Make sure your microphone is connected and not muted")
+        print("• Check that ffmpeg is installed: apt-get install ffmpeg")
+        print("• Check that pulseaudio-utils is installed: apt-get install pulseaudio-utils")
+        return 1
 
 
 async def main():

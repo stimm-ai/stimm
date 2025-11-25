@@ -258,45 +258,35 @@ If you prefer to run services locally (not recommended), you can set up the deve
 
 The VoiceBot platform includes a powerful CLI tool for testing agents directly from the command line, without using the web interface.
 
-### Installation
-
-```bash
-# Install dependencies with UV (recommended)
-uv sync
-
-# Or install manually
-pip install -r src/requirements.txt
-```
-
 ### Usage
 
 #### List Available Agents
 
 ```bash
-python -m src.cli.main --list-agents
+docker exec -it voicebot-app python -m cli.main --list-agents
 ```
 
 #### Text Mode (Recommended for quick testing)
 
 ```bash
 # Basic text conversation
-python -m src.cli.main --agent-name "Etienne" --mode text
+docker exec -it voicebot-app python -m cli.main --agent-name "Etienne" --mode text
 
 # With RAG enabled (default)
-python -m src.cli.main --agent-name "Etienne" --mode text --use-rag
+docker exec -it voicebot-app python -m cli.main --agent-name "Etienne" --mode text --use-rag
 
 # With verbose logging
-python -m src.cli.main --agent-name "Etienne" --mode text --verbose
+docker exec -it voicebot-app python -m cli.main --agent-name "Etienne" --mode text --verbose
 ```
 
 #### Full Audio Mode (LiveKit WebRTC)
 
 ```bash
 # Audio conversation via LiveKit
-python -m src.cli.main --agent-name "Etienne" --mode full
+docker exec -it voicebot-app python -m cli.main --agent-name "Etienne" --mode full
 
 # With custom room name
-python -m src.cli.main --agent-name "Etienne" --mode full --room-name "test-conversation"
+docker exec -it voicebot-app python -m cli.main --agent-name "Etienne" --mode full --room-name "test-conversation"
 ```
 
 ### Features
@@ -311,13 +301,13 @@ python -m src.cli.main --agent-name "Etienne" --mode full --room-name "test-conv
 
 ```bash
 # List all available agents
-python -m src.cli.main --list-agents
+docker exec -it voicebot-app python -m cli.main --list-agents
 
 # Test agent in text mode
-python -m src.cli.main --agent-name "Etienne" --mode text
+docker exec -it voicebot-app python -m cli.main --agent-name "Etienne" --mode text
 
 # Test with audio via LiveKit
-python -m src.cli.main --agent-name "Etienne" --mode full --verbose
+docker exec -it voicebot-app python -m cli.main --agent-name "Etienne" --mode full --verbose
 ```
 
 ## 🤝 Contributing

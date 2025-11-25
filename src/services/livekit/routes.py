@@ -94,7 +94,7 @@ async def livekit_health():
         # sans dépendre de active_sessions qui n'est pas encore implémenté
         return {
             "status": "healthy",
-            "active_sessions": 0,  # Temporairement 0 jusqu'à implémentation complète
+            "active_sessions": len(livekit_service.active_sessions),
             "livekit_url": livekit_service.livekit_url
         }
     except Exception as e:

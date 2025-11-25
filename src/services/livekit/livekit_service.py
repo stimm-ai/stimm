@@ -95,7 +95,15 @@ class LiveKitService:
             
             agent_access_token = agent_token.to_jwt()
             
-            # Create a voicebot service for this agent
+            # Create a voicebot service for this agent using the existing services
+            # Check if services are properly initialized
+            if (not self.voicebot_service.stt_service or
+                not self.voicebot_service.chatbot_service or
+                not self.voicebot_service.tts_service or
+                not self.voicebot_service.vad_service):
+                logger.error("❌ Voicebot services not properly initialized")
+                raise RuntimeError("Voicebot services not properly initialized")
+            
             voicebot_service = VoicebotService(
                 stt_service=self.voicebot_service.stt_service,
                 chatbot_service=self.voicebot_service.chatbot_service,

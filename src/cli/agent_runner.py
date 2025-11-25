@@ -20,7 +20,7 @@ class AgentRunner:
         self.agent_name = agent_name
         self.room_name = room_name or f"cli-{agent_name}-{uuid.uuid4().hex[:8]}"
         self.verbose = verbose
-        self.base_url = "http://localhost:8001"
+        self.base_url = "http://voicebot-app:8001"
         self.livekit_url = os.getenv("LIVEKIT_URL", "ws://livekit:7880")
         self.session: Optional[aiohttp.ClientSession] = None
         self.logger = logging.getLogger(__name__)

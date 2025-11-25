@@ -222,13 +222,17 @@ class LiveKitClient:
         try:
             logger.info("🎤 Starting real audio capture from PulseAudio...")
             
+            # Log des paramètres audio
+            logger.info("🔧 Audio capture parameters:")
+            logger.info(f"   - Format: 16kHz, mono, 16-bit PCM")
+            logger.info(f"   - Chunk size: 640 bytes (20ms at 16kHz)")
+            logger.info(f"   - Source: PulseAudio source #2 (RDP microphone)")
+            
             # Use ffmpeg to capture raw audio from PulseAudio at 16kHz (required for VAD/STT)
-            # Use explicit RDP source (source #2) which is the WSLg microphone
-            # Convert stereo to mono and resample to 16kHz
             cmd = [
                 "ffmpeg",
                 "-f", "pulse",
-                "-i", "2",  # Use RDP source explicitly (stereo 48kHz)
+                "-i", "default",  # Use default PulseAudio source
                 "-ac", "1",  # Convert to mono
                 "-ar", "16000",  # Resample to 16kHz (required for VAD/STT)
                 "-f", "s16le",  # 16-bit signed little-endian PCM
@@ -244,10 +248,28 @@ class LiveKitClient:
             
             # Read audio data in chunks (20ms at 16kHz = 320 samples * 2 bytes = 640 bytes)
             chunk_size = 640  # 20ms chunks at 16kHz
+            chunk_counter = 0
+            total_bytes = 0
             
             while self.is_capturing:
                 audio_data = process.stdout.read(chunk_size)
                 if audio_data:
+                    # Calculate audio level (RMS)
+                    import numpy as np
+                    audio_array = np.frombuffer(audio_data, dtype=np.int16)
+                    rms = np.sqrt(np.mean(audio_array**2))
+                    
+                    chunk_counter += 1
+                    total_bytes += len(audio_data)
+                    
+                    # Log every 50 chunks (1 second)
+                    if chunk_counter % 50 == 0:
+                        logger.info(f"🎯 Audio capture stats:")
+                        logger.info(f"   - Chunks: {chunk_counter}")
+                        logger.info(f"   - Total bytes: {total_bytes}")
+                        logger.info(f"   - RMS level: {rms:.2f}")
+                        logger.info(f"   - Queue size: {self.audio_queue.qsize()}")
+                    
                     self.audio_queue.put(audio_data)
                     # Also put in recording queue for saving to file
                     self.recording_queue.put(audio_data)
@@ -285,6 +307,12 @@ class LiveKitClient:
     
     async def _send_audio_to_livekit(self):
         """Send captured audio to LiveKit"""
+        import asyncio
+        import numpy as np
+        frame_counter = 0
+        error_counter = 0
+        last_log_time = asyncio.get_event_loop().time()
+        
         while self.is_capturing:
             try:
                 # Get audio data from queue (non-blocking)
@@ -294,15 +322,45 @@ class LiveKitClient:
                     await asyncio.sleep(0.01)  # 10ms
                     continue
                 
+                # Send raw audio without amplification (test)
+                audio_array = np.frombuffer(audio_data, dtype=np.int16)
+                # No amplification - send raw audio
+                amplified_data = audio_data
+                
                 # Send to LiveKit
-                if self.audio_source and len(audio_data) > 0:
+                if self.audio_source and len(amplified_data) > 0:
                     frame = rtc.AudioFrame(
-                        data=audio_data,
+                        data=amplified_data,
                         sample_rate=16000,
                         num_channels=1,
-                        samples_per_channel=len(audio_data) // 2  # 16-bit samples
+                        samples_per_channel=len(amplified_data) // 2  # 16-bit samples
                     )
-                    await self.audio_source.capture_frame(frame)
+                    
+                    try:
+                        await self.audio_source.capture_frame(frame)
+                        frame_counter += 1
+                        
+                        # Log every 100 frames (2 seconds)
+                        current_time = asyncio.get_event_loop().time()
+                        if current_time - last_log_time > 2.0:  # Every 2 seconds
+                            original_rms = np.sqrt(np.mean(audio_array**2))
+                            amplified_rms = np.sqrt(np.mean(amplified_audio**2))
+                            logger.info(f"📤 LiveKit transmission stats:")
+                            logger.info(f"   - Frames sent: {frame_counter}")
+                            logger.info(f"   - Errors: {error_counter}")
+                            logger.info(f"   - Queue backlog: {self.audio_queue.qsize()}")
+                            logger.info(f"   - Original RMS: {original_rms:.2f}")
+                            logger.info(f"   - Amplified RMS: {amplified_rms:.2f}")
+                            last_log_time = current_time
+                            
+                    except Exception as e:
+                        error_counter += 1
+                        logger.error(f"❌ Error capturing frame: {e}")
+                        if error_counter % 10 == 0:  # Log every 10 errors
+                            logger.error(f"⚠️  Multiple frame capture errors: {error_counter}")
+                    
+                else:
+                    logger.warning("⚠️ Audio source not available or empty audio chunk")
                     
             except Exception as e:
                 logger.error(f"❌ Error sending audio to LiveKit: {e}")

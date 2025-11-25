@@ -80,6 +80,10 @@ class SileroVADService:
         audio_int16 = np.frombuffer(audio_chunk, dtype=np.int16)
         audio_float32 = audio_int16.astype(np.float32) / 32768.0
         
+        # Log audio statistics for first few chunks and when audio is loud
+        if len(self.audio_buffer) < 1000 or np.max(np.abs(audio_int16)) > 1000:  # Log first chunks or loud audio
+            logger.info(f"🔊 VAD input audio stats: len={len(audio_chunk)}, int16_range=[{np.min(audio_int16)}, {np.max(audio_int16)}], float32_range=[{np.min(audio_float32):.4f}, {np.max(audio_float32):.4f}]")
+        
         # Accumulate audio in buffer
         self.audio_buffer = np.concatenate([self.audio_buffer, audio_float32])
         

@@ -165,18 +165,35 @@ class LiveKitAgentBridge:
         
         async def process_audio_stream():
             try:
+                import numpy as np
+                frame_count = 0
+                
                 async for event in stream:
                     # AudioStream yields AudioFrameEvent
                     frame = event.frame
+                    frame_count += 1
                     
-                    # Log sample rate once per stream
-                    if not hasattr(self, '_logged_sample_rate'):
-                        logger.info(f"🎤 Audio frame format: {frame.sample_rate}Hz, {frame.num_channels}ch, {frame.samples_per_channel} samples")
-                        self._logged_sample_rate = True
+                    # Log detailed audio information for first few frames
+                    if frame_count <= 10:
+                        logger.info(f"🎤 Audio frame #{frame_count} from {participant.identity}:")
+                        logger.info(f"   - Sample rate: {frame.sample_rate}Hz")
+                        logger.info(f"   - Channels: {frame.num_channels}")
+                        logger.info(f"   - Samples per channel: {frame.samples_per_channel}")
                     
-                    # Convert audio frame to bytes
+                    # Convert audio frame to bytes and analyze
                     if hasattr(frame, 'data'):
                         audio_data = frame.data.tobytes() if hasattr(frame.data, 'tobytes') else frame.data
+                        
+                        # Analyze audio amplitude before sending to VAD
+                        if len(audio_data) > 0:
+                            audio_array = np.frombuffer(audio_data, dtype=np.int16)
+                            min_val = np.min(audio_array)
+                            max_val = np.max(audio_array)
+                            rms = np.sqrt(np.mean(audio_array**2))
+                            
+                            if frame_count <= 10:  # Log first 10 frames
+                                logger.info(f"   - Audio stats: int16_range=[{min_val}, {max_val}], RMS={rms:.2f}")
+                                logger.info(f"   - Data size: {len(audio_data)} bytes")
                         
                         # Send to voicebot service for processing
                         if self.voicebot_service:

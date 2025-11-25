@@ -182,7 +182,46 @@ class LiveKitAgentBridge:
                     
                     # Convert audio frame to bytes and analyze
                     if hasattr(frame, 'data'):
-                        audio_data = frame.data.tobytes() if hasattr(frame.data, 'tobytes') else frame.data
+                        # DIAGNOSTIC: Log the actual type and format of frame.data
+                        if frame_count <= 10:
+                            logger.info(f"   - frame.data type: {type(frame.data)}")
+                            if isinstance(frame.data, memoryview):
+                                logger.info(f"   - memoryview format: {frame.data.format}")
+                                logger.info(f"   - memoryview itemsize: {frame.data.itemsize}")
+                                logger.info(f"   - memoryview nbytes: {frame.data.nbytes}")
+                            elif isinstance(frame.data, np.ndarray):
+                                logger.info(f"   - frame.data dtype: {frame.data.dtype}")
+                                logger.info(f"   - frame.data shape: {frame.data.shape}")
+                                logger.info(f"   - frame.data range: [{np.min(frame.data)}, {np.max(frame.data)}]")
+                        
+                        # Extract audio data properly based on its type
+                        if isinstance(frame.data, np.ndarray):
+                            # Data is already a numpy array
+                            if frame.data.dtype == np.int16:
+                                audio_data = frame.data.tobytes()
+                            elif frame.data.dtype == np.float32:
+                                # Convert float32 [-1, 1] to int16
+                                audio_array_int16 = (frame.data * 32768).astype(np.int16)
+                                audio_data = audio_array_int16.tobytes()
+                            else:
+                                logger.warning(f"⚠️ Unexpected dtype: {frame.data.dtype}, converting to bytes directly")
+                                audio_data = frame.data.tobytes()
+                        else:
+                            # Data is bytes/memoryview - need to interpret the format correctly
+                            if isinstance(frame.data, memoryview):
+                                # Check the format of the memoryview
+                                if frame.data.format == 'f':  # float32
+                                    # Convert float32 to int16
+                                    audio_array_float = np.frombuffer(frame.data, dtype=np.float32)
+                                    audio_array_int16 = (audio_array_float * 32768).astype(np.int16)
+                                    audio_data = audio_array_int16.tobytes()
+                                elif frame.data.format in ('h', 's'):  # int16 or signed short
+                                    audio_data = frame.data.tobytes()
+                                else:
+                                    logger.warning(f"⚠️ Unexpected memoryview format: {frame.data.format}")
+                                    audio_data = frame.data.tobytes()
+                            else:
+                                audio_data = frame.data.tobytes() if hasattr(frame.data, 'tobytes') else frame.data
                         
                         # Analyze audio amplitude before sending to VAD
                         if len(audio_data) > 0:
@@ -192,7 +231,7 @@ class LiveKitAgentBridge:
                             rms = np.sqrt(np.mean(audio_array**2))
                             
                             if frame_count <= 10:  # Log first 10 frames
-                                logger.info(f"   - Audio stats: int16_range=[{min_val}, {max_val}], RMS={rms:.2f}")
+                                logger.info(f"   - Audio stats (after extraction): int16_range=[{min_val}, {max_val}], RMS={rms:.2f}")
                                 logger.info(f"   - Data size: {len(audio_data)} bytes")
                         
                         # Send to voicebot service for processing

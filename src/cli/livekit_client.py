@@ -313,6 +313,8 @@ class LiveKitClient:
         error_counter = 0
         last_log_time = asyncio.get_event_loop().time()
         
+        logger.info(f"🎬 Starting LiveKit audio transmission with dynamic AudioFrame creation")
+        
         while self.is_capturing:
             try:
                 # Get audio data from queue (non-blocking)
@@ -322,22 +324,21 @@ class LiveKitClient:
                     await asyncio.sleep(0.01)  # 10ms
                     continue
                 
-                # Send raw audio without amplification (test)
+                # Convert bytes to int16 array
                 audio_array = np.frombuffer(audio_data, dtype=np.int16)
-                # No amplification - send raw audio
-                amplified_data = audio_data
+                samples_per_channel = len(audio_array)
                 
-                # Send to LiveKit
-                if self.audio_source and len(amplified_data) > 0:
-                    frame = rtc.AudioFrame(
-                        data=amplified_data,
-                        sample_rate=16000,
-                        num_channels=1,
-                        samples_per_channel=len(amplified_data) // 2  # 16-bit samples
-                    )
-                    
+                # Create AudioFrame dynamically based on actual chunk size using LiveKit's create() method
+                audio_frame = rtc.AudioFrame.create(16000, 1, samples_per_channel)
+                audio_data_view = np.frombuffer(audio_frame.data, dtype=np.int16)
+                
+                # Copy audio data into the frame buffer using np.copyto()
+                np.copyto(audio_data_view, audio_array)
+                
+                # Send to LiveKit using the frame
+                if self.audio_source:
                     try:
-                        await self.audio_source.capture_frame(frame)
+                        await self.audio_source.capture_frame(audio_frame)
                         frame_counter += 1
                         
                         # Log every 100 frames (2 seconds)

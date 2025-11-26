@@ -22,9 +22,10 @@ ROOM_NAME = "echo-test"
 
 # FFplay process for audio playback
 ffplay_process = None
+ffplay_running = False
 
 async def main():
-    global ffplay_process
+    global ffplay_process, ffplay_running
     
     # Generate token
     token = api.AccessToken(API_KEY, API_SECRET) \
@@ -43,7 +44,10 @@ async def main():
     def on_track_subscribed(track, publication, participant):
         if track.kind == rtc.TrackKind.KIND_AUDIO:
             logger.info(f"🎧 Audio track from {participant.identity} - Starting playback!")
-            asyncio.create_task(play_audio(track))
+            if not ffplay_running:
+                asyncio.create_task(play_audio(track))
+            else:
+                logger.info("🎧 ffplay already running, skipping duplicate playback")
 
     logger.info(f"Connecting to {LIVEKIT_URL}...")
     await room.connect(LIVEKIT_URL, token)
@@ -51,7 +55,7 @@ async def main():
 
     # Publish microphone
     logger.info("🎤 Publishing microphone...")
-    source = rtc.AudioSource(sample_rate=16000, num_channels=1)
+    source = rtc.AudioSource(sample_rate=48000, num_channels=1)
     track = rtc.LocalAudioTrack.create_audio_track("mic", source)
     await room.local_participant.publish_track(track, rtc.TrackPublishOptions())
     
@@ -75,32 +79,38 @@ async def capture_mic(source):
     """Capture microphone using ffmpeg"""
     cmd = [
         "ffmpeg", "-f", "pulse", "-i", "default",
-        "-ac", "1", "-ar", "16000", "-f", "s16le", "-"
+        "-ac", "1", "-ar", "48000", "-f", "s16le", "-"
     ]
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     
-    chunk_size = 640  # 20ms at 16kHz
+    chunk_size = 960  # 20ms at 48kHz
     while True:
         data = process.stdout.read(chunk_size)
         if not data:
             break
         
         # Create audio frame
-        frame = rtc.AudioFrame.create(16000, 1, len(data) // 2)
+        frame = rtc.AudioFrame.create(48000, 1, len(data) // 2)
         import numpy as np
-        np.copyto(np.frombuffer(frame.data, dtype=np.int16), 
+        np.copyto(np.frombuffer(frame.data, dtype=np.int16),
                   np.frombuffer(data, dtype=np.int16))
         await source.capture_frame(frame)
 
 async def play_audio(track):
     """Play received audio using ffplay"""
-    global ffplay_process
+    global ffplay_process, ffplay_running
+    
+    if ffplay_running:
+        logger.info("🎧 ffplay already running, skipping duplicate")
+        return
+        
+    ffplay_running = True
     
     cmd = [
-        "ffplay", "-f", "s16le", "-ar", "48000", 
-        "-ac", "1", "-nodisp", "-autoexit", "-"
+        "ffplay", "-f", "s16le", "-ar", "48000",
+        "-ac", "1", "-nodisp", "-autoexit", "-loglevel", "quiet", "-"
     ]
-    ffplay_process = subprocess.Popen(cmd, stdin=subprocess.PIPE, 
+    ffplay_process = subprocess.Popen(cmd, stdin=subprocess.PIPE,
                                      stderr=subprocess.PIPE)  # Capture stderr
 
     # Log ffplay errors in background
@@ -112,11 +122,21 @@ async def play_audio(track):
     
     asyncio.create_task(log_stderr())
     
-    stream = rtc.AudioStream(track)
-    async for event in stream:
-        frame = event.frame
-        # Write audio data to ffplay
-        ffplay_process.stdin.write(bytes(frame.data))
+    try:
+        stream = rtc.AudioStream(track)
+        async for event in stream:
+            frame = event.frame
+            # Write audio data to ffplay
+            if ffplay_process and ffplay_process.poll() is None:
+                try:
+                    ffplay_process.stdin.write(bytes(frame.data))
+                except BrokenPipeError:
+                    logger.error("ffplay broken pipe - playback stopped")
+                    break
+    except Exception as e:
+        logger.error(f"Audio playback error: {e}")
+    finally:
+        ffplay_running = False
 
 if __name__ == "__main__":
     asyncio.run(main())

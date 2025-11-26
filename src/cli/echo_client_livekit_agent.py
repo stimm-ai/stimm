@@ -30,7 +30,9 @@ async def main():
     url = "ws://localhost:7880"
     grants = VideoGrants(
         room_join=True,
-        room="echo-test"
+        room="echo-test",
+        can_publish=True,
+        can_subscribe=True,
     )
     token = AccessToken(
         api_key="devkey",
@@ -92,8 +94,10 @@ async def main():
     # Handle incoming audio from echo agent
     @room.on("track_subscribed")
     def on_track_subscribed(track, publication, participant):
-        if track.kind == rtc.TrackKind.KIND_AUDIO and participant.identity == "echo-bot":
-            logger.info(f"🎧 Audio track from {participant.identity}")
+        logger.info(f"🔍 Track subscribed from {participant.identity} ({track.kind})")
+        if track.kind == rtc.TrackKind.KIND_AUDIO:
+            # Accept audio from anyone for testing
+            logger.info(f"🎧 Audio track from {participant.identity} - Starting playback")
             asyncio.create_task(play_audio(track))
     
     # Subscribe to echo agent's audio track when it connects

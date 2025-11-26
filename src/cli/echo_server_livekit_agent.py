@@ -97,51 +97,12 @@ async def entrypoint(ctx: JobContext):
         finally:
             logger.info(f"Echo loop ended for {participant_identity} - Total frames: {frame_count}, Total errors: {error_count}")
 
-    # Create audio source for echo output
-    source = rtc.AudioSource(sample_rate=48000, num_channels=1)
-    track = rtc.LocalAudioTrack.create_audio_track("echo", source)
-    
-    # Publish the echo track
-    await ctx.room.local_participant.publish_track(
-        track,
-        rtc.TrackPublishOptions(source=rtc.TrackSource.SOURCE_MICROPHONE),
-    )
-    logger.info("📢 Published echo track")
-
-    # Simple echo loop - immediately echo back received audio
-    logger.info("🔁 Starting echo loop...")
-    
-    frame_count = 0
-    error_count = 0
-    
+    # Keep the agent alive
     try:
-        async for audio_event in stream:
-            frame_count += 1
-            
-            try:
-                if audio_event.frame and len(audio_event.frame.data) > 0:
-                    # Echo the frame back immediately
-                    await source.capture_frame(audio_event.frame)
-                else:
-                    logger.debug(f"Skipping empty frame #{frame_count}")
-                    
-            except Exception as e:
-                error_count += 1
-                if error_count <= 3:  # Only log first few errors
-                    logger.warning(f"Frame capture error #{error_count}: {e}")
-                
-                # Brief pause on error
-                await asyncio.sleep(0.01)
-            
-            # Log stats every 500 frames
-            if frame_count % 500 == 0:
-                error_rate = (error_count / frame_count * 100) if frame_count > 0 else 0
-                logger.info(f"📊 Echo stats - Frames: {frame_count}, Errors: {error_count}, Error rate: {error_rate:.1f}%")
-                
-    except Exception as e:
-        logger.error(f"Echo loop error: {e}")
-    finally:
-        logger.info(f"Echo loop ended - Total frames: {frame_count}, Total errors: {error_count}")
+        # Wait forever (or until disconnection)
+        await asyncio.Event().wait()
+    except asyncio.CancelledError:
+        logger.info("Agent shutting down")
 
 
 if __name__ == "__main__":

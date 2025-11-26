@@ -154,97 +154,43 @@ sequenceDiagram
 
 ## 💻 Development
 
-The VoiceBot platform supports **dual-mode development** with flexible deployment options.
+The VoiceBot platform supports flexible development workflows.
 
-### Option 1: Local Development (Recommended)
+### Quick Start (Recommended)
 
-This approach runs the backend locally with uv virtualenv while using Docker for supporting services.
-
-1. **Start supporting services** (PostgreSQL, Qdrant, LiveKit, Redis, Traefik):
+1. **Start supporting services**:
    ```bash
    docker compose up -d postgres qdrant livekit redis traefik
    ```
 
-2. **Setup and run backend locally**:
+2. **Run backend locally**:
    ```bash
-   # The virtual environment is already set up
    source .venv/bin/activate
-   
-   # Run the application
    python src/main.py
    ```
-   Backend will be available at: http://localhost:8001
+   Backend: http://localhost:8001
 
-3. **Setup and run frontend locally**:
+3. **Run frontend locally**:
    ```bash
    cd src/front
-   
-   # Setup environment (first time only)
-   ./scripts/setup-frontend-dev.sh
-   
-   # Run development server
    npm run dev
    ```
-   Frontend will be available at: http://localhost:3000
+   Frontend: http://localhost:3000
 
-**Benefits:**
-- ✅ Fast development with immediate code changes
-- ✅ Direct access to backend with debugging tools
-- ✅ 60% faster dependency management with uv
-- ✅ Environment-aware URLs (automatic localhost vs container detection)
+### Full Docker Stack
 
-### Option 2: Full Docker Stack
-
-This approach runs everything in Docker containers for a consistent environment.
-
-1. **Start all services including voicebot-app and voicebot-app-front**:
-   ```bash
-   docker compose up
-   ```
-
-2. **Access the application**:
-   - **Frontend**: [http://front.localhost](http://front.localhost)
-   - **API Documentation**: [http://api.localhost/docs](http://api.localhost/docs)
-
-**Features:**
-- Automatic code reloading for both backend and frontend
-- Consistent environment across all developers
-- Persistent database and vector storage
-- Complete service orchestration
-
-### Option 3: Frontend-Only Development
-
-For UI/UX development without backend changes:
-
-1. **Setup frontend environment**:
-   ```bash
-   cd src/front
-   ./scripts/setup-frontend-dev.sh
-   ```
-
-2. **Start frontend** (connects to localhost:8001):
-   ```bash
-   npm run dev
-   ```
-
-3. **Ensure backend is running** (from Option 1 or 2)
-
-### Environment Detection
-
-The platform automatically detects the development environment:
-
-- **Backend**: Uses container names when in Docker, localhost when running locally
-- **Frontend SSR**: Uses environment-aware URLs for API calls
-- **Frontend Client**: Always uses localhost URLs for browser consistency
+For consistent environment testing:
+```bash
+docker compose up
+```
+Access at: http://front.localhost
 
 ### Development Tools
 
-- **Backend debugging**: Use standard Python debugging tools with local execution
-- **Frontend debugging**: Use browser DevTools and Next.js debugging features
-- **Database access**: PostgreSQL available at `localhost:5432`
-- **Vector database**: Qdrant available at `localhost:6333`
-
-Choose the development approach that best fits your workflow!
+- **CLI Testing**: Use `python -m src.cli.main` for agent testing
+- **Audio Pipeline**: Use `--test-echo` for audio debugging
+- **Database**: PostgreSQL at `localhost:5432`
+- **Vector Store**: Qdrant at `localhost:6333`
 
 ## 📂 Project Structure
 
@@ -355,107 +301,40 @@ python -m src.cli.main --agent-name "Etienne" --mode full --verbose
 python -m src.cli.main --test-echo
 ```
 
-## 🔧 Audio Pipeline Testing Tools
+## 🔧 Audio Pipeline Testing
 
-The VoiceBot platform includes specialized tools for testing and debugging the real-time audio pipeline without requiring the full voicebot application. These tools are essential for diagnosing audio issues, VAD problems, or LiveKit connectivity.
+The VoiceBot platform includes specialized tools for testing and debugging the real-time audio pipeline.
 
-### 🎯 Audio Test Tools
-
-#### Single Command Echo Test (`--test-echo`)
-**Purpose**: Complete audio pipeline test that automatically launches both echo server and client.
-
-**Use Case**: Quick verification of LiveKit connectivity and full audio pipeline.
+### Quick Audio Testing
 
 ```bash
 # Test complete audio pipeline with one command
 python -m src.cli.main --test-echo --verbose
 
-# Test with standard logging
-python -m src.cli.main --test-echo
+# Test microphone recording
+python -m src.cli.main --test-mic 5
+
+# Test LiveKit microphone capture
+python -m src.cli.main --test-livekit-mic 5
 ```
 
-**Features**:
-- ✅ Automatic launch of echo server and client
-- ✅ Real-time logging from both processes
-- ✅ Clean shutdown with Ctrl+C
-- ✅ Stable audio playback with auto-restart
-
-#### Echo Server (`src/cli/echo_server.py`)
-**Purpose**: Server-side echo agent that joins a LiveKit room and immediately echoes back any received audio.
-
-**Use Case**: Verify LiveKit connectivity and test full audio pipeline.
+### Manual Testing
 
 ```bash
-# Run echo server locally
+# Terminal 1: Start echo server
 python src/cli/echo_server.py
 
-# Run in background
-python src/cli/echo_server.py &
-```
-
-**Features**:
-- ✅ Stable audio frame handling with error recovery
-- ✅ Uses SOURCE_UNKNOWN to avoid audio processing interference
-- ✅ Automatic source reset on errors
-- ✅ Real-time statistics logging
-
-#### Echo Client (`src/cli/echo_client.py`)
-**Purpose**: Full audio pipeline test client that captures microphone input and plays back received audio.
-
-**Use Case**: End-to-end audio testing - microphone to speaker loopback.
-
-```bash
-# Run echo client locally
+# Terminal 2: Start echo client
 python src/cli/echo_client.py
 ```
 
-**Features**:
-- ✅ Real-time microphone capture via ffmpeg/PulseAudio (48kHz)
-- ✅ LiveKit WebRTC connection and audio streaming
-- ✅ Stable audio playback via ffplay with auto-restart
-- ✅ Complete pipeline verification
+### Expected Behavior
 
-### 🔬 Debugging Audio Issues
-
-#### Quick Audio Pipeline Test
-```bash
-# Single command test (recommended)
-python -m src.cli.main --test-echo --verbose
-
-# Manual test (if needed)
-# Terminal 1: python src/cli/echo_server.py
-# Terminal 2: python src/cli/echo_client.py
-```
-
-**Expected Behavior**:
 - You should hear your own voice echoed back after a short delay
 - Console shows connection success and audio processing statistics
 - No connection errors or `InvalidState` exceptions
 
-#### Microphone Only Test
-```bash
-# Test microphone capture and save to file
-python -m src.cli.main --test-livekit-mic 5
-
-# Test basic PulseAudio capture
-python src/cli/test_mic.py
-```
-
-### 🛠️ Environment Setup
-
-All audio test tools require:
-```bash
-# Activate Python virtual environment
-source .venv/bin/activate
-
-# Set Python path for local imports
-export PYTHONPATH=/home/etienne/repos/voicebot/src:$PYTHONPATH
-
-# Ensure LiveKit server is running
-docker-compose ps livekit
-```
-
-### 📊 Troubleshooting
+### Troubleshooting
 
 | Issue | Symptom | Solution |
 |-------|---------|----------|
@@ -464,7 +343,7 @@ docker-compose ps livekit
 | **No audio playback** | ffplay fails to start | Check speakers and PulseAudio configuration |
 | **Connection failures** | Cannot connect to LiveKit | Verify `docker-compose up livekit` is running |
 
-### 🎵 Audio Pipeline Architecture
+### Audio Pipeline Architecture
 
 ```
 [Microphone] → [ffmpeg capture] → [LiveKit Client] → [LiveKit Server]
@@ -476,7 +355,7 @@ docker-compose ps livekit
 [Audio Loop] → [ffplay output] → [Speakers] → [User hears echo]
 ```
 
-### 🚀 Ready for Main Agent Debugging
+### Ready for Main Agent Debugging
 
 These test tools confirm that:
 - ✅ **Network Layer**: LiveKit WebRTC connectivity is stable

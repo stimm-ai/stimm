@@ -7,9 +7,9 @@ services:
       - 6379:6379
   livekit:
     image: livekit/livekit-server
-    command: --config /etc/livekit.toml --node-ip 0.0.0.0 --redis-host redis:6379 --bind 0.0.0.0
+    command: --config /etc/livekit.yaml --node-ip 0.0.0.0 --redis-host redis:6379 --bind 0.0.0.0
     volumes:
-      - ./livekit.toml:/etc/livekit.toml:ro
+      - ./livekit.yaml:/etc/livekit.yaml:ro
     ports:
       - "7880:7880"
       - "7881:7881"
@@ -43,3 +43,9 @@ services:
 
 volumes:
   redis_data:
+
+
+networks:
+  default:
+    name: voicebot-network
+    external: true

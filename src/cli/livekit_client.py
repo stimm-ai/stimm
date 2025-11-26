@@ -42,6 +42,10 @@ class LiveKitClient:
         self.audio_thread = None
         self.is_capturing = False
         
+        # Audio playback
+        self.ffplay_process = None
+        self.playback_tasks = []
+        
     async def connect(self):
         """
         Connect to the LiveKit room and set up audio streams.
@@ -110,7 +114,9 @@ class LiveKitClient:
         ):
             if track.kind == rtc.TrackKind.KIND_AUDIO:
                 logger.info(f"🔊 Subscribed to audio track from {participant.identity}")
-                # Here we would set up audio playback
+                # Start audio playback for this track
+                task = asyncio.create_task(self._play_audio_track(track, participant.identity))
+                self.playback_tasks.append(task)
                 
         @self.room.on("track_published")
         def on_track_published(
@@ -367,9 +373,51 @@ class LiveKitClient:
                 else:
                     logger.warning("⚠️ Audio source not available or empty audio chunk")
                     
-            except Exception as e:
-                logger.error(f"❌ Error sending audio to LiveKit: {e}")
-                await asyncio.sleep(0.1)
+        except Exception as e:
+            logger.error(f"❌ Error sending audio to LiveKit: {e}")
+            await asyncio.sleep(0.1)
+
+    async def _play_audio_track(self, track: rtc.AudioTrack, participant_id: str):
+        """
+        Play audio received from a LiveKit track using ffplay.
+        
+        Args:
+            track: The audio track to play
+            participant_id: Identity of the participant sending the audio
+        """
+        try:
+            logger.info(f"🎧 Starting audio playback for {participant_id}")
+            
+            # Start ffplay process for audio playback
+            # Use 48kHz (LiveKit default) for playback
+            cmd = [
+                "ffplay", "-f", "s16le", "-ar", "48000",
+                "-ac", "1", "-nodisp", "-autoexit", "-"
+            ]
+            self.ffplay_process = subprocess.Popen(
+                cmd, 
+                stdin=subprocess.PIPE,
+                stderr=subprocess.DEVNULL
+            )
+            
+            # Stream audio frames to ffplay
+            stream = rtc.AudioStream(track)
+            async for event in stream:
+                frame = event.frame
+                # Write raw audio data to ffplay's stdin
+                try:
+                    self.ffplay_process.stdin.write(bytes(frame.data))
+                    self.ffplay_process.stdin.flush()
+                except (BrokenPipeError, OSError):
+                    logger.warning(f"⚠️  Playback stopped for {participant_id}")
+                    break
+                    
+        except Exception as e:
+            logger.error(f"❌ Error in audio playback for {participant_id}: {e}")
+        finally:
+            if self.ffplay_process:
+                self.ffplay_process.terminate()
+                self.ffplay_process = None
 
 
 async def create_livekit_client(room_name: str, token: str, livekit_url: str) -> LiveKitClient:

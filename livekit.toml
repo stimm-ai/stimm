@@ -1,16 +1,14 @@
 # LiveKit Server Configuration with Verbose Audio Logging
 
 # API Configuration
-api_key: "devkey"
-api_secret: "secret"
-url: "http://localhost:7880"
+api_key = "devkey"
+api_secret = "secret"
+url = "http://localhost:7880"
 
 # Logging Configuration - Enable verbose debug output
 [logging]
 level = "debug"
-# Disable sampling to log all events (not just samples)
 sample = false
-# Enable JSON structured logging for easier parsing
 json = true
 
 # RTC Configuration for detailed WebRTC stats
@@ -18,23 +16,14 @@ json = true
 port_range_start = 50000
 port_range_end = 60000
 use_ice_lite = true
-# Enable congestion control logging
 congestion_control_probe_mode = "padding"
 
 # Room Configuration
 [room]
-# Enable all features for debugging
 enable_remote_unmute = true
 auto_create = true
 
-# Audio Configuration - Disable filters to see all audio activity
-[audio]
-# Set to true to enable active speaker detection logging
-active_speaker_update_interval = "1s"
-
 # Connection Quality Monitoring
 [connection_quality]
-# Enable detailed connection quality metrics
 enabled = true
-# Update interval for connection stats (shorter = more verbose)
 update_interval = "1s"

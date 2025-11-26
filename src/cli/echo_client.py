@@ -92,7 +92,7 @@ async def main():
     # Handle incoming audio from echo agent
     @room.on("track_subscribed")
     def on_track_subscribed(track, publication, participant):
-        if track.kind == rtc.TrackKind.KIND_AUDIO and participant.identity == "echo-bot":
+        if track.kind == rtc.TrackKind.KIND_AUDIO and participant.identity == "me":
             logger.info(f"🎧 Audio track from {participant.identity}")
             asyncio.create_task(play_audio(track))
     

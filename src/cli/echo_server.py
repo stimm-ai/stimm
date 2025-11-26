@@ -81,7 +81,7 @@ async def main():
                 try:
                     # Validate that we have valid frame data
                     if event.frame and len(event.frame.data) > 0:
-                        # Use SOURCE_UNKNOWN to capture frame without audio processing
+                        # Echo the frame back immediately (using SOURCE_MICROPHONE for proper processing)
                         await echo_source.capture_frame(event.frame)
                         # Log every 1000 frames instead of every frame for better performance
                         if frame_count % 1000 == 0:
@@ -91,30 +91,11 @@ async def main():
                         
                 except Exception as e:
                     error_count += 1
-                    logger.error(f"Frame capture error #{error_count}: {e}")
+                    # Only log first few errors to avoid performance impact
+                    if error_count <= 3:
+                        logger.warning(f"Frame capture error #{error_count}: {e}")
                     
-                    # Log detailed info periodically
-                    current_time = asyncio.get_event_loop().time()
-                    if current_time - last_log_time > 5.0:  # Every 5 seconds
-                        logger.info(f"Echo stats - Frames: {frame_count}, Errors: {error_count}, Error rate: {error_count/frame_count*100:.1f}%")
-                        last_log_time = current_time
-                        
-                    # Reset source if too many errors
-                    if error_count > 10:
-                        logger.warning("Too many frame capture errors, attempting to reset source...")
-                        try:
-                            # Try to reinitialize the source
-                            echo_source = rtc.AudioSource(sample_rate=48000, num_channels=1)
-                            track = rtc.LocalAudioTrack.create_audio_track("echo-out-reset", echo_source)
-                            await room.local_participant.publish_track(track, options)
-                            error_count = 0
-                            logger.info("Audio source reset successfully")
-                        except Exception as reset_error:
-                            logger.error(f"Failed to reset audio source: {reset_error}")
-                            break
-                    
-                    # Brief pause on error to avoid overwhelming the system
-                    await asyncio.sleep(0.01)
+                    # Continue immediately without pause to avoid latency accumulation
                     
         except Exception as e:
             logger.error(f"Echo loop error: {e}")

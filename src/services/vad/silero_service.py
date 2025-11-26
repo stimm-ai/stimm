@@ -17,6 +17,7 @@ class SileroVADService:
         self.min_speech_duration_ms = 250
         self.min_silence_duration_ms = 100
         self.window_size_samples = 512 if sampling_rate == 16000 else 256
+        self.context_size = 64 if sampling_rate == 16000 else 32
         
         # Audio buffering - accumulate chunks until we have window_size_samples
         self.audio_buffer = np.array([], dtype=np.float32)
@@ -26,6 +27,10 @@ class SileroVADService:
         self.current_probability = 0.0
         self.temp_end = 0
         self.current_speech = {}
+        
+        # Context for ONNX model (Silero needs previous context)
+        self._context = np.zeros((1, self.context_size), dtype=np.float32)
+        self._input_buffer = np.zeros((1, self.context_size + self.window_size_samples), dtype=np.float32)
         
         # Load model
         if model_path is None:
@@ -66,6 +71,7 @@ class SileroVADService:
         self.temp_end = 0
         self.current_speech = {}
         self._state = np.zeros((2, 1, 128)).astype('float32')
+        self._context = np.zeros((1, self.context_size), dtype=np.float32)
         self.audio_buffer = np.array([], dtype=np.float32)  # Clear audio buffer
 
     def process_audio_chunk(self, audio_chunk: bytes) -> List[Dict[str, Any]]:
@@ -98,17 +104,22 @@ class SileroVADService:
             # Keep remaining samples for next iteration
             self.audio_buffer = self.audio_buffer[self.window_size_samples:]
             
-            # Add batch dimension for ONNX model
-            input_tensor = window[np.newaxis, :]
+            # Prepare input with context
+            # Matches LiveKit's implementation which improves detection
+            self._input_buffer[:, :self.context_size] = self._context
+            self._input_buffer[:, self.context_size:] = window[np.newaxis, :]
             
             # Run inference
             ort_inputs = {
-                'input': input_tensor,
+                'input': self._input_buffer,
                 'state': self._state,
                 'sr': np.array(self.sampling_rate, dtype=np.int64)
             }
             ort_outs = self.session.run(None, ort_inputs)
             out, self._state = ort_outs
+            
+            # Update context for next frame
+            self._context = self._input_buffer[:, -self.context_size:]
             
             self.current_probability = out[0][0]
             windows_processed += 1

@@ -108,7 +108,7 @@ async def play_audio(track):
     
     cmd = [
         "ffplay", "-f", "s16le", "-ar", "48000",
-        "-ac", "1", "-nodisp", "-autoexit", "-loglevel", "quiet", "-"
+        "-ac", "1", "-nodisp", "-loglevel", "quiet", "-"
     ]
     ffplay_process = subprocess.Popen(cmd, stdin=subprocess.PIPE,
                                      stderr=subprocess.PIPE)  # Capture stderr
@@ -130,9 +130,17 @@ async def play_audio(track):
             if ffplay_process and ffplay_process.poll() is None:
                 try:
                     ffplay_process.stdin.write(bytes(frame.data))
+                    ffplay_process.stdin.flush()
                 except BrokenPipeError:
-                    logger.error("ffplay broken pipe - playback stopped")
-                    break
+                    logger.error("ffplay broken pipe - restarting playback")
+                    # Restart ffplay
+                    ffplay_process = subprocess.Popen(cmd, stdin=subprocess.PIPE,
+                                                     stderr=subprocess.PIPE)
+            else:
+                # ffplay stopped, restart it
+                logger.info("ffplay stopped, restarting...")
+                ffplay_process = subprocess.Popen(cmd, stdin=subprocess.PIPE,
+                                                 stderr=subprocess.PIPE)
     except Exception as e:
         logger.error(f"Audio playback error: {e}")
     finally:

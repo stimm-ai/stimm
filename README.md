@@ -280,36 +280,51 @@ The VoiceBot platform includes a powerful CLI tool for testing agents directly f
 #### List Available Agents
 
 ```bash
+# Docker container
 docker exec -it voicebot-app python -m cli.main --list-agents
+
+# Local development
+python -m src.cli.main --list-agents
 ```
 
 #### Text Mode (Recommended for quick testing)
 
 ```bash
 # Basic text conversation
-docker exec -it voicebot-app python -m cli.main --agent-name "Etienne" --mode text
+python -m src.cli.main --agent-name "Etienne" --mode text
 
 # With RAG enabled (default)
-docker exec -it voicebot-app python -m cli.main --agent-name "Etienne" --mode text --use-rag
+python -m src.cli.main --agent-name "Etienne" --mode text --use-rag
 
 # With verbose logging
-docker exec -it voicebot-app python -m cli.main --agent-name "Etienne" --mode text --verbose
+python -m src.cli.main --agent-name "Etienne" --mode text --verbose
 ```
 
 #### Full Audio Mode (LiveKit WebRTC)
 
 ```bash
 # Audio conversation via LiveKit
-docker exec -it voicebot-app python -m cli.main --agent-name "Etienne" --mode full
+python -m src.cli.main --agent-name "Etienne" --mode full
 
 # With custom room name
-docker exec -it voicebot-app python -m cli.main --agent-name "Etienne" --mode full --room-name "test-conversation"
+python -m src.cli.main --agent-name "Etienne" --mode full --room-name "test-conversation"
+```
+
+#### Audio Pipeline Testing
+
+```bash
+# Test complete audio pipeline (echo server + client)
+python -m src.cli.main --test-echo --verbose
+
+# Test microphone capture
+python -m src.cli.main --test-livekit-mic 5
 ```
 
 ### Features
 
 - **Text Mode**: Interactive text conversation with the agent
 - **Full Audio Mode**: Real-time audio conversation via LiveKit WebRTC
+- **Audio Pipeline Testing**: Complete echo test for debugging audio issues
 - **RAG Integration**: Retrieval-Augmented Generation with knowledge base context
 - **Agent Configuration**: Uses the specific LLM/TTS/STT configuration of each agent
 - **LiveKit Integration**: WebRTC audio streaming for low-latency conversations
@@ -318,14 +333,147 @@ docker exec -it voicebot-app python -m cli.main --agent-name "Etienne" --mode fu
 
 ```bash
 # List all available agents
-docker exec -it voicebot-app python -m cli.main --list-agents
+python -m src.cli.main --list-agents
 
 # Test agent in text mode
-docker exec -it voicebot-app python -m cli.main --agent-name "Etienne" --mode text
+python -m src.cli.main --agent-name "Etienne" --mode text
 
 # Test with audio via LiveKit
-docker exec -it voicebot-app python -m cli.main --agent-name "Etienne" --mode full --verbose
+python -m src.cli.main --agent-name "Etienne" --mode full --verbose
+
+# Test audio pipeline (recommended for debugging)
+python -m src.cli.main --test-echo --verbose
 ```
+
+## 🔧 Audio Pipeline Testing Tools
+
+The VoiceBot platform includes specialized tools for testing and debugging the real-time audio pipeline without requiring the full voicebot application. These tools are essential for diagnosing audio issues, VAD problems, or LiveKit connectivity.
+
+### 🎯 Audio Test Tools
+
+#### Single Command Echo Test (`--test-echo`)
+**Purpose**: Complete audio pipeline test that automatically launches both echo server and client.
+
+**Use Case**: Quick verification of LiveKit connectivity and full audio pipeline.
+
+```bash
+# Test complete audio pipeline with one command
+python -m src.cli.main --test-echo --verbose
+
+# Test with standard logging
+python -m src.cli.main --test-echo
+```
+
+**Features**:
+- ✅ Automatic launch of echo server and client
+- ✅ Real-time logging from both processes
+- ✅ Clean shutdown with Ctrl+C
+- ✅ Stable audio playback with auto-restart
+
+#### Echo Server (`src/cli/echo_server.py`)
+**Purpose**: Server-side echo agent that joins a LiveKit room and immediately echoes back any received audio.
+
+**Use Case**: Verify LiveKit connectivity and test full audio pipeline.
+
+```bash
+# Run echo server locally
+python src/cli/echo_server.py
+
+# Run in background
+python src/cli/echo_server.py &
+```
+
+**Features**:
+- ✅ Stable audio frame handling with error recovery
+- ✅ Uses SOURCE_UNKNOWN to avoid audio processing interference
+- ✅ Automatic source reset on errors
+- ✅ Real-time statistics logging
+
+#### Echo Client (`src/cli/echo_client.py`)
+**Purpose**: Full audio pipeline test client that captures microphone input and plays back received audio.
+
+**Use Case**: End-to-end audio testing - microphone to speaker loopback.
+
+```bash
+# Run echo client locally
+python src/cli/echo_client.py
+```
+
+**Features**:
+- ✅ Real-time microphone capture via ffmpeg/PulseAudio (48kHz)
+- ✅ LiveKit WebRTC connection and audio streaming
+- ✅ Stable audio playback via ffplay with auto-restart
+- ✅ Complete pipeline verification
+
+### 🔬 Debugging Audio Issues
+
+#### Quick Audio Pipeline Test
+```bash
+# Single command test (recommended)
+python -m src.cli.main --test-echo --verbose
+
+# Manual test (if needed)
+# Terminal 1: python src/cli/echo_server.py
+# Terminal 2: python src/cli/echo_client.py
+```
+
+**Expected Behavior**:
+- You should hear your own voice echoed back after a short delay
+- Console shows connection success and audio processing statistics
+- No connection errors or `InvalidState` exceptions
+
+#### Microphone Only Test
+```bash
+# Test microphone capture and save to file
+python -m src.cli.main --test-livekit-mic 5
+
+# Test basic PulseAudio capture
+python src/cli/test_mic.py
+```
+
+### 🛠️ Environment Setup
+
+All audio test tools require:
+```bash
+# Activate Python virtual environment
+source .venv/bin/activate
+
+# Set Python path for local imports
+export PYTHONPATH=/home/etienne/repos/voicebot/src:$PYTHONPATH
+
+# Ensure LiveKit server is running
+docker-compose ps livekit
+```
+
+### 📊 Troubleshooting
+
+| Issue | Symptom | Solution |
+|-------|---------|----------|
+| **No microphone access** | "pulse: default: No such device" | Check microphone permissions and WSL2 audio setup |
+| **InvalidState errors** | "failed to capture frame" | Use fixed `echo_server.py` with error handling |
+| **No audio playback** | ffplay fails to start | Check speakers and PulseAudio configuration |
+| **Connection failures** | Cannot connect to LiveKit | Verify `docker-compose up livekit` is running |
+
+### 🎵 Audio Pipeline Architecture
+
+```
+[Microphone] → [ffmpeg capture] → [LiveKit Client] → [LiveKit Server]
+     ↓              ↓                    ↓               ↓
+[48kHz mono] → [Raw PCM] → [WebRTC Stream] → [Room Broadcasting]
+     ↓              ↓                    ↓               ↓
+[Echo Server] ← [Audio Stream] ← [LiveKit Server] ← [WebRTC Stream]
+     ↓              ↓                    ↓               ↓
+[Audio Loop] → [ffplay output] → [Speakers] → [User hears echo]
+```
+
+### 🚀 Ready for Main Agent Debugging
+
+These test tools confirm that:
+- ✅ **Network Layer**: LiveKit WebRTC connectivity is stable
+- ✅ **Audio Pipeline**: Microphone → Server → Playback works correctly
+- ✅ **Environment**: WSL2 audio is properly configured
+
+**Any remaining issues** in the main voicebot are isolated to application logic (VAD thresholds, audio processing), not infrastructure problems.
 
 ## 🤝 Contributing
 

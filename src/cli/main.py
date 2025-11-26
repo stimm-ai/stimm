@@ -135,7 +135,13 @@ Examples:
         metavar="SECONDS",
         help="Test LiveKit microphone capture by recording N seconds to test_livekit_recording.wav"
     )
-    
+
+    parser.add_argument(
+        "--test-echo",
+        action="store_true",
+        help="Test LiveKit audio pipeline with echo server and client"
+    )
+
     return parser.parse_args()
 
 
@@ -214,6 +220,80 @@ def test_microphone(duration: float):
 from cli.test_livekit_microphone import test_livekit_microphone
 
 
+async def test_echo_pipeline(verbose: bool = False):
+    """Test LiveKit audio pipeline with echo server and client"""
+    import subprocess
+    import signal
+    import time
+    
+    logging.info("🚀 Starting LiveKit echo pipeline test")
+    logging.info("This will start both echo server and client in parallel")
+    logging.info("Speak into your microphone to hear yourself echoed back!")
+    logging.info("Press Ctrl+C to stop both processes")
+    
+    server_process = None
+    client_process = None
+    
+    try:
+        # Start echo server
+        logging.info("🔄 Starting echo server...")
+        server_process = subprocess.Popen(
+            [sys.executable, "-m", "src.cli.echo_server"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True
+        )
+        
+        # Wait a moment for server to start
+        time.sleep(2)
+        
+        # Start echo client
+        logging.info("🎧 Starting echo client...")
+        client_process = subprocess.Popen(
+            [sys.executable, "-m", "src.cli.echo_client"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True
+        )
+        
+        # Log output from both processes
+        async def log_process_output(process, name):
+            while process.poll() is None:
+                line = process.stdout.readline()
+                if line:
+                    logging.info(f"[{name}] {line.strip()}")
+                await asyncio.sleep(0.1)
+        
+        # Start logging tasks
+        server_log_task = asyncio.create_task(log_process_output(server_process, "SERVER"))
+        client_log_task = asyncio.create_task(log_process_output(client_process, "CLIENT"))
+        
+        # Wait for user interrupt
+        logging.info("✅ Echo pipeline running! Speak into your microphone to test.")
+        logging.info("Press Ctrl+C to stop...")
+        
+        # Keep running until interrupted
+        while True:
+            await asyncio.sleep(1)
+            
+    except KeyboardInterrupt:
+        logging.info("🛑 Stopping echo pipeline...")
+    finally:
+        # Cleanup processes
+        if server_process:
+            server_process.terminate()
+        if client_process:
+            client_process.terminate()
+        
+        # Wait for processes to terminate
+        if server_process:
+            server_process.wait(timeout=5)
+        if client_process:
+            client_process.wait(timeout=5)
+        
+        logging.info("✅ Echo pipeline stopped")
+
+
 async def main():
     """Main entry point - synchronous wrapper for async code"""
     return await async_main()
@@ -232,7 +312,11 @@ async def async_main():
     if args.test_livekit_mic:
         logging.info(f"Testing LiveKit microphone for {args.test_livekit_mic} seconds")
         return await test_livekit_microphone(args.test_livekit_mic)
-    
+
+    if args.test_echo:
+        logging.info("Testing LiveKit echo pipeline")
+        return await test_echo_pipeline(args.verbose)
+
     if args.list_agents:
         logging.info("Listing available agents")
         return await list_agents(args.verbose)

@@ -54,11 +54,6 @@ class VADStream:
                     quality=rtc.AudioResamplerQuality.QUICK  # VAD doesn't need high quality, but needs speed
                 )
 
-            # Log frame details once per second roughly
-            import random
-            if random.random() < 0.01:
-                logger.info(f"🎤 Input frame: rate={frame.sample_rate}, channels={frame.num_channels}, samples={frame.samples_per_channel}")
-
             # Resample using LiveKit's native resampler (better than np.interp)
             resampled_frames = self._resampler.push(frame)
             

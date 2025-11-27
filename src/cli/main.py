@@ -11,6 +11,7 @@ import sys
 from enum import Enum
 from typing import Optional
 import aiohttp
+import os
 
 from cli.agent_runner import AgentRunner
 from cli.text_input import TextInterface
@@ -225,6 +226,7 @@ async def test_echo_pipeline(verbose: bool = False):
     import subprocess
     import signal
     import time
+    import os
     
     logging.info("🚀 Starting LiveKit echo pipeline test")
     logging.info("This will start both echo server and client in parallel")
@@ -233,6 +235,7 @@ async def test_echo_pipeline(verbose: bool = False):
     
     server_process = None
     client_process = None
+    tasks = []
     
     try:
         # Start echo server
@@ -241,7 +244,9 @@ async def test_echo_pipeline(verbose: bool = False):
             [sys.executable, "-m", "src.cli.echo_server"],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            text=True
+            text=True,
+            bufsize=1, # Line buffered
+            env={**os.environ, "PYTHONUNBUFFERED": "1"} # Force unbuffered output
         )
         
         # Wait a moment for server to start
@@ -253,20 +258,38 @@ async def test_echo_pipeline(verbose: bool = False):
             [sys.executable, "-m", "src.cli.echo_client"],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            text=True
+            text=True,
+            bufsize=1, # Line buffered
+            env={**os.environ, "PYTHONUNBUFFERED": "1"} # Force unbuffered output
         )
         
         # Log output from both processes
         async def log_process_output(process, name):
-            while process.poll() is None:
-                line = process.stdout.readline()
+            while True:
+                # Check if process is still running
+                if process.poll() is not None:
+                    # Read remaining output
+                    remaining_lines = process.stdout.readlines()
+                    for line in remaining_lines:
+                        if verbose: # Only log if verbose
+                            logging.info(f"[{name}] {line.strip()}")
+                    break
+                
+                # Simplified blocking readline in executor
+                line = await asyncio.get_event_loop().run_in_executor(None, process.stdout.readline)
                 if line:
-                    logging.info(f"[{name}] {line.strip()}")
-                await asyncio.sleep(0.1)
+                    if verbose:
+                        logging.info(f"[{name}] {line.strip()}")
+                else:
+                    # EOF or empty read
+                    if process.poll() is not None:
+                        break
+                    await asyncio.sleep(0.1)
         
         # Start logging tasks
-        server_log_task = asyncio.create_task(log_process_output(server_process, "SERVER"))
-        client_log_task = asyncio.create_task(log_process_output(client_process, "CLIENT"))
+        if verbose:
+            tasks.append(asyncio.create_task(log_process_output(server_process, "SERVER")))
+            tasks.append(asyncio.create_task(log_process_output(client_process, "CLIENT")))
         
         # Wait for user interrupt
         logging.info("✅ Echo pipeline running! Speak into your microphone to test.")
@@ -274,15 +297,22 @@ async def test_echo_pipeline(verbose: bool = False):
         
         # Keep running until interrupted
         while True:
+            # Check if processes died
+            if server_process.poll() is not None:
+                logging.error("❌ Echo server crashed!")
+                break
+            if client_process.poll() is not None:
+                logging.error("❌ Echo client crashed!")
+                break
             await asyncio.sleep(1)
             
     except KeyboardInterrupt:
         logging.info("🛑 Stopping echo pipeline...")
     finally:
         # Cleanup processes
-        if server_process:
+        if server_process and server_process.poll() is None:
             server_process.terminate()
-        if client_process:
+        if client_process and client_process.poll() is None:
             client_process.terminate()
         
         # Wait for processes to terminate
@@ -291,6 +321,10 @@ async def test_echo_pipeline(verbose: bool = False):
         if client_process:
             client_process.wait(timeout=5)
         
+        # Cancel logging tasks
+        for task in tasks:
+            task.cancel()
+            
         logging.info("✅ Echo pipeline stopped")
 
 
@@ -340,5 +374,8 @@ async def async_main():
 
 if __name__ == "__main__":
     # Run the async main function
-    exit_code = asyncio.run(main())
-    sys.exit(exit_code)
+    try:
+        exit_code = asyncio.run(main())
+        sys.exit(exit_code)
+    except KeyboardInterrupt:
+        pass

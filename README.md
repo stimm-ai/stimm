@@ -151,6 +151,53 @@ sequenceDiagram
    - **Frontend**: [http://front.localhost](http://front.localhost)
    - **API Documentation**: [http://api.localhost/docs](http://api.localhost/docs)
    - **Traefik Dashboard**: [http://localhost:8080](http://localhost:8080)
+## 📊 Logging & Debugging
+
+The platform features a **Smart Logging System** designed to balance readability with depth.
+
+### 1. Unified Logging Semantic
+
+| Mode | Log Level | What you see | Use Case |
+| :--- | :--- | :--- | :--- |
+| **Clean (Default)** | `INFO` | "User Speaking", "Thinking...", "Speaking" | Production, Normal Usage |
+| **Debug** | `DEBUG` | Audio packets, LLM tokens, WebSocket frames | Troubleshooting, Development |
+
+### 2. Configuration
+
+**A. CLI Tool**
+```bash
+# Clean logs
+python -m src.cli.main ...
+
+# Debug logs
+python -m src.cli.main ... --verbose
+```
+
+**B. Docker / Server**
+Use the `LOG_LEVEL` environment variable (default: `info`).
+
+*In `docker-compose.yml` or `.env`:*
+```env
+LOG_LEVEL=debug
+```
+
+*In Docker command:*
+```bash
+LOG_LEVEL=debug docker compose up
+```
+
+**C. Direct Python Execution**
+When running the server manually:
+
+```bash
+# Default (INFO)
+python src/main.py
+
+# Debug Mode
+LOG_LEVEL=debug python src/main.py
+```
+*(Note: `src/main.py` uses Uvicorn, which respects the `LOG_LEVEL` env var via our Docker configuration, but for direct local run you might need to pass `--log-level` to uvicorn if running it directly, or rely on standard python logging config if running via python script wrapper)*
+
 
 ## 💻 Development
 

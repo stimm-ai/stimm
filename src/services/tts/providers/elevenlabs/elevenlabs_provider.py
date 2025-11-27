@@ -158,7 +158,7 @@ class ElevenLabsProvider:
                                 "flush": payload.get("flush", False)
                             }
                             payload_str = json.dumps(elevenlabs_payload)
-                            logger.info(f"Sent text chunk {text_count}: '{payload.get('text', '').strip()}' (flush: {payload.get('flush', False)})")
+                            logger.debug(f"Sent text chunk {text_count}: '{payload.get('text', '').strip()}' (flush: {payload.get('flush', False)})")
                         except (json.JSONDecodeError, TypeError):
                             # Fallback: if it's not valid JSON, treat as plain text
                             text_content = str(text_chunk) if not isinstance(text_chunk, str) else text_chunk
@@ -168,7 +168,7 @@ class ElevenLabsProvider:
                                 "flush": False
                             }
                             payload_str = json.dumps(standard_payload)
-                            logger.info(f"Sent text chunk {text_count}: '{text_content.strip()}' (converted from {type(text_chunk).__name__})")
+                            logger.debug(f"Sent text chunk {text_count}: '{text_content.strip()}' (converted from {type(text_chunk).__name__})")
                         
                         try:
                             await self.websocket.send_str(payload_str)
@@ -176,7 +176,7 @@ class ElevenLabsProvider:
                             logger.error(f"Failed to send text chunk {text_count}: {send_error}")
                             break
                     
-                    logger.info(f"Text generator completed, sent {text_count} chunks total")
+                    logger.debug(f"Text generator completed, sent {text_count} chunks total")
                     
                     # Send final empty text with flush=True to indicate end
                     final_payload = {
@@ -186,7 +186,7 @@ class ElevenLabsProvider:
                     }
                     try:
                         await self.websocket.send_str(json.dumps(final_payload))
-                        logger.info("Sent final text chunk with flush=True")
+                        logger.debug("Sent final text chunk with flush=True")
                     except Exception as close_error:
                         logger.warning(f"Could not send final text chunk: {close_error}")
                     
@@ -224,12 +224,12 @@ class ElevenLabsProvider:
                                         has_normalized_alignment = "normalizedAlignment" in data
                                         is_final = data.get("isFinal", False)
                                         
-                                        logger.info(f"Received audio chunk {chunk_count}: {chunk_size} bytes "
+                                        logger.debug(f"Received audio chunk {chunk_count}: {chunk_size} bytes "
                                                    f"(alignment: {has_alignment}, normalizedAlignment: {has_normalized_alignment}, isFinal: {is_final})")
                                         
                                         # For now, accept all audio chunks to see what we receive
                                         # We'll add filtering later based on actual observation
-                                        logger.info(f"🔊 Queuing audio chunk {chunk_count} ({chunk_size} bytes)")
+                                        logger.debug(f"🔊 Queuing audio chunk {chunk_count} ({chunk_size} bytes)")
                                         await queue.put(audio_bytes)
                                     
                                     # Handle isFinal flag - ElevenLabs sends this with each audio chunk
@@ -241,7 +241,7 @@ class ElevenLabsProvider:
                                     
                                 elif "isFinal" in data and data["isFinal"]:
                                     # Final output message (no audio) - this is the real end signal
-                                    logger.info("Received final output signal (no audio) - ending stream")
+                                    logger.debug("Received final output signal (no audio) - ending stream")
                                     received_final_signal = True
                                     await queue.put(None)
                                     break

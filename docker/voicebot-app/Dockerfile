@@ -48,4 +48,5 @@ RUN python scripts/preload_rag_models.py
 EXPOSE 8001
 
 # Start the FastAPI application with uvicorn
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]
+# Note: LOG_LEVEL environment variable can be set at runtime (default: info)
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port 8001 --reload --log-level ${LOG_LEVEL:-info}"]

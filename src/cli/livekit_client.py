@@ -355,7 +355,7 @@ class LiveKitClient:
                     if time.time() - last_log > 5.0:
                         fill_pct = (self._ring_buffer._fill_level / self._ring_buffer._size) * 100
                         if fill_pct > 10.0 or self._ring_buffer._overrun_count > 0:
-                            logger.info(f"📊 Audio Buffer: {fill_pct:.1f}% | Overruns: {self._ring_buffer._overrun_count} | Underruns: {self._ring_buffer._underrun_count}")
+                            logger.debug(f"📊 Audio Buffer: {fill_pct:.1f}% | Overruns: {self._ring_buffer._overrun_count} | Underruns: {self._ring_buffer._underrun_count}")
                         last_log = time.time()
 
                     # Read from ring buffer (will get silence if empty)

@@ -209,4 +209,5 @@ async def voicebot_interface(request: Request):
     return templates.TemplateResponse("voicebot.html", {"request": request})
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    log_level = os.getenv("LOG_LEVEL", "info").lower()
+    uvicorn.run(app, host="0.0.0.0", port=8001, log_level=log_level)

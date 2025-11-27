@@ -161,7 +161,7 @@ class VoicebotEventLoop:
         # DEBUG: Track audio chunks
         self.audio_chunks_received += 1
         if self.audio_chunks_received % 50 == 0:  # Log every 50 chunks
-            logger.info(f"🎤 Received {self.audio_chunks_received} audio chunks")
+            logger.debug(f"🎤 Received {self.audio_chunks_received} audio chunks")
         
         # Process chunk through Silero VAD
         # SileroVADService.process_audio_chunk returns a list of events
@@ -178,14 +178,14 @@ class VoicebotEventLoop:
             self.audio_chunks_sent_to_stt += 1
             
             if self.audio_chunks_sent_to_stt % 50 == 0:  # Log every 50 chunks
-                logger.info(f"📤 Sent {self.audio_chunks_sent_to_stt}/{self.audio_chunks_received} chunks to STT")
+                logger.debug(f"📤 Sent {self.audio_chunks_sent_to_stt}/{self.audio_chunks_received} chunks to STT")
                 
         except Exception as e:
             logger.error(f"❌ Failed to send audio to STT queue: {e}")
         
         # Handle VAD events (speech_start, speech_end) for state management
         if events:
-            logger.info(f"🎯 VAD: Received {len(events)} events: {[e['type'] for e in events]}")
+            logger.debug(f"🎯 VAD: Received {len(events)} events: {[e['type'] for e in events]}")
         
         for event in events:
             event_type = event["type"]
@@ -260,13 +260,17 @@ class VoicebotEventLoop:
                 # Log transcript reception
                 transcript_text = transcript.get('transcript', '')
                 is_final = transcript.get('is_final', False)
-                logger.info(f"📝 STT Transcript #{transcript_count}: '{transcript_text[:50]}...' (final: {is_final})")
+                
+                if is_final:
+                    logger.info(f"📝 STT Final Transcript: '{transcript_text}'")
+                else:
+                    logger.debug(f"📝 STT Partial Transcript #{transcript_count}: '{transcript_text[:50]}...'")
                 
                 await self.push_event("transcript_update", transcript)
                 
                 # Log every 10 transcripts
                 if transcript_count % 10 == 0:
-                    logger.info(f"📊 STT Processing Stats: {transcript_count} transcripts received, {self.audio_chunks_sent_to_stt} chunks sent")
+                    logger.debug(f"📊 STT Processing Stats: {transcript_count} transcripts received, {self.audio_chunks_sent_to_stt} chunks sent")
                     
         except asyncio.CancelledError:
             logger.info("STT stream processing cancelled")
@@ -425,13 +429,13 @@ class VoicebotEventLoop:
                     session_id=self.session_id
                 ):
                     response_count += 1
-                    logger.info(f"📨 Received response chunk #{response_count}: {response_chunk.get('type')}")
+                    logger.debug(f"📨 Received response chunk #{response_count}: {response_chunk.get('type')}")
                     
                     chunk_type = response_chunk.get('type')
                     content = response_chunk.get('content', '')
                     
                     if content:
-                        logger.info(f"📝 Content: '{content[:30]}...'")
+                        logger.debug(f"📝 Content: '{content[:30]}...'")
                     
                     if chunk_type in ['first_token', 'chunk']:
                         if content:

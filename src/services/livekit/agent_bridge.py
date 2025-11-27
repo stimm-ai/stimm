@@ -28,11 +28,12 @@ class LiveKitAgentBridge:
     4. Manages the conversation lifecycle
     """
     
-    def __init__(self, agent_id: str, room_name: str, token: str, livekit_url: str):
+    def __init__(self, agent_id: str, room_name: str, token: str, livekit_url: str, sample_rate: int = 24000):
         self.agent_id = agent_id
         self.room_name = room_name
         self.token = token
         self.livekit_url = livekit_url
+        self.sample_rate = sample_rate
         self.is_connected = False
         
         # LiveKit components
@@ -64,7 +65,9 @@ class LiveKitAgentBridge:
             self._setup_event_handlers()
             
             # Create audio source for agent responses
-            self.audio_source = rtc.AudioSource(sample_rate=48000, num_channels=1)
+            # Use sample rate from configuration
+            logger.info(f"🎧 Creating agent audio source with sample rate: {self.sample_rate}Hz")
+            self.audio_source = rtc.AudioSource(sample_rate=self.sample_rate, num_channels=1)
             self.audio_track = rtc.LocalAudioTrack.create_audio_track("agent-audio", self.audio_source)
             
             # Connect to the room
@@ -279,7 +282,7 @@ class LiveKitAgentBridge:
                 # Create audio frame from the chunk
                 frame = rtc.AudioFrame(
                     data=audio_chunk,
-                    sample_rate=48000,
+                    sample_rate=self.sample_rate,
                     num_channels=1,
                     samples_per_channel=len(audio_chunk) // 2  # Assuming 16-bit samples
                 )
@@ -403,7 +406,7 @@ class LiveKitAgentBridge:
             raise
 
 
-async def create_agent_bridge(agent_id: str, room_name: str, token: str, livekit_url: str) -> LiveKitAgentBridge:
+async def create_agent_bridge(agent_id: str, room_name: str, token: str, livekit_url: str, sample_rate: int = 24000) -> LiveKitAgentBridge:
     """
     Create and connect an agent bridge.
     
@@ -412,10 +415,11 @@ async def create_agent_bridge(agent_id: str, room_name: str, token: str, livekit
         room_name: Name of the LiveKit room
         token: JWT access token for the agent
         livekit_url: LiveKit server URL
+        sample_rate: Audio sample rate for TTS playback
         
     Returns:
         Connected LiveKitAgentBridge instance
     """
-    bridge = LiveKitAgentBridge(agent_id, room_name, token, livekit_url)
+    bridge = LiveKitAgentBridge(agent_id, room_name, token, livekit_url, sample_rate)
     await bridge.connect()
     return bridge

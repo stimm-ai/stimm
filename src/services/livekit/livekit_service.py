@@ -117,12 +117,19 @@ class LiveKitService:
                 agent_id=agent_id
             )
             
+            # Determine sample rate from TTS provider
+            sample_rate = 24000  # Default
+            if hasattr(tts_service, 'provider') and hasattr(tts_service.provider, 'sample_rate'):
+                sample_rate = tts_service.provider.sample_rate
+                logger.info(f"🎤 Using sample rate {sample_rate}Hz from TTS provider")
+            
             # Create and connect the agent bridge to LiveKit
             agent_bridge = await create_agent_bridge(
                 agent_id=agent_id,
                 room_name=room_name,
                 token=agent_access_token,
-                livekit_url=self.livekit_url
+                livekit_url=self.livekit_url,
+                sample_rate=sample_rate
             )
             
             # Connect the bridge to the voicebot service

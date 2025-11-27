@@ -5,13 +5,16 @@ services:
       dockerfile: ./docker/voicebot-app/Dockerfile
     container_name: voicebot-app
     volumes:
-      - ../../src:/app
+      # Mount source files to src subdirectory to preserve Python environment (read-write for development)
+      - ../../src:/app/src
       # PulseAudio socket (host -> container)
       - /mnt/wslg:/mnt/wslg
     environment:
       - PULSE_SERVER=unix:/mnt/wslg/PulseServer
       - LOG_LEVEL=${LOG_LEVEL:-info}
-    command: [ "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001", "--reload", "--log-level", "${LOG_LEVEL:-info}" ]
+    command: >
+      sh -c "uv run uvicorn src.main:app --host 0.0.0.0 --port 8001 --reload --log-level info"
+    working_dir: /app
     ports:
       - "8001:8001"
     # Environment variables are loaded from env_file in root docker-compose.yml

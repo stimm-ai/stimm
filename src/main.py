@@ -1,6 +1,5 @@
-"""
-Main entry point for the voicebot application.
-"""
+#Main entry point for the voicebot application.
+
 
 import asyncio
 import logging
@@ -25,7 +24,7 @@ from services.agents_admin.routes import router as agent_router
 from services.provider_constants import get_provider_constants
 from services.webrtc.signaling import router as signaling_router
 from services.livekit.routes import router as livekit_router
-from src.utils.logging_config import configure_logging
+from utils.logging_config import configure_logging
 
 # Configure logging early
 configure_logging()

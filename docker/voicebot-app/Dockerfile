@@ -4,6 +4,9 @@ FROM python:3.10-slim
 # Set working directory
 WORKDIR /app
 
+# Set PYTHONPATH to ensure the application can find the src/ directory
+ENV PYTHONPATH=/app
+
 # Install system dependencies including audio libraries
 RUN apt-get update && apt-get install -y \
     portaudio19-dev \
@@ -20,11 +23,11 @@ RUN apt-get update && apt-get install -y \
 # Install uv using pip (most reliable method)
 RUN pip install uv
 
+# Copy source code (src/ directory)
+COPY src/ .
+
 # Copy pyproject.toml first for better Docker layer caching
 COPY pyproject.toml ./pyproject.toml
-
-# Copy source code (src/ directory)
-COPY src/ ./src/
 
 
 # Install the package in development mode
@@ -39,4 +42,4 @@ EXPOSE 8001
 
 # Start the FastAPI application with uvicorn using uv run
 # Note: LOG_LEVEL environment variable can be set at runtime (default: info)
-CMD ["sh", "-c", "uv run uvicorn src.main:app --host 0.0.0.0 --port 8001 --reload --log-level ${LOG_LEVEL:-info}"]
+CMD ["sh", "-c", "uv run uvicorn main:app --host 0.0.0.0 --port 8001 --reload --log-level ${LOG_LEVEL:-info}"]

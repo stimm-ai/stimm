@@ -1,4 +1,4 @@
-t#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 CLI Tool for testing voice agents from command line
 Supports both full audio mode (via LiveKit) and text-only mode
@@ -200,7 +200,7 @@ def test_microphone(duration: float):
     
     try:
         # Use the working PulseAudio method from test_mic.py
-        from src.cli.test_mic import test_pulseaudio_recording
+        from cli.test_mic import test_pulseaudio_recording
         
         success = test_pulseaudio_recording(duration, "test_recording.wav")
         
@@ -229,7 +229,7 @@ def test_microphone(duration: float):
         return 1
 
 
-from src.cli.test_livekit_microphone import test_livekit_microphone
+from cli.test_livekit_microphone import test_livekit_microphone
 
 
 async def test_echo_pipeline(verbose: bool = False):

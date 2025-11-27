@@ -16,7 +16,7 @@ from livekit import api
 # Import services
 from services.agents.agent_factory import create_agent_session
 from environment_config import get_livekit_url
-from src.utils.logging_config import configure_logging
+from utils.logging_config import configure_logging
 
 # Setup logging
 # Will be re-configured in main()

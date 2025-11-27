@@ -37,6 +37,7 @@ class VADStream:
         
         # State
         self._triggered = False
+        self._current_probability = 0.0
         self._speech_buffer_index = 0
         self._speech_buffer_max_reached = False
         
@@ -62,6 +63,14 @@ class VADStream:
         # Performance monitoring
         self._last_inference_time = 0
         self._slow_inference_count = 0
+        
+    @property
+    def triggered(self) -> bool:
+        return self._triggered
+        
+    @property
+    def current_probability(self) -> float:
+        return self._current_probability
         
     async def process_audio_chunk(self, audio_chunk: bytes) -> List[Dict[str, Any]]:
         """
@@ -89,6 +98,8 @@ class VADStream:
             start_time = time.perf_counter()
             prob = await self._run_inference()
             inference_duration = time.perf_counter() - start_time
+            
+            self._current_probability = prob
             
             if inference_duration > 0.02: # Log if inference takes > 20ms
                 self._slow_inference_count += 1
@@ -154,6 +165,7 @@ class VADStream:
     
     def reset(self):
         self._triggered = False
+        self._current_probability = 0.0
         self._state = np.zeros((2, 1, 128)).astype('float32')
         self._context = np.zeros((1, self.context_size), dtype=np.float32)
         self._raw_buffer = bytearray()
@@ -164,6 +176,7 @@ class VADStream:
 class SileroVADService:
     """
     Factory service for Silero VAD.
+    Also provides a default stream for backward compatibility.
     """
     def __init__(self, model_path: str = None, threshold: float = 0.5):
         self.threshold = threshold
@@ -191,6 +204,10 @@ class SileroVADService:
                 sess_options=opts
             )
             logger.info("Silero VAD model loaded successfully (Optimized Service V2)")
+            
+            # Initialize default stream for backward compatibility
+            self._default_stream = self.create_stream()
+            
         except Exception as e:
             logger.error(f"Failed to load Silero VAD model: {e}")
             raise
@@ -212,3 +229,23 @@ class SileroVADService:
             sample_rate=self.sample_rate
         )
         return VADStream(self.session, opts)
+        
+    # --- Backward Compatibility Layer ---
+    
+    @property
+    def triggered(self) -> bool:
+        """Backward compatibility property"""
+        return self._default_stream.triggered
+        
+    @property
+    def current_probability(self) -> float:
+        """Backward compatibility property"""
+        return self._default_stream.current_probability
+        
+    async def process_audio_chunk(self, audio_chunk: bytes) -> List[Dict[str, Any]]:
+        """Backward compatibility method"""
+        return await self._default_stream.process_audio_chunk(audio_chunk)
+        
+    def reset(self):
+        """Backward compatibility method"""
+        self._default_stream.reset()

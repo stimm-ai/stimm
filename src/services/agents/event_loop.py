@@ -121,7 +121,7 @@ class VoicebotEventLoop:
         
         # Process chunk through Silero VAD
         # SileroVADService.process_audio_chunk returns a list of events
-        events = self.vad_service.process_audio_chunk(chunk)
+        events = await self.vad_service.process_audio_chunk(chunk)
         
         # Check current VAD state
         is_speech = self.vad_service.triggered

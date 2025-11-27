@@ -69,7 +69,7 @@ class AsyncAIProvider:
             # model_id is required for AsyncAI, use a default if not provided
             self.model_id = provider_config.get("model_id") or "tts-1"
             
-            logger.info(f"🔍 AsyncAIProvider parsed - api_key: {bool(self.api_key)}, voice_id: {self.voice_id}, model_id: {self.model_id}")
+            logger.debug(f"🔍 AsyncAIProvider parsed - api_key: {bool(self.api_key)}, voice_id: {self.voice_id}, model_id: {self.model_id}")
             
             # Validate required parameters
             if not self.api_key:
@@ -92,10 +92,10 @@ class AsyncAIProvider:
         """Concurrent streaming passthrough for use by TTSService."""
         url = f"{self.websocket_url}?api_key={self.api_key}&version=v1"
         logger.info(f"Connecting to AsyncAI WebSocket: {url.split('?')[0]}...")
-        logger.info(f"🔧 DEBUG: Using model_id: {self.model_id}, voice_id: {self.voice_id}")
+        logger.debug(f"🔧 DEBUG: Using model_id: {self.model_id}, voice_id: {self.voice_id}")
 
         async with websockets.connect(url, ping_interval=20, ping_timeout=20, max_size=None) as ws:
-            logger.info("WebSocket connected, sending initialization...")
+            logger.debug("WebSocket connected, sending initialization...")
             # Send initialization message (direct JSON object, not wrapped)
             init_payload = {
                 "model_id": self.model_id,
@@ -107,7 +107,7 @@ class AsyncAIProvider:
                 }
             }
             await ws.send(json.dumps(init_payload))
-            logger.info(f"🔧 DEBUG: Sent initialization: {init_payload}")
+            logger.debug(f"🔧 DEBUG: Sent initialization: {init_payload}")
 
             queue: asyncio.Queue[bytes | None] = asyncio.Queue()
 
@@ -121,7 +121,7 @@ class AsyncAIProvider:
                         "voice": {"mode": "id", "id": self.voice_id}
                     }
                     await ws.send(json.dumps(warm_up_payload))
-                    logger.info("🔧 DEBUG: Sent minimal warm-up text: '.'")
+                    logger.debug("🔧 DEBUG: Sent minimal warm-up text: '.'")
                     # No artificial delay - rely on async processing for ultra-low latency
                     
                     async for chunk in text_generator:
@@ -145,11 +145,11 @@ class AsyncAIProvider:
                             "voice": {"mode": "id", "id": self.voice_id}
                         }
                         await ws.send(json.dumps(asyncai_payload))
-                        logger.info(f"🔧 DEBUG: Sent text chunk {text_count}: '{text_content.strip()}'")
+                        logger.debug(f"🔧 DEBUG: Sent text chunk {text_count}: '{text_content.strip()}'")
                         
                         # Add detailed logging for first few chunks to debug missing text
                         if text_count <= 3:
-                            logger.info(f"🔍 DEBUG: First {text_count} chunks sent - text: '{text_content.strip()}'")
+                            logger.debug(f"🔍 DEBUG: First {text_count} chunks sent - text: '{text_content.strip()}'")
                     
                     # Send close connection message with voice parameter
                     close_payload = {
@@ -157,7 +157,7 @@ class AsyncAIProvider:
                         "voice": {"mode": "id", "id": self.voice_id}
                     }
                     await ws.send(json.dumps(close_payload))
-                    logger.info("Sent close connection message")
+                    logger.debug("Sent close connection message")
                 except Exception as e:
                     logger.error(f"Sender error: {e}")
 

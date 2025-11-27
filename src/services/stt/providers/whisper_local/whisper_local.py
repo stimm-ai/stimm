@@ -66,7 +66,7 @@ class WhisperLocalProvider:
         try:
             self.websocket = await websockets.connect(self.full_url)
             self.connected = True
-            logger.info(f"Connected to whisper-stt service at {self.full_url}")
+            logger.debug(f"Connected to whisper-stt service at {self.full_url}")
         except Exception as e:
             logger.error(f"Failed to connect to whisper-stt service: {e}")
             raise

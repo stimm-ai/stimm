@@ -114,7 +114,7 @@ class DeepgramProvider:
             self.session = aiohttp.ClientSession()
             self.websocket = await self.session.ws_connect(ws_url, headers=headers)
             self.connected = True
-            logger.info(f"Connected to Deepgram service with model: {self.model}, language: {self.language}")
+            logger.debug(f"Connected to Deepgram service with model: {self.model}, language: {self.language}")
             
         except Exception as e:
             logger.error(f"Failed to connect to Deepgram service: {e}")

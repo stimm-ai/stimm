@@ -95,7 +95,7 @@ class DeepgramProvider:
         self.session = aiohttp.ClientSession()
         try:
             self.websocket = await self.session.ws_connect(url, headers=headers)
-            logger.info("Deepgram TTS WebSocket connected, starting text streaming...")
+            logger.debug("Deepgram TTS WebSocket connected, starting text streaming...")
 
             queue: asyncio.Queue[bytes | None] = asyncio.Queue()
 

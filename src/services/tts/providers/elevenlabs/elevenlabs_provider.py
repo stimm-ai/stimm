@@ -118,8 +118,8 @@ class ElevenLabsProvider:
         self.session = aiohttp.ClientSession()
         try:
             self.websocket = await self.session.ws_connect(url, headers=headers, params=params)
-            logger.info(f"✅ ElevenLabs TTS WebSocket connected to {url}")
-            logger.info("ElevenLabs TTS WebSocket connected, sending initialization...")
+            logger.debug(f"✅ ElevenLabs TTS WebSocket connected to {url}")
+            logger.debug("ElevenLabs TTS WebSocket connected, sending initialization...")
             
             # Send initialization message
             init_payload = {

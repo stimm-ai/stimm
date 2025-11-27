@@ -82,7 +82,7 @@ class KokoroLocalProvider:
         logger.info(f"Connecting to Kokoro Live Streaming WebSocket: {url}...")
 
         async with websockets.connect(url, ping_interval=20, ping_timeout=20, max_size=None) as ws:
-            logger.info("Live streaming WebSocket connected, sending initialization...")
+            logger.debug("Live streaming WebSocket connected, sending initialization...")
             
             # Send initialization for live streaming
             init_payload = {

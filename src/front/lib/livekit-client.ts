@@ -11,6 +11,7 @@ interface LiveKitEvents {
   onError?: (error: string) => void
   onRoomConnected?: (room: Room) => void
   onRoomDisconnected?: () => void
+  onDataReceived?: (payload: Uint8Array, participant?: RemoteParticipant) => void
 }
 
 export class LiveKitVoiceClient {
@@ -91,6 +92,10 @@ export class LiveKitVoiceClient {
       .on(RoomEvent.MediaDevicesError, (error: Error) => {
         console.error('🎤 Media devices error:', error)
         this.events.onError?.(error.message)
+      })
+      .on(RoomEvent.DataReceived, (payload: Uint8Array, participant?: RemoteParticipant, _kind?: any, _topic?: any) => {
+        console.log('📦 Data received from:', participant?.identity)
+        this.events.onDataReceived?.(payload, participant)
       })
   }
 
@@ -212,6 +217,10 @@ export class LiveKitVoiceClient {
 
   set onRoomDisconnected(handler: () => void) {
     this.events.onRoomDisconnected = handler
+  }
+
+  set onDataReceived(handler: (payload: Uint8Array, participant?: RemoteParticipant) => void) {
+    this.events.onDataReceived = handler
   }
 }
 

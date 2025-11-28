@@ -6,13 +6,11 @@ import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Agent } from '@/components/agent/types'
-import { WebRTCVoiceClient } from '@/lib/webrtc-client'
+import { useLiveKit } from '@/hooks/use-livekit'
 
 interface VoicebotStatus {
   energy: number
   state: 'silence' | 'speaking' | 'processing' | 'responding'
-  isConnected: boolean
-  connectionState: 'disconnected' | 'connecting' | 'connected' | 'failed' | 'closed'
   llmStatus: boolean
   ttsStatus: boolean
   tokenCount: number
@@ -28,8 +26,6 @@ export function VoicebotInterface() {
   const [status, setStatus] = useState<VoicebotStatus>({
     energy: 0,
     state: 'silence',
-    isConnected: false,
-    connectionState: 'disconnected',
     llmStatus: false,
     ttsStatus: false,
     tokenCount: 0,
@@ -39,64 +35,43 @@ export function VoicebotInterface() {
   
   const [transcription, setTranscription] = useState<string>('Your speech will appear here in real-time...')
   const [response, setResponse] = useState<string>('Assistant responses will appear here...')
-  const [error, setError] = useState<string | null>(null)
   
-  const webrtcClientRef = useRef<WebRTCVoiceClient | null>(null)
+  // Use the LiveKit hook
+  const { 
+    isConnected, 
+    connectionState, 
+    agentParticipant, 
+    audioStream, 
+    error: liveKitError, 
+    connect, 
+    disconnect 
+  } = useLiveKit()
+  
   const audioPlayerRef = useRef<HTMLAudioElement>(null)
-  const streamStartTimeRef = useRef<number>(0)
-  const firstChunkTimeRef = useRef<number>(0)
 
   // Load agents on component mount
   useEffect(() => {
     loadAgents()
   }, [])
 
-  // Initialize WebRTC client
+  // Handle Audio Stream
   useEffect(() => {
-    webrtcClientRef.current = new WebRTCVoiceClient()
-    
-    const client = webrtcClientRef.current
-    
-    // Set up event handlers
-    client.onConnectionStateChange = (state: string) => {
-      setStatus(prev => ({ ...prev, connectionState: state as any }))
-    }
-    
-    client.onAudioTrack = (stream: MediaStream) => {
-      if (audioPlayerRef.current) {
-        audioPlayerRef.current.srcObject = stream
-        audioPlayerRef.current.play().catch(console.error)
+    if (audioPlayerRef.current) {
+      if (audioStream) {
+        console.log('Attaching audio stream to player')
+        audioPlayerRef.current.srcObject = audioStream
+        audioPlayerRef.current.play().catch(e => console.error('Audio playback failed:', e))
+      } else {
+        audioPlayerRef.current.srcObject = null
       }
     }
-    
-    client.onVADUpdate = (energy: number, state: string) => {
-      setStatus(prev => ({ ...prev, energy, state: state as any }))
-    }
-    
-    client.onTranscription = (text: string) => {
-      setTranscription(text)
-    }
-    
-    client.onResponse = (text: string) => {
-      setResponse(text)
-    }
-    
-    client.onStatusUpdate = (statusUpdate: Partial<VoicebotStatus>) => {
-      setStatus(prev => ({ ...prev, ...statusUpdate }))
-    }
-    
-    client.onError = (errorMessage: string) => {
-      setError(errorMessage)
-    }
-
-    return () => {
-      client.disconnect()
-    }
-  }, [])
+  }, [audioStream])
 
   const loadAgents = async () => {
     try {
-      // WSL2 IP for Docker networking
+      // Use environment-aware logic from frontend-config (but here we hardcode for now as per original)
+      // Or better, use the proxy or direct IP if known.
+      // Keeping original logic for fetching agents list
       const WSL2_IP = '172.23.126.232'
       const response = await fetch(`http://${WSL2_IP}:8001/api/agents/`)
       if (response.ok) {
@@ -114,57 +89,34 @@ export function VoicebotInterface() {
   }
 
   const handleVoiceToggle = async () => {
-    if (!status.isConnected) {
+    if (!isConnected) {
       // Connect
-      try {
-        setError(null)
-        streamStartTimeRef.current = Date.now()
-        firstChunkTimeRef.current = 0
-        
-        setStatus(prev => ({ ...prev, connectionState: 'connecting' }))
-        
-        await webrtcClientRef.current?.connect(selectedAgent)
-        
-        setStatus(prev => ({ 
-          ...prev, 
-          isConnected: true, 
-          connectionState: 'connected',
-          streamTime: 0 
-        }))
-      } catch (err) {
-        console.error('Connection failed:', err)
-        setError(err instanceof Error ? err.message : 'Connection failed')
-        setStatus(prev => ({ ...prev, connectionState: 'failed' }))
-      }
+      if (connectionState === 'connecting') return
+      await connect(selectedAgent)
     } else {
       // Disconnect
-      webrtcClientRef.current?.disconnect()
-      setStatus(prev => ({ 
-        ...prev, 
-        isConnected: false, 
-        connectionState: 'disconnected',
-        state: 'silence',
-        energy: 0 
-      }))
+      await disconnect()
       setTranscription('Your speech will appear here in real-time...')
       setResponse('Assistant responses will appear here...')
     }
   }
 
   const getButtonText = () => {
-    switch (status.connectionState) {
+    switch (connectionState) {
       case 'connecting': return '⏳ Connecting...'
       case 'connected': return '🛑 Stop Conversation'
       case 'failed': return '❌ Connection Failed'
+      case 'reconnecting': return '🔄 Reconnecting...'
       default: return '🎤 Start Conversation'
     }
   }
 
   const getButtonClass = () => {
-    switch (status.connectionState) {
+    switch (connectionState) {
       case 'connecting': return 'bg-gray-500 text-white'
       case 'connected': return 'bg-red-500 text-white'
       case 'failed': return 'bg-orange-500 text-white'
+      case 'reconnecting': return 'bg-yellow-500 text-white'
       default: return 'bg-green-500 text-white hover:bg-green-600'
     }
   }
@@ -179,7 +131,7 @@ export function VoicebotInterface() {
       <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-2xl h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 text-center">
-          <h1 className="text-2xl font-semibold mb-2">Voicebot Assistant</h1>
+          <h1 className="text-2xl font-semibold mb-2">Voicebot Assistant (LiveKit)</h1>
           <p className="opacity-90">Complete voice conversation with STT, RAG/LLM, and TTS integration</p>
         </div>
 
@@ -188,11 +140,12 @@ export function VoicebotInterface() {
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
               <div className={`w-3 h-3 rounded-full ${
-                status.connectionState === 'connected' ? 'bg-green-500 animate-pulse' :
-                status.connectionState === 'failed' ? 'bg-red-500' : 'bg-gray-400'
+                connectionState === 'connected' ? 'bg-green-500 animate-pulse' :
+                connectionState === 'failed' ? 'bg-red-500' : 
+                connectionState === 'connecting' ? 'bg-yellow-500 animate-pulse' : 'bg-gray-400'
               }`} />
               <span className="text-sm font-medium capitalize">
-                {status.connectionState === 'disconnected' ? 'Ready to connect' : status.connectionState}
+                {connectionState === 'disconnected' ? 'Ready to connect' : connectionState}
               </span>
             </div>
             
@@ -217,15 +170,15 @@ export function VoicebotInterface() {
             </div>
             
             <div className="text-xs text-gray-500">
-              Energy: {status.energy.toFixed(3)} | State: {status.state}
+               {agentParticipant ? `Connected to Agent: ${agentParticipant.identity}` : 'No Agent Connected'}
             </div>
           </div>
         </div>
 
         {/* Error Alert */}
-        {error && (
+        {liveKitError && (
           <Alert className="mx-4 mt-4 border-red-200 bg-red-50">
-            <AlertDescription className="text-red-800">{error}</AlertDescription>
+            <AlertDescription className="text-red-800">{liveKitError}</AlertDescription>
           </Alert>
         )}
 
@@ -233,13 +186,13 @@ export function VoicebotInterface() {
         <div className="p-8 text-center bg-white">
           <Button
             onClick={handleVoiceToggle}
-            disabled={status.connectionState === 'connecting'}
+            disabled={connectionState === 'connecting'}
             className={`px-8 py-4 text-lg font-semibold rounded-full min-w-48 shadow-lg transition-all hover:scale-105 ${getButtonClass()}`}
           >
             {getButtonText()}
           </Button>
           
-          {/* VAD Visualizer */}
+          {/* VAD Visualizer - Placeholder as VAD data is not currently streamed from backend */}
           <div className="mt-4 mx-auto w-80 max-w-sm">
             <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
               <div 
@@ -247,6 +200,9 @@ export function VoicebotInterface() {
                 style={{ width: `${Math.min(status.energy * 100, 100)}%` }}
               />
             </div>
+            <p className="text-xs text-gray-400 mt-1">
+              (Visualizer currently disabled in LiveKit mode)
+            </p>
           </div>
         </div>
 
@@ -260,6 +216,11 @@ export function VoicebotInterface() {
             <CardContent className="flex-1">
               <div className="h-48 overflow-y-auto text-gray-700 leading-relaxed whitespace-pre-wrap">
                 {transcription}
+                {isConnected && (
+                  <p className="text-sm text-gray-400 mt-2 italic">
+                    Note: Real-time transcription display requires backend update to stream text via LiveKit Data.
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -272,6 +233,11 @@ export function VoicebotInterface() {
             <CardContent className="flex-1">
               <div className="h-48 overflow-y-auto text-gray-700 leading-relaxed whitespace-pre-wrap">
                 {response}
+                {isConnected && (
+                  <p className="text-sm text-gray-400 mt-2 italic">
+                    Note: Real-time text response display requires backend update to stream text via LiveKit Data.
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>

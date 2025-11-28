@@ -82,7 +82,7 @@ class ChatbotService:
             
             # Ensure models are pre-warmed
             if not self._is_prewarmed:
-                await self.prewarm_models()
+                await self.prewarm_models(agent_id=agent_id, session_id=session_id)
             
             # Check if RAG state is properly initialized
             if rag_state.client is None or rag_state.embedder is None:

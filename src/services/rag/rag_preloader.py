@@ -31,10 +31,13 @@ class RAGPreloader:
         self._preload_time: Optional[float] = None
         self._preload_error: Optional[str] = None
         
-    async def preload_all(self) -> bool:
+    async def preload_all(self, agent_id: str = None) -> bool:
         """
         Preload all RAG components at server startup.
         
+        Args:
+            agent_id: Optional agent ID to use for model pre-warming (default: None/System Default)
+
         Returns:
             bool: True if preloading successful, False otherwise
         """
@@ -51,7 +54,7 @@ class RAGPreloader:
             
             # Preload chatbot models
             from .chatbot_service import chatbot_service
-            await chatbot_service.prewarm_models()
+            await chatbot_service.prewarm_models(agent_id=agent_id)
             
             self._preload_time = time.time() - self._preload_start_time
             self._is_preloaded = True

@@ -59,6 +59,7 @@ async def list_agents_local():
             print(f"  ID: {agent.id}")
             print(f"  Description: {agent.description or 'No description'}")
             print(f"  LLM Provider: {agent.llm_provider}")
+            print(f"  LLM Config: {agent.llm_config}")
             print(f"  TTS Provider: {agent.tts_provider}")
             print(f"  STT Provider: {agent.stt_provider}")
             print(f"  Default: {'✅' if agent.is_default else '❌'}")
@@ -209,7 +210,7 @@ Examples:
     return parser.parse_args(preprocess_argv())
 
 async def run_chat_mode_local(args):
-    from services.rag.chatbot_service import ChatbotService
+    from services.rag.chatbot_service import chatbot_service
     from services.rag.rag_preloader import rag_preloader
     from services.agents_admin.agent_service import AgentService
     from database.session import get_db
@@ -227,7 +228,7 @@ async def run_chat_mode_local(args):
             agents = service.list_agents(skip=0, limit=1000).agents
             for agent in agents:
                 if agent.name == agent_name:
-                    agent_id = str(agent.id)
+                    agent_id = agent.id
                     break
             if not agent_id:
                 print(f"❌ Agent '{agent_name}' not found in local database.")
@@ -240,7 +241,8 @@ async def run_chat_mode_local(args):
     
     if use_rag:
         print("⏳ Initializing RAG system (loading models)...")
-        if not await rag_preloader.preload_all():
+        # Preload using the specific agent to ensure correct models are warmed up
+        if not await rag_preloader.preload_all(agent_id=agent_id):
             print("❌ Failed to initialize RAG system.")
             return 1
         rag_state = rag_preloader.rag_state
@@ -255,7 +257,7 @@ async def run_chat_mode_local(args):
         # Let's check ChatbotService logic.
         pass
 
-    chatbot_service = ChatbotService()
+    # Use global chatbot_service instance
     
     conversation_id = None
     while True:

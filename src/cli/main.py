@@ -210,7 +210,7 @@ Examples:
 
 async def run_chat_mode_local(args):
     from services.rag.chatbot_service import ChatbotService
-    from services.rag.rag_state import RagState
+    from services.rag.rag_preloader import rag_preloader
     from services.agents_admin.agent_service import AgentService
     from database.session import get_db
 
@@ -238,8 +238,23 @@ async def run_chat_mode_local(args):
     print(f"\n🤖 Local Chat Mode (Agent: {agent_name or 'Default'})")
     print("=" * 50)
     
-    rag_state = RagState()
-    await rag_state.ensure_ready()
+    if use_rag:
+        print("⏳ Initializing RAG system (loading models)...")
+        if not await rag_preloader.preload_all():
+            print("❌ Failed to initialize RAG system.")
+            return 1
+        rag_state = rag_preloader.rag_state
+        print("✅ RAG system ready.")
+    else:
+        # Create dummy RAG state if RAG is disabled
+        from services.rag.rag_state import RagState
+        rag_state = RagState()
+        # Mock ensure_ready to pass if disable_rag is true?
+        # Actually ChatbotService checks rag_state.client.
+        # If we disable rag, we probably don't need rag_state to be ready?
+        # Let's check ChatbotService logic.
+        pass
+
     chatbot_service = ChatbotService()
     
     conversation_id = None

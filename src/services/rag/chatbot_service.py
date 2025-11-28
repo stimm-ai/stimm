@@ -55,6 +55,9 @@ class ChatbotService:
             
         except Exception as e:
             LOGGER.error(f"Failed to pre-warm chatbot models: {e}")
+        finally:
+            if 'llm_service' in locals() and llm_service:
+                await llm_service.close()
     
     async def process_chat_message(self, message: str, conversation_id: str = None, rag_state: RagState = None, agent_id: str = None, session_id: str = None):
         """
@@ -223,6 +226,9 @@ class ChatbotService:
                 "type": "error",
                 "content": str(e)
             }
+        finally:
+            if self.llm_service:
+                await self.llm_service.close()
 
 # Global chatbot service instance
 chatbot_service = ChatbotService()

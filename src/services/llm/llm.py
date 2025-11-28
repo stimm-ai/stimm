@@ -52,8 +52,8 @@ class LLMService:
         provider_name = agent_config.llm_provider
         provider_config = agent_config.llm_config
         
-        logger.info(f"Initializing LLM provider: {provider_name} with agent configuration")
-        logger.info(f"🔍 LLM provider config for {provider_name}: {provider_config}")
+        logger.debug(f"Initializing LLM provider: {provider_name} with agent configuration")
+        logger.debug(f"🔍 LLM provider config for {provider_name}: {provider_config}")
         
         # Initialize provider - mapping is now handled within each provider
         if provider_name == "groq.com":

@@ -21,14 +21,8 @@ export class LiveKitVoiceClient {
   private agentParticipant: RemoteParticipant | null = null
 
   constructor() {
-    // Log environment info for debugging
-    const envInfo = apiClient.getEnvironment()
-    console.log('LiveKit Client Environment:', {
-      isServerSide: envInfo.isServerSide,
-      hostname: envInfo.hostname,
-      type: envInfo.type,
-      liveKitUrl: apiClient.getLiveKitUrl()
-    })
+    // The new config logs itself, so this is just for confirmation
+    console.log('LiveKitVoiceClient initialized. LiveKit URL:', apiClient.getLiveKitUrl());
     
     this.setupRoom()
   }
@@ -94,7 +88,7 @@ export class LiveKitVoiceClient {
         this.events.onError?.(error.message)
       })
       .on(RoomEvent.DataReceived, (payload: Uint8Array, participant?: RemoteParticipant, _kind?: any, _topic?: any) => {
-        console.log('📦 Data received from:', participant?.identity)
+        //console.log('📦 Data received from:', participant?.identity)
         this.events.onDataReceived?.(payload, participant)
       })
   }

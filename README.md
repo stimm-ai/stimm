@@ -208,12 +208,6 @@ uv run python -m src.cli.main talk --agent-name "ava"
 
 # Start a session with a custom room name
 uv run python -m src.cli.main talk --agent-name "ava" --room-name "my-test-room"
-
-# Connect to a remote backend (default URL)
-uv run python -m src.cli.main --http talk --agent-name "ava"
-
-# Connect to a specific backend URL
-uv run python -m src.cli.main --http http://my-backend:8001 talk --agent-name "ava"
 ```
 **Options:**
 - `--agent-name NAME`: The name of the agent to talk to.
@@ -229,9 +223,6 @@ uv run python -m src.cli.main chat
 
 # Start a chat with a specific agent, disabling RAG
 uv run python -m src.cli.main chat --agent-name "ava" --disable-rag
-
-# Start a chat using a remote backend
-uv run python -m src.cli.main --http chat --agent-name "ava"
 ```
 **Options:**
 - `--agent-name NAME`: The name of the agent to chat with.
@@ -243,9 +234,6 @@ Manages agents in the system.
 ```bash
 # List all agents
 uv run python -m src.cli.main agents list
-
-# List agents from a running backend API
-uv run python -m src.cli.main --http agents list
 ```
 **Subcommands:**
 - `list`: Displays a list of all configured agents.
@@ -262,6 +250,30 @@ uv run python -m src.cli.main --verbose test echo
 ```
 **Subcommands:**
 - `echo`: Starts an echo client and server to verify that your audio is being correctly captured and played back through LiveKit.
+
+#### HTTP Mode
+
+The CLI tool can operate in HTTP mode to connect to a remote backend server. This is useful for testing deployed instances or when you don't want to run agent logic locally.
+
+**Basic Usage:**
+- `--http`: Connect to the backend URL defined in your `.env` file
+- `--http URL`: Connect to a specific backend URL
+
+**Examples:**
+
+```bash
+# Connect to remote backend using default URL from .env
+uv run python -m src.cli.main --http talk --agent-name "ava"
+
+# Connect to a specific backend URL
+uv run python -m src.cli.main --http http://my-backend:8001 talk --agent-name "ava"
+
+# Use HTTP mode with chat command
+uv run python -m src.cli.main --http chat --agent-name "ava"
+
+# List agents from a remote backend
+uv run python -m src.cli.main --http agents list
+```
 
 ## 📊 Logging
 

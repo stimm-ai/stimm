@@ -1,6 +1,5 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   env: {
     // Make environment info available to the frontend
     NEXT_PUBLIC_ENVIRONMENT_TYPE: process.env.NODE_ENV === 'development' ? 'local' : 'docker',

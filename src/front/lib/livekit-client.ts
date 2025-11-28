@@ -144,6 +144,25 @@ export class LiveKitVoiceClient {
         autoSubscribe: true,
       })
 
+      // Check for existing participants (if agent is already there)
+      this.room.remoteParticipants.forEach(participant => {
+        if (participant.identity.startsWith('agent_')) {
+          console.log('🤖 Found existing agent in room:', participant.identity)
+          this.agentParticipant = participant
+          this.events.onAgentJoined?.(participant)
+          
+          // Check for existing tracks
+          participant.trackPublications.forEach(publication => {
+            if (publication.track && publication.kind === 'audio') {
+               // Manually trigger track handling
+               const stream = new MediaStream([publication.track.mediaStreamTrack])
+               this.events.onAudioTrack?.(stream)
+               console.log('🔊 Found existing agent audio track')
+            }
+          })
+        }
+      })
+
       // 4. Publier le microphone
       await this.room.localParticipant.publishTrack(localStream.getAudioTracks()[0], {
         name: 'microphone',

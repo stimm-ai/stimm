@@ -37,14 +37,17 @@ export function VoicebotInterface() {
   const [response, setResponse] = useState<string>('Assistant responses will appear here...')
   
   // Use the LiveKit hook
-  const { 
-    isConnected, 
-    connectionState, 
-    agentParticipant, 
-    audioStream, 
-    error: liveKitError, 
-    connect, 
-    disconnect 
+  const {
+    isConnected,
+    connectionState,
+    agentParticipant,
+    audioStream,
+    error: liveKitError,
+    transcription: liveTranscripts,
+    response: liveResponse,
+    vadState,
+    connect,
+    disconnect
   } = useLiveKit()
   
   const audioPlayerRef = useRef<HTMLAudioElement>(null)
@@ -66,6 +69,23 @@ export function VoicebotInterface() {
       }
     }
   }, [audioStream])
+
+  // Sync LiveKit Data to Local State for UI
+  useEffect(() => {
+    if (liveTranscripts) {
+      setTranscription(liveTranscripts)
+    }
+    if (liveResponse) {
+      setResponse(liveResponse)
+    }
+    if (vadState) {
+      setStatus(prev => ({
+        ...prev,
+        energy: vadState.energy,
+        state: vadState.state
+      }))
+    }
+  }, [liveTranscripts, liveResponse, vadState])
 
   const loadAgents = async () => {
     try {
@@ -192,17 +212,18 @@ export function VoicebotInterface() {
             {getButtonText()}
           </Button>
           
-          {/* VAD Visualizer - Placeholder as VAD data is not currently streamed from backend */}
+          {/* VAD Visualizer */}
           <div className="mt-4 mx-auto w-80 max-w-sm">
             <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div 
+              <div
                 className="h-full bg-green-500 transition-all duration-100 rounded-full"
                 style={{ width: `${Math.min(status.energy * 100, 100)}%` }}
               />
             </div>
-            <p className="text-xs text-gray-400 mt-1">
-              (Visualizer currently disabled in LiveKit mode)
-            </p>
+            <div className="text-xs text-gray-500 mt-1 flex justify-between">
+               <span>VAD State: {status.state}</span>
+               <span>Energy: {status.energy.toFixed(2)}</span>
+            </div>
           </div>
         </div>
 
@@ -214,13 +235,8 @@ export function VoicebotInterface() {
               <CardTitle>Transcription</CardTitle>
             </CardHeader>
             <CardContent className="flex-1">
-              <div className="h-48 overflow-y-auto text-gray-700 leading-relaxed whitespace-pre-wrap">
-                {transcription}
-                {isConnected && (
-                  <p className="text-sm text-gray-400 mt-2 italic">
-                    Note: Real-time transcription display requires backend update to stream text via LiveKit Data.
-                  </p>
-                )}
+              <div className="h-48 overflow-y-auto text-gray-700 leading-relaxed whitespace-pre-wrap font-mono text-sm">
+                {transcription || <span className="text-gray-400 italic">Waiting for speech...</span>}
               </div>
             </CardContent>
           </Card>
@@ -231,13 +247,8 @@ export function VoicebotInterface() {
               <CardTitle>Assistant Response</CardTitle>
             </CardHeader>
             <CardContent className="flex-1">
-              <div className="h-48 overflow-y-auto text-gray-700 leading-relaxed whitespace-pre-wrap">
-                {response}
-                {isConnected && (
-                  <p className="text-sm text-gray-400 mt-2 italic">
-                    Note: Real-time text response display requires backend update to stream text via LiveKit Data.
-                  </p>
-                )}
+              <div className="h-48 overflow-y-auto text-gray-700 leading-relaxed whitespace-pre-wrap font-mono text-sm">
+                {response || <span className="text-gray-400 italic">Waiting for response...</span>}
               </div>
             </CardContent>
           </Card>

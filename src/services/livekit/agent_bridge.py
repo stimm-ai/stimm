@@ -369,6 +369,15 @@ class LiveKitAgentBridge:
                 self._handle_agent_audio_response
             )
             
+            # Register handlers for text/data events
+            self.voicebot_service.register_event_handler("transcript_update", self._handle_data_event)
+            self.voicebot_service.register_event_handler("assistant_response", self._handle_data_event)
+            self.voicebot_service.register_event_handler("vad_update", self._handle_data_event)
+            self.voicebot_service.register_event_handler("speech_start", self._handle_data_event)
+            self.voicebot_service.register_event_handler("speech_end", self._handle_data_event)
+            self.voicebot_service.register_event_handler("bot_responding_start", self._handle_data_event)
+            self.voicebot_service.register_event_handler("bot_responding_end", self._handle_data_event)
+            
             logger.debug(f"🎙️ Voicebot session created for conversation {self.conversation_id}")
             
         except Exception as e:
@@ -391,6 +400,34 @@ class LiveKitAgentBridge:
                 
         except Exception as e:
             logger.error(f"❌ Error handling agent audio response: {e}")
+
+    async def _handle_data_event(self, event: Dict[str, Any]):
+        """
+        Handle non-audio data events and forward as LiveKit Data Packets.
+        """
+        try:
+            import json
+            if not self.is_connected:
+                return
+
+            # Clean event payload (remove large binary data if any, though audio_chunk is handled separately)
+            payload = {k: v for k, v in event.items() if k != "data" or not isinstance(v, bytes)}
+            
+            # Serialize to JSON string then bytes
+            json_str = json.dumps(payload)
+            data_bytes = json_str.encode('utf-8')
+            
+            # Publish to room
+            # Use reliable delivery for text, lossy for VAD could be okay but let's stick to reliable for simplicity
+            await self.room.local_participant.publish_data(
+                data_bytes,
+                reliable=True,
+                destination_identities=[] # Broadcast to all
+            )
+            # logger.debug(f"📤 Published data event: {event.get('type')}")
+            
+        except Exception as e:
+            logger.error(f"❌ Error publishing data packet: {e}")
     
     async def disconnect(self):
         """
@@ -419,6 +456,13 @@ class LiveKitAgentBridge:
         
         if self.voicebot_service:
             self.voicebot_service.unregister_event_handler("audio_chunk")
+            self.voicebot_service.unregister_event_handler("transcript_update")
+            self.voicebot_service.unregister_event_handler("assistant_response")
+            self.voicebot_service.unregister_event_handler("vad_update")
+            self.voicebot_service.unregister_event_handler("speech_start")
+            self.voicebot_service.unregister_event_handler("speech_end")
+            self.voicebot_service.unregister_event_handler("bot_responding_start")
+            self.voicebot_service.unregister_event_handler("bot_responding_end")
     
     async def start_session(self):
         """

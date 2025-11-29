@@ -6,6 +6,7 @@ import { apiClient } from './frontend-config'
 interface LiveKitEvents {
   onConnectionStateChange?: (state: string) => void
   onAudioTrack?: (stream: MediaStream) => void
+  onLocalAudioTrack?: (stream: MediaStream) => void
   onAgentJoined?: (participant: RemoteParticipant) => void
   onAgentLeft?: (participant: RemoteParticipant) => void
   onError?: (error: string) => void
@@ -166,6 +167,9 @@ export class LiveKitVoiceClient {
       })
 
       console.log('✅ Successfully connected and published microphone')
+      
+      // Notify listeners about local audio track for visualization
+      this.events.onLocalAudioTrack?.(localStream)
 
     } catch (error) {
       console.error('❌ Failed to connect to LiveKit:', error)
@@ -210,6 +214,10 @@ export class LiveKitVoiceClient {
 
   set onAudioTrack(handler: (stream: MediaStream) => void) {
     this.events.onAudioTrack = handler
+  }
+
+  set onLocalAudioTrack(handler: (stream: MediaStream) => void) {
+    this.events.onLocalAudioTrack = handler
   }
 
   set onAgentJoined(handler: (participant: RemoteParticipant) => void) {

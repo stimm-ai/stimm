@@ -12,6 +12,7 @@ export interface UseLiveKitReturn {
   connectionState: ConnectionState
   agentParticipant: RemoteParticipant | null
   audioStream: MediaStream | null
+  localAudioStream: MediaStream | null
   error: string | null
   transcription: string
   response: string
@@ -28,6 +29,7 @@ export function useLiveKit(): UseLiveKitReturn {
   const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected')
   const [agentParticipant, setAgentParticipant] = useState<RemoteParticipant | null>(null)
   const [audioStream, setAudioStream] = useState<MediaStream | null>(null)
+  const [localAudioStream, setLocalAudioStream] = useState<MediaStream | null>(null)
   const [error, setError] = useState<string | null>(null)
   
   // Data states
@@ -75,6 +77,12 @@ export function useLiveKit(): UseLiveKitReturn {
     liveKitClient.onAudioTrack = (stream: MediaStream) => {
       if (isMounted.current) {
         setAudioStream(stream)
+      }
+    }
+    
+    liveKitClient.onLocalAudioTrack = (stream: MediaStream) => {
+      if (isMounted.current) {
+        setLocalAudioStream(stream)
       }
     }
 
@@ -214,6 +222,7 @@ export function useLiveKit(): UseLiveKitReturn {
         setConnectionState('disconnected')
         setAgentParticipant(null)
         setAudioStream(null)
+        setLocalAudioStream(null)
       }
     } catch (err) {
       console.error('Disconnect failed:', err)
@@ -225,6 +234,7 @@ export function useLiveKit(): UseLiveKitReturn {
     connectionState,
     agentParticipant,
     audioStream,
+    localAudioStream,
     error,
     transcription,
     response,

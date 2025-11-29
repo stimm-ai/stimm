@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Agent } from '@/components/agent/types'
 import { useLiveKit } from '@/hooks/use-livekit'
-import { Mic, MicOff, MoreHorizontal, X, MessageSquare, Activity, Settings, Zap } from 'lucide-react'
+import { Mic, MicOff, MoreHorizontal, X, MessageSquare, Activity, Settings, Zap, Bot, User } from 'lucide-react'
 
 interface VoicebotStatus {
   energy: number
@@ -57,6 +57,7 @@ export function VoicebotInterface() {
     connectionState,
     agentParticipant,
     audioStream,
+    localAudioStream,
     error: liveKitError,
     transcription: liveTranscripts,
     response: liveResponse,
@@ -70,6 +71,13 @@ export function VoicebotInterface() {
   } = useLiveKit()
   
   const audioPlayerRef = useRef<HTMLAudioElement>(null)
+  
+  // Visualizer State
+  const [audioLevels, setAudioLevels] = useState<number[]>([0, 0, 0, 0, 0])
+  const [activeStreamType, setActiveStreamType] = useState<'user' | 'agent'>('user')
+  const animationRef = useRef<number>()
+  const analyserRef = useRef<AnalyserNode>()
+  const audioContextRef = useRef<AudioContext>()
 
   // Load agents on component mount
   useEffect(() => {
@@ -96,6 +104,93 @@ export function VoicebotInterface() {
       }
     }
   }, [audioStream])
+
+  // Setup Web Audio API for Real-time Visualizer
+  useEffect(() => {
+    // Determine which stream to visualize
+    // If agent is speaking (responding state or playing audio), use agent stream
+    // Otherwise use local mic
+    const isAgentSpeaking = status.state === 'responding' || turnState.webrtc_streaming_agent_audio_response_started
+    // Prioritize audioStream only if it exists and agent is supposedly speaking
+    const targetStream = (isAgentSpeaking && audioStream) ? audioStream : localAudioStream
+    const type = (isAgentSpeaking && audioStream) ? 'agent' : 'user'
+    
+    setActiveStreamType(type)
+
+    if (!targetStream) {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current)
+      setAudioLevels([0, 0, 0, 0, 0])
+      return
+    }
+
+    const initAudioContext = () => {
+      try {
+        // Reuse context if exists and running, or create new
+        if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+             audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
+        }
+        const audioContext = audioContextRef.current
+
+        // Ensure we don't have dangling analysers/animations
+        if (animationRef.current) cancelAnimationFrame(animationRef.current)
+        
+        const analyser = audioContext.createAnalyser()
+        // Note: createMediaStreamSource can throw if stream is not active or valid
+        const source = audioContext.createMediaStreamSource(targetStream)
+        
+        analyser.fftSize = 32 // Small FFT size for fewer bars
+        source.connect(analyser)
+        
+        analyserRef.current = analyser
+        
+        const bufferLength = analyser.frequencyBinCount
+        const dataArray = new Uint8Array(bufferLength)
+        
+        const updateVisualizer = () => {
+          if (!analyserRef.current) return
+          
+          // Gate for user microphone based on VAD to avoid parasitic noise
+          // If we are in user mode (listening) and VAD is NOT active/speaking, show zero levels
+          // We use status.state which comes from backend VAD, or a local threshold if needed
+          // The user specifically requested this to filter out idle noise
+          const isUserMode = type === 'user'
+          const isVadActive = status.state === 'speaking' || turnState.vad_speech_detected
+          
+          if (isUserMode && !isVadActive) {
+             // Decay levels to 0 smoothly or set to 0
+             setAudioLevels(prev => prev.map(l => Math.max(0, l - 5)))
+             animationRef.current = requestAnimationFrame(updateVisualizer)
+             return
+          }
+
+          analyserRef.current.getByteFrequencyData(dataArray)
+          
+          // Map frequency bins to 5 bars
+          // Indices: 0 (Bass), 1, 2 (Mids), 3, 4 (Treble)
+          const indices = [1, 2, 3, 5, 8]
+          const levels = indices.map(i => {
+             const val = dataArray[i] || 0
+             // Scale 0-255 to 0-100
+             return (val / 255) * 100
+          })
+          
+          setAudioLevels(levels)
+          animationRef.current = requestAnimationFrame(updateVisualizer)
+        }
+        
+        updateVisualizer()
+      } catch (e) {
+        console.error('Failed to initialize audio visualizer:', e)
+      }
+    }
+
+    initAudioContext()
+
+    return () => {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current)
+      // We generally keep audioContext alive, but could close it if component unmounts
+    }
+  }, [localAudioStream, audioStream, status.state, turnState.webrtc_streaming_agent_audio_response_started])
 
   // Sync LiveKit Data to Local State for UI
   useEffect(() => {
@@ -201,33 +296,43 @@ export function VoicebotInterface() {
 
         {/* Center: VAD Visualizer */}
         <div className="flex-1 flex flex-col items-center justify-center p-8">
+           
+           {/* Visualizer Icon Indicator */}
+           <div className="mb-6 flex justify-center h-8">
+             {isConnected && (
+               <div className={`
+                 flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300
+                 ${activeStreamType === 'agent' 
+                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-[0_0_15px_rgba(103,232,249,0.3)]' 
+                   : 'bg-white/10 text-white/70 border border-white/10'}
+               `}>
+                 {activeStreamType === 'agent' ? <Bot className="w-3 h-3" /> : <User className="w-3 h-3" />}
+                 <span>{activeStreamType === 'agent' ? 'Agent Speaking' : 'Listening'}</span>
+               </div>
+             )}
+           </div>
+
            {/* Visualizer Bars */}
            <div className="flex items-center justify-center gap-3 h-32">
-              {[0, 1, 2, 3, 4].map((i) => {
-                 // Improved visualizer with "hill" pattern and organic variance
-                 // Center bars (2) are taller, outer bars (0,4) are shorter
-                 const shapeMultipliers = [0.6, 0.85, 1.2, 0.85, 0.6]
-                 const multiplier = shapeMultipliers[i]
+              {audioLevels.map((level, i) => {
+                 // Enhance levels for better visibility
+                 const shapeMultipliers = [0.8, 1.0, 1.2, 1.0, 0.8]
+                 const height = Math.max(15, level * shapeMultipliers[i])
                  
-                 // Base height driven by energy (scaled up slightly to be more responsive)
-                 const energyBase = Math.min(100, Math.max(0, status.energy * 150))
-                 
-                 // Add organic variance that scales with energy
-                 const variance = Math.random() * 20 * status.energy
-                 
-                 // Calculate final height
-                 const calculatedHeight = (energyBase * multiplier) + variance
-                 const height = Math.max(15, Math.min(100, calculatedHeight))
-                 
-                 const isActive = status.state === 'speaking' || status.state === 'responding'
+                 const isActive = level > 5
+                 const isAgent = activeStreamType === 'agent'
                  
                  return (
                    <div
                      key={i}
-                     className={`w-12 rounded-full transition-all duration-100 ease-out shadow-lg ${isActive ? 'bg-white shadow-[0_0_20px_rgba(255,255,255,0.6)]' : 'bg-white/20'}`}
+                     className={`w-12 rounded-full transition-all duration-75 ease-out shadow-lg 
+                       ${isActive 
+                         ? (isAgent ? 'bg-cyan-300 shadow-[0_0_20px_rgba(103,232,249,0.6)]' : 'bg-white shadow-[0_0_20px_rgba(255,255,255,0.6)]') 
+                         : (isAgent ? 'bg-cyan-900/40' : 'bg-white/20')
+                       }`}
                      style={{
-                       height: `${isActive ? height : 15}%`,
-                       opacity: isActive ? 0.8 + (status.energy * 0.2) : 0.3
+                       height: `${Math.min(100, height)}%`,
+                       opacity: isActive ? 0.8 + (level / 200) : 0.3
                      }}
                    />
                  )

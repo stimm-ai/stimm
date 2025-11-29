@@ -12,6 +12,8 @@ from enum import Enum
 from typing import Optional, Dict, Any, List, AsyncGenerator
 import time
 
+from .metrics import TurnState, VADState
+
 logger = logging.getLogger(__name__)
 
 class AgentState(Enum):
@@ -54,6 +56,7 @@ class VoicebotEventLoop:
         
         # State
         self.state = AgentState.LISTENING
+        self.turn_state = TurnState()
         self.transcript_buffer = []
         self.current_sentence = ""
         self.last_speech_end_time = 0
@@ -173,6 +176,13 @@ class VoicebotEventLoop:
         is_speech = self.vad_service.triggered
         probability = self.vad_service.current_probability
         
+        # Update telemetry
+        self.turn_state.vad_energy = probability
+        self.turn_state.vad_state = VADState.SPEAKING if is_speech else VADState.SILENCE
+        # We don't push telemetry on every chunk to avoid flooding, only on significant changes
+        # But for energy visualization we might need frequent updates.
+        # Let's send it with the vad_update event which is already throttled or used for UI.
+        
         # CRITICAL FIX: Always send audio to STT, regardless of VAD state
         # This is the main fix - STT needs continuous audio to work properly
         try:
@@ -217,10 +227,13 @@ class VoicebotEventLoop:
                     await self.push_event("vad_end")
         
         # Send VAD status to client for UI updates
+        # Also include telemetry data
+        self.turn_state.calculate_metrics()
         await self.output_queue.put({
             "type": "vad_update",
             "energy": probability,
-            "state": "speaking" if is_speech else "silence"
+            "state": "speaking" if is_speech else "silence",
+            "telemetry": self.turn_state.to_dict()
         })
 
     async def _process_stt_stream(self):
@@ -256,6 +269,10 @@ class VoicebotEventLoop:
             transcript_count = 0
             
             async for transcript in self.stt_service.transcribe_streaming(audio_generator()):
+                if not self.turn_state.stt_streaming_started:
+                    self.turn_state.stt_streaming_started = True
+                    await self._push_telemetry_update()
+
                 transcript_count += 1
                 self.last_transcript_received = transcript
                 
@@ -270,6 +287,10 @@ class VoicebotEventLoop:
                 
                 await self.push_event("transcript_update", transcript)
                 
+                if is_final:
+                    self.turn_state.stt_streaming_ended = True
+                    await self._push_telemetry_update()
+
                 # Log every 10 transcripts
                 if transcript_count % 10 == 0:
                     logger.debug(f"📊 STT Processing Stats: {transcript_count} transcripts received, {self.audio_chunks_sent_to_stt} chunks sent")
@@ -285,6 +306,16 @@ class VoicebotEventLoop:
         """Push an external event to the loop."""
         await self.event_queue.put({"type": event_type, "data": data, "timestamp": time.time()})
         
+    async def _push_telemetry_update(self):
+        """Push telemetry update to client."""
+        # Calculate derived metrics before sending
+        self.turn_state.calculate_metrics()
+        
+        await self.output_queue.put({
+            "type": "telemetry_update",
+            "data": self.turn_state.to_dict()
+        })
+
     async def _process_events(self):
         """Main event processing loop."""
         while True:
@@ -316,6 +347,11 @@ class VoicebotEventLoop:
                 
     async def _handle_vad_start(self):
         """Handle speech start event."""
+        # Reset turn state for new turn
+        self.turn_state.reset()
+        self.turn_state.vad_speech_detected = True
+        await self._push_telemetry_update()
+
         if self.state == AgentState.SPEAKING:
             # Interruption!
             logger.info("User interrupted agent speech")
@@ -327,6 +363,10 @@ class VoicebotEventLoop:
         
     async def _handle_vad_end(self):
         """Handle speech end event."""
+        self.turn_state.vad_end_of_speech_detected = True
+        self.turn_state.vad_end_of_speech_detected_time = time.time()
+        await self._push_telemetry_update()
+
         # Notify client
         await self.output_queue.put({"type": "speech_end"})
         self.last_speech_end_time = time.time()
@@ -436,6 +476,14 @@ class VoicebotEventLoop:
         try:
             logger.debug(f"🔄 Starting LLM processing for: '{text[:50]}...'")
             
+            self.turn_state.llm_streaming_started = False
+            self.turn_state.llm_streaming_ended = False
+            self.turn_state.tts_streaming_started = False
+            self.turn_state.tts_streaming_ended = False
+            self.turn_state.webrtc_streaming_agent_audio_response_started = False
+            self.turn_state.webrtc_streaming_agent_audio_response_ended = False
+            await self._push_telemetry_update()
+
             # Initialize RAG state if not already done
             if self.rag_state is None:
                 try:
@@ -493,6 +541,10 @@ class VoicebotEventLoop:
                             logger.debug(f"📝 Content: '{content[:30]}...'")
                         
                         if chunk_type in ['first_token', 'chunk']:
+                            if not self.turn_state.llm_streaming_started:
+                                self.turn_state.llm_streaming_started = True
+                                await self._push_telemetry_update()
+
                             if content:
                                 # Apply buffering logic before sending to TTS
                                 self.text_buffer += content
@@ -509,6 +561,9 @@ class VoicebotEventLoop:
                         elif chunk_type == 'complete':
                             logger.info("✅ Chatbot response complete")
                             
+                            self.turn_state.llm_streaming_ended = True
+                            await self._push_telemetry_update()
+
                             # Send remaining buffer
                             if self.text_buffer:
                                 await self.tts_text_queue.put(self.text_buffer)
@@ -592,14 +647,22 @@ class VoicebotEventLoop:
                 self.tts_service,
                 self.conversation_id
             ):
+                if not self.turn_state.tts_streaming_started:
+                    self.turn_state.tts_streaming_started = True
+                    await self._push_telemetry_update()
+
                 await self.push_event("tts_chunk", audio_chunk)
                 
+            self.turn_state.tts_streaming_ended = True
+            await self._push_telemetry_update()
+
         except asyncio.CancelledError:
             pass
         except Exception as e:
             logger.error(f"TTS streaming error: {e}")
         finally:
             self.state = AgentState.LISTENING # Back to listening after TTS
+            await self.output_queue.put({"type": "audio_stream_end"})
             await self.output_queue.put({"type": "bot_responding_end"})
             
     async def _handle_llm_token(self, token: str):
@@ -609,6 +672,14 @@ class VoicebotEventLoop:
     async def _handle_tts_chunk(self, audio_chunk: bytes):
         """Handle TTS audio chunk."""
         self.state = AgentState.SPEAKING
+        
+        if not self.turn_state.webrtc_streaming_agent_audio_response_started:
+            self.turn_state.webrtc_streaming_agent_audio_response_started = True
+            self.turn_state.webrtc_streaming_agent_audio_response_started_time = time.time()
+            # Calculate metrics now that we have the start time
+            self.turn_state.calculate_metrics()
+            await self._push_telemetry_update()
+
         # Send audio to client
         await self.output_queue.put({"type": "audio_chunk", "data": audio_chunk})
 

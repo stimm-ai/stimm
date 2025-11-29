@@ -49,6 +49,7 @@ export function VoicebotInterface() {
     llmState,
     ttsState,
     metrics,
+    turnState,
     connect,
     disconnect
   } = useLiveKit()
@@ -269,50 +270,54 @@ export function VoicebotInterface() {
 
         {/* Status Section */}
         <div className="bg-gray-50 border-t border-gray-200 p-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <span className="text-gray-600">🔄 LLM Sending:</span>
-              <div className={`w-3 h-3 rounded-full ${status.llmStatus ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-gray-600">🔊 TTS Receiving:</span>
-              <div className={`w-3 h-3 rounded-full ${status.ttsStatus ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-            </div>
-            <div className="text-gray-600">
-              <span>Tokens: {status.tokenCount}</span>
-            </div>
-            <div className="text-gray-600">
-              <span>Audio Chunks: {status.audioChunkCount}</span>
-            </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm mb-4">
+             {/* Turn State Indicators */}
+             <div className="flex flex-col gap-1">
+               <span className="text-xs font-semibold text-gray-500">VAD Speech</span>
+               <div className={`w-full h-2 rounded-full ${turnState.vad_speech_detected && !turnState.vad_end_of_speech_detected ? 'bg-green-500' : 'bg-gray-300'}`} />
+             </div>
+             
+             <div className="flex flex-col gap-1">
+               <span className="text-xs font-semibold text-gray-500">STT Streaming</span>
+               <div className={`w-full h-2 rounded-full ${turnState.stt_streaming_started && !turnState.stt_streaming_ended ? 'bg-blue-500 animate-pulse' : 'bg-gray-300'}`} />
+             </div>
+
+             <div className="flex flex-col gap-1">
+               <span className="text-xs font-semibold text-gray-500">LLM Streaming</span>
+               <div className={`w-full h-2 rounded-full ${turnState.llm_streaming_started && !turnState.llm_streaming_ended ? 'bg-purple-500 animate-pulse' : 'bg-gray-300'}`} />
+             </div>
+
+             <div className="flex flex-col gap-1">
+               <span className="text-xs font-semibold text-gray-500">TTS Streaming</span>
+               <div className={`w-full h-2 rounded-full ${turnState.tts_streaming_started && !turnState.tts_streaming_ended ? 'bg-orange-500 animate-pulse' : 'bg-gray-300'}`} />
+             </div>
+
+             <div className="flex flex-col gap-1">
+               <span className="text-xs font-semibold text-gray-500">Agent Audio</span>
+               <div className={`w-full h-2 rounded-full ${turnState.webrtc_streaming_agent_audio_response_started && !turnState.webrtc_streaming_agent_audio_response_ended ? 'bg-red-500 animate-pulse' : 'bg-gray-300'}`} />
+             </div>
           </div>
 
-          {/* Latency Section */}
-          {(status.firstChunkLatency || status.playbackStartLatency) && (
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">⏱️ First Audio Chunk:</span>
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                    status.firstChunkLatency 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-gray-100 text-gray-600'
-                  }`}>
-                    {formatLatency(status.firstChunkLatency)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">🎵 Audio Playback Start:</span>
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                    status.playbackStartLatency 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-gray-100 text-gray-600'
-                  }`}>
-                    {formatLatency(status.playbackStartLatency)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm border-t border-gray-200 pt-3">
+             <div className="flex items-center justify-between">
+                <span className="text-gray-600">State:</span>
+                <span className="font-mono font-medium">{turnState.vad_state}</span>
+             </div>
+             <div className="flex items-center justify-between">
+                <span className="text-gray-600">Response Delay:</span>
+                <span className={`font-mono font-medium ${turnState.agent_response_delay ? 'text-green-600' : 'text-gray-400'}`}>
+                  {turnState.agent_response_delay ? `${Math.round(turnState.agent_response_delay * 1000)}ms` : '-'}
+                </span>
+             </div>
+             <div className="flex items-center justify-between">
+               <span className="text-gray-600">Tokens:</span>
+               <span className="font-mono">{status.tokenCount}</span>
+             </div>
+             <div className="flex items-center justify-between">
+               <span className="text-gray-600">Audio Chunks:</span>
+               <span className="font-mono">{status.audioChunkCount}</span>
+             </div>
+          </div>
         </div>
 
         {/* Hidden Audio Player */}

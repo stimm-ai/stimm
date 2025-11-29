@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { liveKitClient } from '@/lib/livekit-client'
 import { RemoteParticipant } from 'livekit-client'
+import { useTelemetry, TurnState } from './use-telemetry'
 
 export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'reconnecting' | 'failed'
 
@@ -18,6 +19,7 @@ export interface UseLiveKitReturn {
   llmState: boolean
   ttsState: boolean
   metrics: { tokens: number, audioChunks: number, latency?: number }
+  turnState: TurnState
   connect: (agentId: string) => Promise<void>
   disconnect: () => Promise<void>
 }
@@ -37,6 +39,9 @@ export function useLiveKit(): UseLiveKitReturn {
   const [llmState, setLlmState] = useState<boolean>(false)
   const [ttsState, setTtsState] = useState<boolean>(false)
   const [metrics, setMetrics] = useState<{ tokens: number, audioChunks: number, latency?: number }>({ tokens: 0, audioChunks: 0 })
+
+  // Telemetry hook
+  const { turnState, updateTelemetry, resetTelemetry } = useTelemetry()
 
   // Latency tracking
   const lastSpeechEnd = useRef<number>(0)
@@ -119,15 +124,21 @@ export function useLiveKit(): UseLiveKitReturn {
             
           case 'vad_update':
             setVadState({ energy: data.energy, state: data.state })
+            if (data.telemetry) {
+              updateTelemetry(data.telemetry)
+            }
             break
             
           case 'speech_start':
             setVadState(prev => ({ ...prev, state: 'speaking' }))
+            resetTelemetry() // Reset telemetry on new speech start
+            updateTelemetry({ vad_speech_detected: true })
             break
             
           case 'speech_end':
             setVadState(prev => ({ ...prev, state: 'silence' }))
             lastSpeechEnd.current = Date.now()
+            updateTelemetry({ vad_end_of_speech_detected: true })
             break
             
           case 'bot_responding_start':
@@ -156,7 +167,13 @@ export function useLiveKit(): UseLiveKitReturn {
              }))
              setTtsState(true)
              break
-        }
+
+          case 'telemetry_update':
+             if (data.data) {
+               updateTelemetry(data.data)
+             }
+             break
+         }
       } catch (e) {
         console.error('Failed to parse data packet:', e)
       }
@@ -215,6 +232,7 @@ export function useLiveKit(): UseLiveKitReturn {
     llmState,
     ttsState,
     metrics,
+    turnState,
     connect,
     disconnect
   }

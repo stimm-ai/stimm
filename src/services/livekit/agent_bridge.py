@@ -393,6 +393,8 @@ class LiveKitAgentBridge:
             self.voicebot_service.register_event_handler("speech_end", self._handle_data_event)
             self.voicebot_service.register_event_handler("bot_responding_start", self._handle_data_event)
             self.voicebot_service.register_event_handler("bot_responding_end", self._handle_data_event)
+            self.voicebot_service.register_event_handler("telemetry_update", self._handle_data_event)
+            self.voicebot_service.register_event_handler("audio_stream_end", self._handle_audio_stream_end)
             
             logger.debug(f"🎙️ Voicebot session created for conversation {self.conversation_id}")
             
@@ -434,6 +436,11 @@ class LiveKitAgentBridge:
         # Simpler: clear it after a minimal sleep?
         await asyncio.sleep(0.1)
         self.interruption_signal.clear()
+
+    async def _handle_audio_stream_end(self, event: Dict[str, Any]):
+        """Handle end of audio stream from voicebot."""
+        # Put sentinel in queue to mark end of stream
+        await self.agent_audio_queue.put(None)
 
     async def _handle_agent_audio_response(self, event: Dict[str, Any]):
         """
@@ -479,6 +486,15 @@ class LiveKitAgentBridge:
                     
                     if audio_chunk:
                         await self.send_agent_audio(audio_chunk)
+                    elif audio_chunk is None:
+                        # Sentinel received - stream ended
+                        # Send telemetry update to client
+                        await self._handle_data_event({
+                            "type": "telemetry_update",
+                            "data": {
+                                "webrtc_streaming_agent_audio_response_ended": True
+                            }
+                        })
                         
                     self.agent_audio_queue.task_done()
                     
@@ -560,6 +576,8 @@ class LiveKitAgentBridge:
             self.voicebot_service.unregister_event_handler("speech_end")
             self.voicebot_service.unregister_event_handler("bot_responding_start")
             self.voicebot_service.unregister_event_handler("bot_responding_end")
+            self.voicebot_service.unregister_event_handler("telemetry_update")
+            self.voicebot_service.unregister_event_handler("audio_stream_end")
     
     async def start_session(self):
         """

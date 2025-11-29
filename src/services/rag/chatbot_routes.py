@@ -12,8 +12,7 @@ import os
 from typing import Dict, Any
 
 from fastapi import APIRouter, HTTPException, Request, Depends
-from fastapi.responses import HTMLResponse, StreamingResponse
-from fastapi.templating import Jinja2Templates
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from .rag_state import RagState
@@ -25,9 +24,6 @@ LOGGER = logging.getLogger("rag_chatbot")
 
 # Create router
 router = APIRouter()
-
-# Initialize templates
-templates = Jinja2Templates(directory="/app/services/rag/templates")
 
 # Global RAG state
 rag_state = None
@@ -133,12 +129,6 @@ class ChatRequest(BaseModel):
     conversation_id: Optional[str] = None
     agent_id: Optional[str] = None
     session_id: Optional[str] = None
-
-
-@router.get("/chat", response_class=HTMLResponse)
-async def chat_interface(request: Request):
-    """Serve the chatbot interface"""
-    return templates.TemplateResponse("chatbot.html", {"request": request})
 
 
 @router.post("/chat/message")

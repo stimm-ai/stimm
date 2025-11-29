@@ -9,16 +9,13 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from fastapi import Request
 
 # Import route modules
 from services.llm.llm_routes import router as llm_router
 from services.rag.chatbot_routes import router as chatbot_router
 from services.stt.routes import router as stt_router
-from services.stt.web_routes import router as stt_web_router
 from services.tts.routes import router as tts_router
-from services.tts.web_routes import router as tts_web_router
 from services.agents.routes import router as voicebot_router
 from services.agents_admin.routes import router as agent_router
 from services.provider_constants import get_provider_constants
@@ -118,31 +115,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files for voicebot wrapper
-static_dir = BASE_DIR / "services" / "agents" / "static"
-app.mount("/static", StaticFiles(directory=str(static_dir)), name="voicebot_static")
-
 # Mount shared static files
 shared_static_dir = BASE_DIR / "static"
-app.mount("/shared-static", StaticFiles(directory=str(shared_static_dir)), name="shared_static")
-
-# Mount app static files
-app.mount("/app-static", StaticFiles(directory=str(shared_static_dir)), name="app_static")
+# Only mount if directory exists (for legacy support if needed)
+if shared_static_dir.exists():
+    app.mount("/shared-static", StaticFiles(directory=str(shared_static_dir)), name="shared_static")
+    app.mount("/app-static", StaticFiles(directory=str(shared_static_dir)), name="app_static")
 
 # Include routers
 app.include_router(llm_router, prefix="/api", tags=["llm"])
 app.include_router(chatbot_router, prefix="/rag", tags=["chatbot"])
 app.include_router(stt_router, prefix="/api", tags=["stt"])
-app.include_router(stt_web_router, prefix="/stt", tags=["stt-web"])
 app.include_router(tts_router, prefix="/api", tags=["tts"])
-app.include_router(tts_web_router, prefix="/tts", tags=["tts-web"])
 app.include_router(voicebot_router, prefix="/api", tags=["voicebot"])
 app.include_router(agent_router, prefix="/api", tags=["agents"])
 app.include_router(signaling_router, prefix="/api", tags=["webrtc"])
 app.include_router(livekit_router, prefix="/api", tags=["livekit"])
-# Templates for voicebot interface
-templates_dir = BASE_DIR / "services" / "agents" / "templates"
-templates = Jinja2Templates(directory=str(templates_dir))
 
 
 @app.get("/")
@@ -210,11 +198,6 @@ async def rag_preloading_health():
             "rag_preloading": "unknown",
             "error": str(e)
         }
-
-@app.get("/voicebot/interface")
-async def voicebot_interface(request: Request):
-    """Serve the voicebot interface."""
-    return templates.TemplateResponse("voicebot.html", {"request": request})
 
 if __name__ == "__main__":
     # Note: When running with uvicorn, uvicorn's own logging config might interact with ours.

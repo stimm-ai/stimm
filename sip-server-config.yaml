@@ -1,5 +1,5 @@
 # LiveKit SIP Server Configuration for WSL2 Local Testing
-# Using local development credentials for testing
+# Updated configuration to handle flood protection and inbound calls
 
 api_key: devkey
 api_secret: secret
@@ -18,8 +18,31 @@ bind_address: "0.0.0.0"  # Listen on all interfaces
 public_ip: "172.23.126.232"   # Your WSL2 Ubuntu machine local IP
 
 # SIP authentication for local testing
-# You can set up authentication or use anonymous for testing
+# Allow anonymous calls for testing purposes
 allow_anonymous: true
+
+# Flood protection configuration - adjusted for testing
+flood_protection:
+  enabled: true
+  # Increase thresholds for testing to prevent false positives
+  invite_threshold: 50          # Allow 50 INVITEs per window (increased from default)
+  invite_window_seconds: 60     # 60 second window
+  # Whitelist local networks to prevent blocking legitimate test calls
+  whitelist_local_networks: true
+  whitelist_private_ips: true   # Whitelist private IP ranges
+  # Specific IP whitelist based on SIP logs
+  trusted_ips:
+    - "172.18.0.1"     # Docker network
+    - "172.23.126.232" # WSL2 host
+    - "127.0.0.1"      # Localhost
+    - "10.0.0.0/8"     # Private network range
+    - "172.16.0.0/12"  # Private network range
+    - "192.168.0.0/16" # Private network range
+
+# Rate limiting - disabled for testing
+rate_limiting:
+  enabled: false
+  requests_per_second: 10
 
 # Media handling
 enable_ice: true
@@ -38,3 +61,32 @@ log_format: "json"
 # SIP server settings
 max_call_duration: 3600  # 1 hour max call duration
 enable_recording: false
+
+# Inbound call handling
+inbound:
+  # Allow calls from specific numbers
+  allowed_numbers:
+    - "+1234567"
+  # Allow calls from specific IP ranges
+  allowed_ip_ranges:
+    - "172.18.0.0/16"
+    - "172.23.0.0/16"
+    - "127.0.0.0/8"
+
+# Outbound call settings
+outbound:
+  enabled: false  # Disable outbound for now
+
+# Dispatch rule matching
+dispatch_rules:
+  # This will be populated by the dispatch rule we create
+  enabled: true
+  # Allow dispatch rules to create rooms automatically
+  auto_create_rooms: true
+  # Default room configuration for SIP calls
+  default_room_config:
+    # Enable agent dispatch for SIP rooms
+    agents: []
+    # Room timeout settings
+    empty_timeout: 300  # 5 minutes
+    max_participants: 10

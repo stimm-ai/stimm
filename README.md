@@ -5,6 +5,7 @@ A modular, real-time AI voice assistant platform built with Python (FastAPI) and
 ## 🚀 Features
 
 - **Real-time Voice Interaction**: Low-latency voice conversations using WebRTC and WebSocket transports.
+- **SIP Telephony Integration**: Connect incoming phone calls to AI agents via SIP protocol.
 - **Modular AI Providers**:
   - **LLM**: Support for Groq, Mistral, OpenRouter, and local Llama.cpp.
   - **TTS**: Deepgram, ElevenLabs, Async.ai, and local Kokoro.
@@ -275,7 +276,71 @@ uv run python -m src.cli.main --http chat --agent-name "ava"
 uv run python -m src.cli.main --http agents list
 ```
 
-## 📊 Logging
+## 📞 SIP Integration
+
+Connect incoming phone calls to AI agents via telephony integration using SIP (Session Initiation Protocol).
+
+### Quick Setup
+
+1. **Configure Environment**:
+   ```bash
+   # Add to your .env file
+   ENABLE_SIP_BRIDGE=true
+   ```
+
+2. **Start Services**:
+   ```bash
+   docker compose up
+   ```
+
+3. **Test Integration**:
+   ```bash
+   uv run python tests/sip_integration/test_sip_bridge_integration.py
+   ```
+
+### Usage
+
+- **Call**: Dial +1234567 from any SIP client (e.g., MicroSIP)
+- **Connect**: "Etienne" (Development Agent) automatically answers
+- **Converse**: Full duplex voice conversation with AI
+
+### Architecture
+
+```
+SIP Call → LiveKit SIP → Room Created → SIP Bridge → Agent Spawned → Audio Conversation
+```
+
+**Key Components:**
+- **SIP Server**: Handles incoming calls via LiveKit SIP service
+- **SIP Bridge**: Monitors rooms with prefix "sip-inbound-" and spawns agents automatically
+- **Agent Integration**: Connects Development Agent to SIP rooms for voice conversations
+
+### Configuration
+
+**SIP Server Settings**: `sip-server-config.yaml` (flood protection, ports)
+**Dispatch Rules**: Managed via `scripts/sip_integration/sip-dispatch-config.py`
+**Environment**: `ENABLE_SIP_BRIDGE=true` activates the integration
+
+### Health Monitoring
+
+```bash
+# Check SIP Bridge status
+curl http://localhost:8001/health/sip-bridge
+
+# View logs
+docker logs voicebot-app | grep "SIP"
+```
+
+### Scripts
+
+Located in `scripts/sip_integration/`:
+- `create_sip_trunk.py` - Create SIP trunk configuration
+- `sip-dispatch-config.py` - Configure call routing rules
+- `update_trunk.sh` - Update existing trunk settings
+
+The system supports real-time voice conversations with AI agents, demonstrated with French speech recognition and response generation.
+
+## � Logging
 
 ### Log Levels
 

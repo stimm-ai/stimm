@@ -20,6 +20,8 @@ services:
       - "49160-49200:49160-49200/udp" # UDP range for ICE candidates
     env_file:
       - .env
+    environment:
+      - ENABLE_SIP_BRIDGE=true
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api.rule=Host(`api.localhost`)"

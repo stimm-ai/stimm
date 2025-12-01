@@ -99,6 +99,19 @@ async def startup_event():
         except Exception as e:
             logger.error(f"Failed to initialize agent system: {e}")
         
+        # Initialize SIP Bridge Integration if enabled
+        try:
+            from services.sip_bridge_integration import start_sip_bridge
+            
+            # Start SIP Bridge in background
+            start_sip_bridge()
+            logger.info("✅ SIP Bridge Integration initialized")
+            
+        except ImportError as e:
+            logger.warning(f"SIP Bridge Integration not available: {e}")
+        except Exception as e:
+            logger.error(f"Failed to initialize SIP Bridge Integration: {e}")
+        
         # Note: Voicebot services are now initialized per-session in LiveKit service
         # to avoid concurrency issues with providers like Deepgram
         
@@ -198,6 +211,47 @@ async def rag_preloading_health():
             "rag_preloading": "unknown",
             "error": str(e)
         }
+
+
+@app.get("/health/sip-bridge")
+async def sip_bridge_health():
+    """Health check for SIP Bridge status"""
+    try:
+        from services.sip_bridge_integration import sip_bridge_integration
+        
+        if not sip_bridge_integration.is_enabled():
+            return {
+                "status": "disabled",
+                "sip_bridge": "not_enabled",
+                "message": "SIP Bridge is disabled (ENABLE_SIP_BRIDGE=false)"
+            }
+        
+        if sip_bridge_integration.is_running():
+            return {
+                "status": "healthy",
+                "sip_bridge": "running",
+                "message": "SIP Bridge is running normally"
+            }
+        else:
+            return {
+                "status": "degraded",
+                "sip_bridge": "not_running",
+                "message": "SIP Bridge is enabled but not running"
+            }
+            
+    except ImportError:
+        return {
+            "status": "error",
+            "sip_bridge": "not_available",
+            "message": "SIP Bridge Integration module not available"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "sip_bridge": "error",
+            "error": str(e)
+        }
+
 
 if __name__ == "__main__":
     # Note: When running with uvicorn, uvicorn's own logging config might interact with ours.

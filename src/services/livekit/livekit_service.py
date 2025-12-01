@@ -2,7 +2,10 @@ import asyncio
 import logging
 import uuid
 import os
-from typing import Dict, Any
+import subprocess
+import sys
+import time
+from typing import Dict, Any, Optional
 from livekit import api
 
 from environment_config import config
@@ -30,6 +33,134 @@ class LiveKitService:
         
         # Suivi des sessions actives
         self.active_sessions = {}
+        
+        # SIP room monitoring
+        self.sip_monitoring_enabled = True
+        self.sip_room_prefix = "sip-inbound"
+        self.sip_agent_name = "Development Agent"
+        self.monitored_sip_rooms = set()
+        self.sip_monitor_task = None
+        self.lkapi = None  # Will be initialized in methods
+    
+    async def start_sip_monitoring(self):
+        """Start monitoring for SIP rooms"""
+        if self.sip_monitoring_enabled and not self.sip_monitor_task:
+            self.sip_monitor_task = asyncio.create_task(self._monitor_sip_rooms())
+            logger.info("🎯 Started SIP room monitoring")
+    
+    async def stop_sip_monitoring(self):
+        """Stop monitoring for SIP rooms"""
+        if self.sip_monitor_task:
+            self.sip_monitor_task.cancel()
+            try:
+                await self.sip_monitor_task
+            except asyncio.CancelledError:
+                pass
+            self.sip_monitor_task = None
+            logger.info("🛑 Stopped SIP room monitoring")
+    
+    async def _monitor_sip_rooms(self):
+        """Monitor for SIP rooms and spawn agents automatically"""
+        logger.info(f"🔍 Monitoring for SIP rooms with prefix: {self.sip_room_prefix}")
+        
+        # Initialize LiveKit API if not already done
+        if not self.lkapi:
+            self.lkapi = api.LiveKitAPI(
+                url=self.livekit_url,
+                api_key=self.api_key,
+                api_secret=self.api_secret
+            )
+        
+        while True:
+            try:
+                # List all rooms
+                rooms = await self.lkapi.room.list_rooms(api.ListRoomsRequest())
+                
+                # Find SIP rooms
+                sip_rooms = [room for room in rooms.rooms if room.name.startswith(self.sip_room_prefix)]
+                
+                for room in sip_rooms:
+                    if room.name not in self.monitored_sip_rooms and room.num_participants > 0:
+                        # New SIP room with participants - spawn agent
+                        logger.info(f"📞 Detected new SIP room: {room.name} ({room.num_participants} participants)")
+                        await self._spawn_agent_for_sip_room(room.name)
+                        self.monitored_sip_rooms.add(room.name)
+                
+                # Clean up old monitored rooms that no longer exist
+                current_room_names = {room.name for room in rooms.rooms}
+                self.monitored_sip_rooms.intersection_update(current_room_names)
+                
+                await asyncio.sleep(5)  # Check every 5 seconds
+                
+            except Exception as e:
+                logger.error(f"❌ Error in SIP room monitoring: {e}")
+                await asyncio.sleep(10)  # Wait longer on error
+    
+    async def _spawn_agent_for_sip_room(self, room_name: str) -> bool:
+        """Spawn our custom agent for a SIP room"""
+        try:
+            logger.info(f"🤖 Spawning agent for SIP room: {room_name}")
+            
+            # Get the Development Agent from database
+            try:
+                default_agent = self.agent_service.get_default_agent()
+                agent_id = str(default_agent.id)
+                agent_name = default_agent.name
+                logger.info(f"✅ Found default agent: {agent_name} (ID: {agent_id})")
+            except Exception as e:
+                logger.error(f"❌ Failed to get default agent: {e}")
+                return False
+            
+            # Generate token for the agent
+            agent_token = api.AccessToken(self.api_key, self.api_secret) \
+                .with_identity(f"agent_{agent_id}_{uuid.uuid4().hex[:8]}") \
+                .with_name(f"Agent-{agent_name}") \
+                .with_grants(api.VideoGrants(
+                    room_join=True,
+                    room=room_name,
+                    can_publish=True,
+                    can_subscribe=True
+                ))
+            
+            token = agent_token.to_jwt()
+            
+            # Spawn agent worker process
+            env = os.environ.copy()
+            env["PYTHONUNBUFFERED"] = "1"
+            
+            cmd = [
+                sys.executable, "-m", "src.cli.agent_worker",
+                "--room-name", room_name,
+                "--agent-id", agent_id,
+                "--livekit-url", config.livekit_url
+            ]
+            
+            logger.info(f"🏗️ Starting agent worker: {' '.join(cmd)}")
+            
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                env=env
+            )
+            
+            # Store the process for monitoring
+            session_id = f"sip_{room_name}_{uuid.uuid4().hex[:8]}"
+            self.active_sessions[session_id] = {
+                "agent_id": agent_id,
+                "room_name": room_name,
+                "process": process,
+                "created_at": time.time(),
+                "type": "sip_bridge"
+            }
+            
+            logger.info(f"✅ Agent worker spawned for SIP room: {room_name}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to spawn agent for SIP room {room_name}: {e}")
+            return False
     
     async def create_room_for_agent(self, agent_id: str, room_name: str = None) -> Dict[str, Any]:
         """

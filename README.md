@@ -25,10 +25,10 @@ graph TD
     Client[Web Client / Next.js] -->|HTTPS/WSS| Traefik[Traefik Reverse Proxy]
     Traefik -->|/api| Backend[Voicebot Backend / FastAPI]
     Traefik -->|/| Frontend[Frontend Service]
-    
+
     Backend --> Postgres[(PostgreSQL)]
     Backend --> Qdrant[(Qdrant Vector DB)]
-    
+
     subgraph "AI Services"
         Backend -->|External API| LLM[LLM Providers]
         Backend -->|External API| TTS[TTS Providers]
@@ -52,12 +52,12 @@ sequenceDiagram
     User->>WebRTC: Microphone Audio Stream
     WebRTC->>Media: Incoming Audio Track
     Media->>VAD: Raw Audio Frames
-    
+
     alt Voice Detected
         VAD->>EvLoop: Speech Start Event
         EvLoop->>STT: Start Transcribing
     end
-    
+
     alt Voice Ended
         VAD->>EvLoop: Speech End Event
         EvLoop->>STT: Finalize Transcription
@@ -155,29 +155,29 @@ LIVEKIT_API_SECRET=secret
 ### Local Development Setup
 
 1. **Start supporting services**:
-   ```bash
-   docker compose up -d postgres qdrant traefik livekit redis sip
-   ```
+    ```bash
+    docker compose up -d postgres qdrant traefik livekit redis sip
+    ```
 
 2. **Set up Python environment**:
-   ```bash
-   # Required for imports to work correctly
-   export PYTHONPATH=./src
-   ```
+    ```bash
+    # Required for imports to work correctly
+    export PYTHONPATH=./src
+    ```
 
 3. **Run backend locally**:
-   ```bash
-   uv run python -m src.main
-   ```
-   Backend available at: http://localhost:8001
+    ```bash
+    uv run python -m src.main
+    ```
+    Backend available at: http://localhost:8001
 
 4. **Run frontend locally** (in a separate terminal):
-   ```bash
-   cd src/front
-   npm install
-   npm run dev
-   ```
-   Frontend available at: http://localhost:3000
+    ```bash
+    cd src/front
+    npm install
+    npm run dev
+    ```
+    Frontend available at: http://localhost:3000
 
 ### Full Docker Stack Development
 
@@ -298,29 +298,52 @@ uv run python -m src.cli.main --http agents list
 
 Connect incoming phone calls to AI agents via telephony integration using SIP (Session Initiation Protocol).
 
-### Quick Setup
+### Setup
 
 1. **Configure Environment**:
-   ```bash
-   # Add to your .env file
-   ENABLE_SIP_BRIDGE=true
-   ```
+    ```bash
+    # Add to your .env file
+    ENABLE_SIP_BRIDGE=true
+    ```
 
 2. **Start Services**:
-   ```bash
-   docker compose up
-   ```
+    ```bash
+    docker compose up
+    ```
 
-3. **Tests**:
-   ```bash
-   uv run python tests/sip_integration/test_sip_bridge_integration.py
-   uv run python tests/sip_integration/test_sip_bridge.py
-   ```
+3. **Run Tests**:
+    ```bash
+    uv run python tests/sip_integration/test_sip_bridge_integration.py
+    uv run python tests/sip_integration/test_sip_bridge.py
+    ```
+
+4. **Configure SIP** (scripts in `scripts/sip_integration/`):
+    - Create SIP trunk configuration in Redis for the LiveKit SIP server:
+      ```bash
+      uv run python scripts/sip_integration/create_sip_trunk.py
+      ```
+    - Configure call routing rules (stores in Redis key `sip_dispatch_rules`):
+      ```bash
+      uv run python scripts/sip_integration/sip-dispatch-config.py
+      ```
+    - Update existing trunk's phone number or allowed addresses:
+      ```bash
+      # List all trunks
+      uv run python scripts/sip_integration/update_trunk.py
+
+      # Update a specific trunk
+      uv run python scripts/sip_integration/update_trunk.py --trunk-id <ID> --number +1234567
+
+      # Or use the shell wrapper
+      ./scripts/sip_integration/update_trunk.sh --trunk-id <ID> --number +1234567
+      ```
+
+      These scripts require a running Redis instance (provided by the `redis` service in Docker Compose).
 
 ### Usage
 
 - **Call**: Dial +1234567 from any SIP client (e.g., MicroSIP)
-- **Connect**: "Etienne" (Development Agent) automatically answers
+- **Connect**: Default agent automatically answers
 - **Converse**: Full duplex voice conversation with AI
 
 ### Architecture
@@ -353,7 +376,7 @@ curl http://localhost:8001/health/sip-bridge-status
 docker logs voicebot‑app | grep "SIP"
 ```
 
-### Cleanup Commands
+### Cleanup
 
 Stale SIP rooms and agent processes can be cleaned up via the CLI:
 
@@ -368,37 +391,9 @@ uv run python -m src.cli.main livekit clear-sip-bridge
 uv run python -m src.cli.main livekit clear-rooms
 ```
 
-### Scripts
-
-Located in `scripts/sip_integration/`:
-
-- `create_sip_trunk.py` – Create SIP trunk configuration in Redis for the LiveKit SIP server.
-  ```bash
-  uv run python scripts/sip_integration/create_sip_trunk.py
-  ```
-
-- `sip‑dispatch‑config.py` – Configure call routing rules (stores in Redis key `sip_dispatch_rules`).
-  ```bash
-  uv run python scripts/sip_integration/sip-dispatch-config.py
-  ```
-
-- `update_trunk.py` / `update_trunk.sh` – Update an existing trunk’s phone number or allowed addresses.
-  ```bash
-  # List all trunks
-  uv run python scripts/sip_integration/update_trunk.py
-
-  # Update a specific trunk
-  uv run python scripts/sip_integration/update_trunk.py --trunk-id <ID> --number +1234567
-
-  # Or use the shell wrapper
-  ./scripts/sip_integration/update_trunk.sh --trunk-id <ID> --number +1234567
-  ```
-
-These scripts require a running Redis instance (provided by the `redis` service in Docker Compose).
-
 The system supports real‑time voice conversations with AI agents, demonstrated with French speech recognition and response generation.
 
-## � Logging
+## 📝 Logging
 
 ### Log Levels
 

@@ -48,6 +48,9 @@ class Agent(Base):
     is_active = Column(Boolean, default=True)
     is_system_agent = Column(Boolean, default=False)
     
+    # System prompt (instructions)
+    system_prompt = Column(Text)
+    
     # Metadata
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
@@ -79,6 +82,7 @@ class Agent(Base):
             "is_default": self.is_default,
             "is_active": self.is_active,
             "is_system_agent": self.is_system_agent,
+            "system_prompt": self.system_prompt,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

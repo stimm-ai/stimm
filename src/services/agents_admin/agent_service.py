@@ -222,6 +222,7 @@ class AgentService:
                 user_id=user_id,
                 name=agent_data.name,
                 description=agent_data.description,
+                system_prompt=agent_data.system_prompt,
                 llm_provider=agent_data.llm_config.provider,
                 tts_provider=agent_data.tts_config.provider,
                 stt_provider=agent_data.stt_config.provider,
@@ -398,6 +399,8 @@ class AgentService:
                 update_fields['name'] = agent_data.name
             if agent_data.description is not None:
                 update_fields['description'] = agent_data.description
+            if agent_data.system_prompt is not None:
+                update_fields['system_prompt'] = agent_data.system_prompt
             if agent_data.is_default is not None:
                 update_fields['is_default'] = agent_data.is_default
             if agent_data.is_active is not None:

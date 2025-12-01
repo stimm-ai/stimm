@@ -28,6 +28,7 @@ class LLMService:
         self.agent_manager = get_agent_manager()
         self.agent_id = agent_id
         self.session_id = session_id
+        self.agent_config = None
         self.provider = self._initialize_provider()
 
     def _initialize_provider(self):
@@ -48,6 +49,9 @@ class LLMService:
             
         if not agent_config:
             agent_config = self.agent_manager.get_agent_config()
+        
+        # Store agent configuration for later use (e.g., system prompt)
+        self.agent_config = agent_config
         
         provider_name = agent_config.llm_provider
         provider_config = agent_config.llm_config

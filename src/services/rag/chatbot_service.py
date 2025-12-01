@@ -152,8 +152,11 @@ class ChatbotService:
                             conversation_history += f"Assistant: {content}\n"
             
             # Step 4: Build the prompt using the configured system prompt
-            # Use the French system prompt from config.py for Ava, the banking agent
-            base_system_prompt = rag_config.get_system_prompt()
+            # Use the agent's system prompt if available, otherwise fallback to the hardcoded French prompt
+            if self.llm_service.agent_config and self.llm_service.agent_config.system_prompt:
+                base_system_prompt = self.llm_service.agent_config.system_prompt
+            else:
+                base_system_prompt = rag_config.get_system_prompt()
             
             # Build the complete prompt with system instructions, conversation history, and user message
             if context_text:

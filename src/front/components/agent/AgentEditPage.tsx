@@ -38,6 +38,7 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
   const [agent, setAgent] = useState<Partial<Agent>>({
     name: '',
     description: '',
+    system_prompt: '',
     llm_provider: '',
     tts_provider: '',
     stt_provider: '',
@@ -163,6 +164,7 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
       const payload = {
         name: agent.name || '',
         description: agent.description || '',
+        system_prompt: agent.system_prompt || '',
         llm_config: agent.llm_provider ? {
           provider: agent.llm_provider,
           config: agent.llm_config as Record<string, string> || {}
@@ -268,6 +270,17 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
                 value={agent.description || ''}
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 placeholder="Enter agent description"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="system_prompt">System Prompt</Label>
+              <textarea
+                id="system_prompt"
+                value={agent.system_prompt || ''}
+                onChange={(e) => handleInputChange('system_prompt', e.target.value)}
+                placeholder="Enter system prompt for the agent (optional)"
+                className="w-full min-h-[120px] p-3 border rounded-md bg-transparent text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               />
             </div>
 

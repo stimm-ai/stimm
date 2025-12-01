@@ -2,6 +2,7 @@ export interface Agent {
   id: string
   name: string
   description?: string
+  system_prompt?: string
   llm_provider?: string
   llm_config?: {
     model?: string

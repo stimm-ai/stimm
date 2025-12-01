@@ -26,6 +26,7 @@ class AgentCreate(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=255, description="Agent name")
     description: Optional[str] = Field(None, description="Agent description")
+    system_prompt: Optional[str] = Field(None, description="System prompt for the agent")
     llm_config: ProviderConfig = Field(..., description="LLM provider configuration")
     tts_config: ProviderConfig = Field(..., description="TTS provider configuration")
     stt_config: ProviderConfig = Field(..., description="STT provider configuration")
@@ -45,6 +46,7 @@ class AgentUpdate(BaseModel):
     
     name: Optional[str] = Field(None, min_length=1, max_length=255, description="Agent name")
     description: Optional[str] = Field(None, description="Agent description")
+    system_prompt: Optional[str] = Field(None, description="System prompt for the agent")
     llm_config: Optional[ProviderConfig] = Field(None, description="LLM provider configuration")
     tts_config: Optional[ProviderConfig] = Field(None, description="TTS provider configuration")
     stt_config: Optional[ProviderConfig] = Field(None, description="STT provider configuration")
@@ -59,6 +61,7 @@ class AgentResponse(BaseModel):
     user_id: UUID
     name: str
     description: Optional[str]
+    system_prompt: Optional[str]
     llm_provider: str
     tts_provider: str
     stt_provider: str
@@ -88,6 +91,7 @@ class AgentConfig(BaseModel):
     llm_provider: str
     tts_provider: str
     stt_provider: str
+    system_prompt: Optional[str] = None
     llm_config: Dict[str, Any]
     tts_config: Dict[str, Any]
     stt_config: Dict[str, Any]
@@ -99,6 +103,7 @@ class AgentConfig(BaseModel):
             llm_provider=agent.llm_provider,
             tts_provider=agent.tts_provider,
             stt_provider=agent.stt_provider,
+            system_prompt=agent.system_prompt,
             llm_config=agent.llm_config,
             tts_config=agent.tts_config,
             stt_config=agent.stt_config

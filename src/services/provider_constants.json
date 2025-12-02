@@ -52,5 +52,20 @@
       "API_URL": "http://llama-cpp-server:8002",
       "COMPLETIONS_PATH": "/v1/chat/completions"
     }
+  },
+  "rag": {
+    "qdrant.internal": {
+      "HOST": "localhost",
+      "PORT": 6333,
+      "USE_TLS": false,
+      "API_KEY": null
+    },
+    "pinecone.io": {
+      "API_URL": "https://api.pinecone.io",
+      "ENVIRONMENT": "us-west1-gcp"
+    },
+    "rag.saas": {
+      "URL": "https://api.rag.saas.example.com"
+    }
   }
 }

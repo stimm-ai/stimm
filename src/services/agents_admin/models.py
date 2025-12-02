@@ -31,6 +31,7 @@ class AgentCreate(BaseModel):
     tts_config: ProviderConfig = Field(..., description="TTS provider configuration")
     stt_config: ProviderConfig = Field(..., description="STT provider configuration")
     is_default: bool = Field(False, description="Whether this agent should be the default")
+    rag_config_id: Optional[UUID] = Field(None, description="Optional RAG configuration ID")
     
     @validator('name')
     def validate_name(cls, v):
@@ -52,6 +53,7 @@ class AgentUpdate(BaseModel):
     stt_config: Optional[ProviderConfig] = Field(None, description="STT provider configuration")
     is_default: Optional[bool] = Field(None, description="Whether this agent should be the default")
     is_active: Optional[bool] = Field(None, description="Whether this agent is active")
+    rag_config_id: Optional[UUID] = Field(None, description="Optional RAG configuration ID")
 
 
 class AgentResponse(BaseModel):
@@ -62,6 +64,7 @@ class AgentResponse(BaseModel):
     name: str
     description: Optional[str]
     system_prompt: Optional[str]
+    rag_config_id: Optional[UUID]
     llm_provider: str
     tts_provider: str
     stt_provider: str
@@ -92,6 +95,7 @@ class AgentConfig(BaseModel):
     tts_provider: str
     stt_provider: str
     system_prompt: Optional[str] = None
+    rag_config_id: Optional[UUID] = None
     llm_config: Dict[str, Any]
     tts_config: Dict[str, Any]
     stt_config: Dict[str, Any]
@@ -104,6 +108,7 @@ class AgentConfig(BaseModel):
             tts_provider=agent.tts_provider,
             stt_provider=agent.stt_provider,
             system_prompt=agent.system_prompt,
+            rag_config_id=agent.rag_config_id,
             llm_config=agent.llm_config,
             tts_config=agent.tts_config,
             stt_config=agent.stt_config

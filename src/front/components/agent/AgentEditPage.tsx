@@ -42,11 +42,13 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
     llm_provider: '',
     tts_provider: '',
     stt_provider: '',
+    rag_config_id: '',
     llm_config: {},
     tts_config: {},
     stt_config: {}
   })
   const [providers, setProviders] = useState<AvailableProviders | null>(null)
+  const [ragConfigs, setRagConfigs] = useState<{ id: string; name: string }[]>([])
   const [providerFields, setProviderFields] = useState<Record<string, ProviderFields>>({
     llm: {},
     tts: {},
@@ -58,6 +60,7 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
 
   useEffect(() => {
     loadProviders()
+    loadRagConfigs()
     if (agentId) {
       loadAgent()
     }
@@ -93,6 +96,19 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
       setProviders(providerData)
     } catch (err) {
       console.error('Failed to load providers:', err)
+    }
+  }
+
+  const loadRagConfigs = async () => {
+    try {
+      const response = await fetch('http://localhost:8001/api/rag-configs/')
+      if (!response.ok) {
+        throw new Error(`Failed to load RAG configs: ${response.statusText}`)
+      }
+      const data = await response.json()
+      setRagConfigs(data.map((config: any) => ({ id: config.id, name: config.name })))
+    } catch (err) {
+      console.error('Failed to load RAG configs:', err)
     }
   }
 
@@ -165,6 +181,7 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
         name: agent.name || '',
         description: agent.description || '',
         system_prompt: agent.system_prompt || '',
+        rag_config_id: agent.rag_config_id || undefined,
         llm_config: agent.llm_provider ? {
           provider: agent.llm_provider,
           config: agent.llm_config as Record<string, string> || {}
@@ -405,6 +422,29 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
                   </div>
                 </div>
               )}
+            </div>
+            {/* RAG Configuration */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">RAG Configuration</h3>
+              <div>
+                <Label htmlFor="rag_config_id">RAG Configuration</Label>
+                <Select value={agent.rag_config_id === '' ? 'none' : (agent.rag_config_id || '')} onValueChange={(value) => handleInputChange('rag_config_id', value === 'none' ? '' : value)}>
+                 <SelectTrigger id="rag_config_id">
+                   <SelectValue placeholder="Select RAG Configuration (optional)" />
+                 </SelectTrigger>
+                 <SelectContent>
+                   <SelectItem value="none">None</SelectItem>
+                   {ragConfigs.map((config) => (
+                     <SelectItem key={config.id} value={config.id}>
+                       {config.name}
+                     </SelectItem>
+                   ))}
+                 </SelectContent>
+               </Select>
+                <div className="mt-2 text-sm text-muted-foreground">
+                  <a href="/rag/admin" className="text-primary hover:underline">Manage RAG configurations</a>
+                </div>
+              </div>
             </div>
           </div>
 

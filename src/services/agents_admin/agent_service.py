@@ -9,7 +9,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 
-from database import get_db, User, Agent, AgentSession
+from database import get_db, User, Agent, AgentSession, RagConfig
 from .models import (
     AgentCreate,
     AgentUpdate,
@@ -173,7 +173,34 @@ class AgentService:
                 agent_data.stt_config.provider,
                 agent_data.stt_config.config
             )
-     
+    
+    def _validate_rag_config_id(self, rag_config_id: Optional[UUID], user_id: UUID, session: Session) -> None:
+        """
+        Validate that a RAG configuration ID exists and belongs to the user (or system).
+        
+        Args:
+            rag_config_id: RAG configuration ID to validate (can be None)
+            user_id: User ID to check ownership
+            session: Database session
+            
+        Raises:
+            AgentValidationError: If RAG config not found or doesn't belong to user
+        """
+        if rag_config_id is None:
+            return
+        
+        rag_config = session.query(RagConfig).filter(
+            and_(
+                RagConfig.id == rag_config_id,
+                RagConfig.user_id == user_id
+            )
+        ).first()
+        
+        if not rag_config:
+            raise AgentValidationError(
+                f"RAG configuration with ID {rag_config_id} not found or does not belong to user"
+            )
+      
     def create_agent(self, agent_data: AgentCreate, user_id: Optional[UUID] = None) -> AgentResponse:
         """
         Create a new agent.
@@ -217,6 +244,9 @@ class AgentService:
                     )
                 ).update({'is_default': False})
             
+            # Validate RAG configuration ID if provided
+            self._validate_rag_config_id(agent_data.rag_config_id, user_id, session)
+            
             # Create new agent with standardized field names
             agent = Agent(
                 user_id=user_id,
@@ -230,6 +260,7 @@ class AgentService:
                 tts_config=agent_data.tts_config.config,
                 stt_config=agent_data.stt_config.config,
                 is_default=agent_data.is_default,
+                rag_config_id=agent_data.rag_config_id,
                 is_active=True
             )
             
@@ -392,6 +423,10 @@ class AgentService:
                     )
                 ).update({'is_default': False})
             
+            # Validate RAG configuration ID if provided
+            if agent_data.rag_config_id is not None:
+                self._validate_rag_config_id(agent_data.rag_config_id, user_id, session)
+            
             # Update fields
             update_fields = {}
             
@@ -405,6 +440,8 @@ class AgentService:
                 update_fields['is_default'] = agent_data.is_default
             if agent_data.is_active is not None:
                 update_fields['is_active'] = agent_data.is_active
+            if agent_data.rag_config_id is not None:
+                update_fields['rag_config_id'] = agent_data.rag_config_id
             
             # Update provider configurations - merge with existing configs to preserve API keys
             # Mapping is now handled within each provider implementation

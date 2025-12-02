@@ -14,6 +14,7 @@ from fastapi import Request
 # Import route modules
 from services.llm.llm_routes import router as llm_router
 from services.rag.chatbot_routes import router as chatbot_router
+from services.rag.rag_config_routes import router as rag_config_router
 from services.stt.routes import router as stt_router
 from services.tts.routes import router as tts_router
 from services.agents.routes import router as voicebot_router
@@ -142,6 +143,7 @@ app.include_router(stt_router, prefix="/api", tags=["stt"])
 app.include_router(tts_router, prefix="/api", tags=["tts"])
 app.include_router(voicebot_router, prefix="/api", tags=["voicebot"])
 app.include_router(agent_router, prefix="/api", tags=["agents"])
+app.include_router(rag_config_router, prefix="/api", tags=["rag-configs"])
 app.include_router(signaling_router, prefix="/api", tags=["webrtc"])
 app.include_router(livekit_router, prefix="/api", tags=["livekit"])
 

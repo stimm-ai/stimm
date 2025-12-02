@@ -25,8 +25,9 @@ class ProviderRegistry:
     # Provider type to module mapping
     PROVIDER_MODULES = {
         "llm": "services.llm.providers",
-        "tts": "services.tts.providers", 
-        "stt": "services.stt.providers"
+        "tts": "services.tts.providers",
+        "stt": "services.stt.providers",
+        "rag": "services.rag.providers"
     }
     
     # Provider name to class name mapping
@@ -46,6 +47,11 @@ class ProviderRegistry:
         "stt": {
             "deepgram.com": "deepgram.DeepgramProvider",
             "whisper.local": "whisper_local.WhisperLocalProvider"
+        },
+        "rag": {
+            "qdrant.internal": "qdrant_internal.QdrantInternalProvider",
+            "pinecone.io": "pinecone_io.PineconeProvider",
+            "rag.saas": "rag_saas.RagSaaSProvider"
         }
     }
     

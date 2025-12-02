@@ -27,6 +27,7 @@ class RagState:
         self.documents: Dict[str, StoredDocument] = {}
         self.conversations: "OrderedDict[str, Any]" = OrderedDict()
         self.lock = asyncio.Lock()
+        self.retrieval_engine = None  # Optional RetrievalEngine instance for per‑agent RAG
 
     async def ensure_ready(self) -> None:
         """Ensure the RAG service is properly initialized."""

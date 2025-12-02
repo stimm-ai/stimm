@@ -117,14 +117,23 @@ class ChatbotService:
                     
                     # Always use ultra-low latency retrieval for voicebot
                     LOGGER.info("Using ultra-low latency retrieval mode")
-                    contexts = await _ultra_fast_retrieve_contexts(
-                        rag_state.embedder,
-                        rag_state.client,
-                        rag_state.lexical_index,
-                        rag_state.documents,
-                        text=message,
-                        namespace=None,
-                    )
+                    if rag_state.retrieval_engine is not None:
+                        # Use per‑agent retrieval engine (respects RAG config collection)
+                        contexts = await rag_state.retrieval_engine.ultra_fast_retrieve_contexts(
+                            text=message,
+                            namespace=None,
+                        )
+                        LOGGER.info(f"Using retrieval engine with collection: {rag_state.retrieval_engine.collection_name}")
+                    else:
+                        # Fallback to global retrieval (default collection)
+                        contexts = await _ultra_fast_retrieve_contexts(
+                            rag_state.embedder,
+                            rag_state.client,
+                            rag_state.lexical_index,
+                            rag_state.documents,
+                            text=message,
+                            namespace=None,
+                        )
                 
                 rag_time = time.time() - rag_start
                 LOGGER.info(f"RAG retrieval completed in {rag_time:.3f}s (ultra-low latency mode)")

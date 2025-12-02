@@ -135,6 +135,28 @@ class VoicebotEventLoop:
                     host=retrieval_config.qdrant_host,
                     port=retrieval_config.qdrant_port
                 )
+                
+                # If agent has a RAG config, create a retrieval engine for it
+                if self.agent_id:
+                    try:
+                        from services.agents_admin.agent_manager import get_agent_manager
+                        from services.rag.rag_config_service import RagConfigService
+                        import uuid
+                        
+                        agent_manager = get_agent_manager()
+                        agent_config = agent_manager.get_agent_config(uuid.UUID(self.agent_id))
+                        if agent_config.rag_config_id:
+                            rag_config_service = RagConfigService()
+                            retrieval_engine = rag_config_service.get_retrieval_engine(
+                                agent_config.rag_config_id
+                            )
+                            self.rag_state.retrieval_engine = retrieval_engine
+                            logger.info(f"✅ Attached retrieval engine for RAG config {agent_config.rag_config_id} (collection: {retrieval_engine.collection_name})")
+                        else:
+                            logger.info("ℹ️ Agent has no RAG config, using default collection")
+                    except Exception as e:
+                        logger.warning(f"⚠️ Could not attach retrieval engine: {e}")
+                
                 logger.info("✅ RAG state preloaded successfully")
         except Exception as e:
             logger.warning(f"⚠️ RAG preloading failed: {e}")
@@ -506,6 +528,28 @@ class VoicebotEventLoop:
                         host=retrieval_config.qdrant_host,
                         port=retrieval_config.qdrant_port
                     )
+                    
+                    # If agent has a RAG config, create a retrieval engine for it
+                    if self.agent_id:
+                        try:
+                            from services.agents_admin.agent_manager import get_agent_manager
+                            from services.rag.rag_config_service import RagConfigService
+                            import uuid
+                            
+                            agent_manager = get_agent_manager()
+                            agent_config = agent_manager.get_agent_config(uuid.UUID(self.agent_id))
+                            if agent_config.rag_config_id:
+                                rag_config_service = RagConfigService()
+                                retrieval_engine = rag_config_service.get_retrieval_engine(
+                                    agent_config.rag_config_id
+                                )
+                                self.rag_state.retrieval_engine = retrieval_engine
+                                logger.info(f"✅ Attached retrieval engine for RAG config {agent_config.rag_config_id} (collection: {retrieval_engine.collection_name})")
+                            else:
+                                logger.info("ℹ️ Agent has no RAG config, using default collection")
+                        except Exception as e:
+                            logger.warning(f"⚠️ Could not attach retrieval engine: {e}")
+                    
                     logger.info("✅ RagState initialized and cached")
                     
                 except Exception as e:

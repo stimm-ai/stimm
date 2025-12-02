@@ -335,11 +335,20 @@ async def upload_documents(
             from qdrant_client.http import models as qmodels
             points = []
             for doc, embedding in zip(documents, embeddings):
+                # Build payload with text and flattened metadata
+                payload = {}
+                payload["text"] = doc["text"]
+                if "namespace" in doc:
+                    payload["namespace"] = doc["namespace"]
+                # Merge metadata into payload (flatten)
+                metadata = doc.get("metadata", {})
+                for key, value in metadata.items():
+                    payload[key] = value
                 points.append(
                     qmodels.PointStruct(
                         id=doc["id"],
                         vector=embedding.tolist(),
-                        payload=doc.get("metadata", {}),
+                        payload=payload,
                     )
                 )
             

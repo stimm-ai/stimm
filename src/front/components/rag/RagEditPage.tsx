@@ -207,6 +207,24 @@ export function RagEditPage({ configId }: RagEditPageProps) {
     setDocumentsRefresh(prev => prev + 1)
   }
 
+  const handleDelete = async () => {
+    if (!configId) return
+    if (!confirm('Are you sure you want to delete this RAG configuration? This action cannot be undone.')) {
+      return
+    }
+    try {
+      const response = await fetch(`http://localhost:8001/api/rag-configs/${configId}/`, {
+        method: 'DELETE',
+      })
+      if (!response.ok) {
+        throw new Error('Failed to delete RAG config')
+      }
+      window.location.href = '/rag/admin'
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete RAG config')
+    }
+  }
+
   if (loading) {
     return (
       <div className="container mx-auto py-8">
@@ -397,6 +415,15 @@ export function RagEditPage({ configId }: RagEditPageProps) {
                 <Button variant="outline" asChild>
                   <a href="/rag/admin">Cancel</a>
                 </Button>
+                {configId && (
+                  <Button
+                    variant="destructive"
+                    onClick={handleDelete}
+                    disabled={saving}
+                  >
+                    Delete Configuration
+                  </Button>
+                )}
               </div>
             </TabsContent>
 

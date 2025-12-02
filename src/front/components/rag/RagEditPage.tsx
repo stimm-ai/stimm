@@ -13,7 +13,10 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { RagConfig } from './types'
+import { DocumentUpload } from './DocumentUpload'
+import { DocumentList } from './DocumentList'
 
 interface ProviderConfig {
   providers: { value: string; label: string }[]
@@ -54,6 +57,8 @@ export function RagEditPage({ configId }: RagEditPageProps) {
   const [loading, setLoading] = useState(!!configId)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [activeTab, setActiveTab] = useState('configuration')
+  const [documentsRefresh, setDocumentsRefresh] = useState(0)
 
   useEffect(() => {
     loadProviders()
@@ -86,12 +91,12 @@ export function RagEditPage({ configId }: RagEditPageProps) {
     try {
       setLoading(true)
       setError(null)
-      
+
       const response = await fetch(`http://localhost:8001/api/rag-configs/${configId}`)
       if (!response.ok) {
         throw new Error(`Failed to load RAG config: ${response.statusText}`)
       }
-      
+
       const configData = await response.json()
       setConfig(configData)
     } catch (err) {
@@ -119,11 +124,11 @@ export function RagEditPage({ configId }: RagEditPageProps) {
   const handleProviderChange = async (providerName: string) => {
     // Update the provider selection
     handleInputChange('provider', providerName)
-    
+
     // Load provider-specific fields
     if (providerName) {
       const fields = await loadProviderFields(providerName)
-      
+
       // Initialize config with default values for the new provider
       const newConfig: Record<string, any> = {}
       Object.entries(fields).forEach(([field, fieldDef]) => {
@@ -153,12 +158,12 @@ export function RagEditPage({ configId }: RagEditPageProps) {
         is_active: config.is_active ?? true
       }
 
-      const url = configId 
+      const url = configId
         ? `http://localhost:8001/api/rag-configs/${configId}/`
         : 'http://localhost:8001/api/rag-configs/'
-      
+
       const method = configId ? 'PUT' : 'POST'
-      
+
       const response = await fetch(url, {
         method,
         headers: {
@@ -198,6 +203,10 @@ export function RagEditPage({ configId }: RagEditPageProps) {
     }))
   }
 
+  const handleUploadComplete = () => {
+    setDocumentsRefresh(prev => prev + 1)
+  }
+
   if (loading) {
     return (
       <div className="container mx-auto py-8">
@@ -219,169 +228,198 @@ export function RagEditPage({ configId }: RagEditPageProps) {
             {configId ? 'Edit RAG Configuration' : 'Create New RAG Configuration'}
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent>
           {error && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="mb-6">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
 
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="name">Configuration Name *</Label>
-              <Input
-                id="name"
-                value={config.name || ''}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                placeholder="Enter RAG configuration name"
-                required
-              />
-            </div>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="mb-6">
+              <TabsTrigger value="configuration">Configuration</TabsTrigger>
+              {configId && <TabsTrigger value="documents">Documents</TabsTrigger>}
+            </TabsList>
 
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Input
-                id="description"
-                value={config.description || ''}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                placeholder="Enter description (optional)"
-              />
-            </div>
+            <TabsContent value="configuration" className="space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="name">Configuration Name *</Label>
+                  <Input
+                    id="name"
+                    value={config.name || ''}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    placeholder="Enter RAG configuration name"
+                    required
+                  />
+                </div>
 
-            {/* Provider Section */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">RAG Provider</h3>
-              <div>
-                <Label htmlFor="provider">Provider</Label>
-                <Select value={config.provider || ''} onValueChange={(value) => handleProviderChange(value)}>
-                  <SelectTrigger id="provider">
-                    <SelectValue placeholder="Select RAG Provider" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {providers?.providers.map((provider) => (
-                      <SelectItem key={provider.value} value={provider.value}>
-                        {provider.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                <div>
+                  <Label htmlFor="description">Description</Label>
+                  <Input
+                    id="description"
+                    value={config.description || ''}
+                    onChange={(e) => handleInputChange('description', e.target.value)}
+                    placeholder="Enter description (optional)"
+                  />
+                </div>
 
-              {/* Provider Configuration */}
-              {config.provider && (
-                <div className="space-y-4 pl-4 border-l-2 border-gray-200">
-                  <h4 className="text-md font-medium">Provider Configuration</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Object.entries(providerFields).map(([field, fieldDef]) => {
-                      const value = (config.provider_config as Record<string, any>)?.[field];
-                      if (fieldDef.type === 'select') {
-                        return (
-                          <div key={field}>
-                            <Label htmlFor={`provider_${field}`}>{fieldDef.label}</Label>
-                            <Select
-                              value={value || fieldDef.default || ''}
-                              onValueChange={(val) => handleConfigChange(field, val)}
-                            >
-                              <SelectTrigger id={`provider_${field}`}>
-                                <SelectValue placeholder={`Select ${fieldDef.label}`} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {fieldDef.options?.map((opt) => (
-                                  <SelectItem key={opt.value} value={opt.value}>
-                                    {opt.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        );
-                      }
-                      if (fieldDef.type === 'boolean') {
-                        return (
-                          <div key={field} className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              id={`provider_${field}`}
-                              checked={!!value}
-                              onChange={(e) => handleConfigChange(field, e.target.checked)}
-                              className="h-4 w-4 rounded border-gray-300"
-                            />
-                            <Label htmlFor={`provider_${field}`}>{fieldDef.label}</Label>
-                          </div>
-                        );
-                      }
-                      if (fieldDef.type === 'number') {
-                        return (
-                          <div key={field}>
-                            <Label htmlFor={`provider_${field}`}>{fieldDef.label}</Label>
-                            <Input
-                              id={`provider_${field}`}
-                              type="number"
-                              min={fieldDef.min}
-                              max={fieldDef.max}
-                              value={value || fieldDef.default || ''}
-                              onChange={(e) => handleConfigChange(field, e.target.valueAsNumber || parseInt(e.target.value) || 0)}
-                              placeholder={`Enter ${fieldDef.label}`}
-                            />
-                          </div>
-                        );
-                      }
-                      // text, password, etc.
-                      return (
-                        <div key={field}>
-                          <Label htmlFor={`provider_${field}`}>{fieldDef.label}</Label>
-                          <Input
-                            id={`provider_${field}`}
-                            type={fieldDef.type === 'password' ? 'password' : 'text'}
-                            value={value || ''}
-                            onChange={(e) => handleConfigChange(field, e.target.value)}
-                            placeholder={`Enter ${fieldDef.label}`}
-                          />
-                        </div>
-                      );
-                    })}
+                {/* Provider Section */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">RAG Provider</h3>
+                  <div>
+                    <Label htmlFor="provider">Provider</Label>
+                    <Select value={config.provider || ''} onValueChange={(value) => handleProviderChange(value)}>
+                      <SelectTrigger id="provider">
+                        <SelectValue placeholder="Select RAG Provider" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {providers?.providers.map((provider) => (
+                          <SelectItem key={provider.value} value={provider.value}>
+                            {provider.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Provider Configuration */}
+                  {config.provider && (
+                    <div className="space-y-4 pl-4 border-l-2 border-gray-200">
+                      <h4 className="text-md font-medium">Provider Configuration</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {Object.entries(providerFields).map(([field, fieldDef]) => {
+                          const value = (config.provider_config as Record<string, any>)?.[field];
+                          if (fieldDef.type === 'select') {
+                            return (
+                              <div key={field}>
+                                <Label htmlFor={`provider_${field}`}>{fieldDef.label}</Label>
+                                <Select
+                                  value={value || fieldDef.default || ''}
+                                  onValueChange={(val) => handleConfigChange(field, val)}
+                                >
+                                  <SelectTrigger id={`provider_${field}`}>
+                                    <SelectValue placeholder={`Select ${fieldDef.label}`} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {fieldDef.options?.map((opt) => (
+                                      <SelectItem key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            );
+                          }
+                          if (fieldDef.type === 'boolean') {
+                            return (
+                              <div key={field} className="flex items-center space-x-2">
+                                <input
+                                  type="checkbox"
+                                  id={`provider_${field}`}
+                                  checked={!!value}
+                                  onChange={(e) => handleConfigChange(field, e.target.checked)}
+                                  className="h-4 w-4 rounded border-gray-300"
+                                />
+                                <Label htmlFor={`provider_${field}`}>{fieldDef.label}</Label>
+                              </div>
+                            );
+                          }
+                          if (fieldDef.type === 'number') {
+                            return (
+                              <div key={field}>
+                                <Label htmlFor={`provider_${field}`}>{fieldDef.label}</Label>
+                                <Input
+                                  id={`provider_${field}`}
+                                  type="number"
+                                  min={fieldDef.min}
+                                  max={fieldDef.max}
+                                  value={value || fieldDef.default || ''}
+                                  onChange={(e) => handleConfigChange(field, e.target.valueAsNumber || parseInt(e.target.value) || 0)}
+                                  placeholder={`Enter ${fieldDef.label}`}
+                                />
+                              </div>
+                            );
+                          }
+                          // text, password, etc.
+                          return (
+                            <div key={field}>
+                              <Label htmlFor={`provider_${field}`}>{fieldDef.label}</Label>
+                              <Input
+                                id={`provider_${field}`}
+                                type={fieldDef.type === 'password' ? 'password' : 'text'}
+                                value={value || ''}
+                                onChange={(e) => handleConfigChange(field, e.target.value)}
+                                placeholder={`Enter ${fieldDef.label}`}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Options */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Options</h3>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="is_default"
+                      checked={config.is_default || false}
+                      onChange={(e) => handleInputChange('is_default', e.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300"
+                    />
+                    <Label htmlFor="is_default">Set as default RAG configuration</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="is_active"
+                      checked={config.is_active ?? true}
+                      onChange={(e) => handleInputChange('is_active', e.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300"
+                    />
+                    <Label htmlFor="is_active">Active (can be used by agents)</Label>
                   </div>
                 </div>
-              )}
-            </div>
-
-            {/* Options */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Options</h3>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="is_default"
-                  checked={config.is_default || false}
-                  onChange={(e) => handleInputChange('is_default', e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300"
-                />
-                <Label htmlFor="is_default">Set as default RAG configuration</Label>
               </div>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="is_active"
-                  checked={config.is_active ?? true}
-                  onChange={(e) => handleInputChange('is_active', e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300"
-                />
-                <Label htmlFor="is_active">Active (can be used by agents)</Label>
-              </div>
-            </div>
-          </div>
 
-          <div className="flex gap-4">
-            <Button 
-              onClick={handleSave} 
-              disabled={saving}
-            >
-              {saving ? 'Saving...' : 'Save Configuration'}
-            </Button>
-            <Button variant="outline" asChild>
-              <a href="/rag/admin">Cancel</a>
-            </Button>
-          </div>
+              <div className="flex gap-4">
+                <Button
+                  onClick={handleSave}
+                  disabled={saving}
+                >
+                  {saving ? 'Saving...' : 'Save Configuration'}
+                </Button>
+                <Button variant="outline" asChild>
+                  <a href="/rag/admin">Cancel</a>
+                </Button>
+              </div>
+            </TabsContent>
+
+            {configId && (
+              <TabsContent value="documents" className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Upload Documents</h3>
+                  <DocumentUpload
+                    ragConfigId={configId}
+                    onUploadComplete={handleUploadComplete}
+                  />
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Uploaded Documents</h3>
+                  <DocumentList
+                    ragConfigId={configId}
+                    refreshTrigger={documentsRefresh}
+                  />
+                </div>
+              </TabsContent>
+            )}
+          </Tabs>
         </CardContent>
       </Card>
     </div>

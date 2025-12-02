@@ -20,18 +20,20 @@ export function RagAdminPage() {
     try {
       setLoading(true)
       setError(null)
-      
+
       // Fetch RAG configs from FastAPI backend
       const response = await fetch('http://localhost:8001/api/rag-configs/')
       if (!response.ok) {
         throw new Error(`Failed to load RAG configs: ${response.statusText}`)
       }
-      
+
       const data = await response.json()
-      setConfigs(data.configs || [])
-      
+      // API returns array directly, not wrapped in object
+      const configsList = Array.isArray(data) ? data : []
+      setConfigs(configsList)
+
       // Find default config
-      const defaultConfig = data.configs.find((config: RagConfig) => config.is_default)
+      const defaultConfig = configsList.find((config: RagConfig) => config.is_default)
       setDefaultConfig(defaultConfig || null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load RAG configs')

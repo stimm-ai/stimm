@@ -74,6 +74,19 @@ async def create_rag_config(
     rag_config_service = RagConfigService(db)
     try:
         rag_config = rag_config_service.create_rag_config(rag_config_data)
+        # Ensure collection exists for vector database providers
+        if rag_config.provider == 'qdrant.internal':
+            try:
+                config = rag_config.provider_config or {}
+                engine = RetrievalEngine(
+                    collection_name=config.get('collection_name'),
+                    embed_model_name=config.get('embedding_model'),
+                )
+                await engine.ensure_collection()
+                logger.info(f"Ensured collection exists for RAG config {rag_config.id}")
+            except Exception as e:
+                # Log but don't fail creation, as collection can be created later
+                logger.warning(f"Failed to ensure collection for new RAG config {rag_config.id}: {e}")
         return rag_config
     except AgentValidationError as e:
         raise HTTPException(
@@ -275,6 +288,16 @@ async def upload_documents(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to initialize RetrievalEngine: {str(e)}"
+        )
+    
+    # Ensure the collection exists before uploading
+    try:
+        await engine.ensure_collection()
+    except Exception as e:
+        logger.error(f"Failed to ensure collection: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to ensure collection: {str(e)}"
         )
     
     uploaded_docs = []

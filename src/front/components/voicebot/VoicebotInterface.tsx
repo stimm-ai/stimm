@@ -37,7 +37,7 @@ export function VoicebotInterface() {
   const [agents, setAgents] = useState<Agent[]>([])
   const [selectedAgentId, setSelectedAgentId] = useState<string>('default')
   const [currentAgent, setCurrentAgent] = useState<Agent | null>(null)
-  
+
   const [status, setStatus] = useState<VoicebotStatus>({
     energy: 0,
     state: 'silence',
@@ -47,10 +47,11 @@ export function VoicebotInterface() {
     audioChunkCount: 0,
     streamTime: 0
   })
-  
+  const [showAgentOverlay, setShowAgentOverlay] = useState(false)
+
   const [transcription, setTranscription] = useState<string>('')
   const [response, setResponse] = useState<string>('')
-  
+
   // Use the LiveKit hook
   const {
     isConnected,
@@ -69,9 +70,9 @@ export function VoicebotInterface() {
     connect,
     disconnect
   } = useLiveKit()
-  
+
   const audioPlayerRef = useRef<HTMLAudioElement>(null)
-  
+
   // Visualizer State
   const [audioLevels, setAudioLevels] = useState<number[]>([0, 0, 0, 0, 0])
   const [activeStreamType, setActiveStreamType] = useState<'user' | 'agent'>('user')
@@ -114,7 +115,7 @@ export function VoicebotInterface() {
     // Prioritize audioStream only if it exists and agent is supposedly speaking
     const targetStream = (isAgentSpeaking && audioStream) ? audioStream : localAudioStream
     const type = (isAgentSpeaking && audioStream) ? 'agent' : 'user'
-    
+
     setActiveStreamType(type)
 
     if (!targetStream) {
@@ -133,29 +134,29 @@ export function VoicebotInterface() {
 
         // Ensure we don't have dangling analysers/animations
         if (animationRef.current) cancelAnimationFrame(animationRef.current)
-        
+
         const analyser = audioContext.createAnalyser()
         // Note: createMediaStreamSource can throw if stream is not active or valid
         const source = audioContext.createMediaStreamSource(targetStream)
-        
+
         analyser.fftSize = 32 // Small FFT size for fewer bars
         source.connect(analyser)
-        
+
         analyserRef.current = analyser
-        
+
         const bufferLength = analyser.frequencyBinCount
         const dataArray = new Uint8Array(bufferLength)
-        
+
         const updateVisualizer = () => {
           if (!analyserRef.current) return
-          
+
           // Gate for user microphone based on VAD to avoid parasitic noise
           // If we are in user mode (listening) and VAD is NOT active/speaking, show zero levels
           // We use status.state which comes from backend VAD, or a local threshold if needed
           // The user specifically requested this to filter out idle noise
           const isUserMode = type === 'user'
           const isVadActive = status.state === 'speaking' || turnState.vad_speech_detected
-          
+
           if (isUserMode && !isVadActive) {
              // Decay levels to 0 smoothly or set to 0
              setAudioLevels(prev => prev.map(l => Math.max(0, l - 5)))
@@ -164,7 +165,7 @@ export function VoicebotInterface() {
           }
 
           analyserRef.current.getByteFrequencyData(dataArray)
-          
+
           // Map frequency bins to 5 bars
           // Indices: 0 (Bass), 1, 2 (Mids), 3, 4 (Treble)
           const indices = [1, 2, 3, 5, 8]
@@ -173,11 +174,11 @@ export function VoicebotInterface() {
              // Scale 0-255 to 0-100
              return (val / 255) * 100
           })
-          
+
           setAudioLevels(levels)
           animationRef.current = requestAnimationFrame(updateVisualizer)
         }
-        
+
         updateVisualizer()
       } catch (e) {
         console.error('Failed to initialize audio visualizer:', e)
@@ -200,7 +201,7 @@ export function VoicebotInterface() {
     if (liveResponse) {
       setResponse(liveResponse)
     }
-    
+
     // Update status object with all indicators
     setStatus(prev => ({
       ...prev,
@@ -249,250 +250,261 @@ export function VoicebotInterface() {
 
   return (
     <div className={`min-h-screen ${THEME.bg} text-white font-sans p-4 flex gap-4 overflow-hidden`}>
-      
-      {/* CENTER PANEL: Visualizer & Controls */}
-      <div className="flex-1 flex flex-col relative rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm overflow-hidden shadow-2xl">
-        
-        {/* Top Header - Agent Selector */}
-        <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-start z-10">
-          <div className="flex flex-col gap-1">
-             <h1 className="text-xl font-bold tracking-tight text-white drop-shadow-md">VOICEBOT</h1>
-             <p className="text-xs text-white/70 uppercase tracking-widest">LiveKit Integration</p>
-          </div>
-          
-          <div className="flex items-center gap-4">
-             {/* Agent Cards / Selector */}
-             <div className="hidden md:flex gap-4">
-                {agents.slice(0, 4).map(agent => (
-                  <button 
-                    key={agent.id}
-                    onClick={() => setSelectedAgentId(agent.id)}
-                    className={`px-4 py-3 rounded border transition-all text-left w-48 shadow-lg
-                      ${selectedAgentId === agent.id 
-                        ? 'border-white/60 bg-white/20 ring-1 ring-white/30' 
-                        : 'border-white/10 hover:border-white/30 bg-black/20 hover:bg-black/30'}`}
-                  >
-                    <div className="text-xs font-bold text-white uppercase mb-1 drop-shadow-sm">{agent.name}</div>
-                    <div className="text-[10px] text-white/60 truncate">{agent.description || 'Voice AI Agent'}</div>
-                  </button>
-                ))}
-             </div>
-             
-             {/* Mobile / Fallback Selector */}
-             <div className="md:hidden">
-                <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
-                  <SelectTrigger className="w-48 bg-white/10 border-white/20 text-white backdrop-blur-md">
-                    <SelectValue placeholder="Select Agent" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-700 text-white">
-                    {agents.map((agent) => (
-                      <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-             </div>
-          </div>
-        </div>
-
-        {/* Center: VAD Visualizer */}
-        <div className="flex-1 flex flex-col items-center justify-center p-8">
-           
-           {/* Visualizer Icon Indicator */}
-           <div className="mb-6 flex justify-center h-8">
-             {isConnected && (
-               <div className={`
-                 flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300
-                 ${activeStreamType === 'agent' 
-                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-[0_0_15px_rgba(103,232,249,0.3)]' 
-                   : 'bg-white/10 text-white/70 border border-white/10'}
-               `}>
-                 {activeStreamType === 'agent' ? <Bot className="w-3 h-3" /> : <User className="w-3 h-3" />}
-                 <span>{activeStreamType === 'agent' ? 'Agent Speaking' : 'Listening'}</span>
-               </div>
-             )}
+       {/* CENTER PANEL: Visualizer & Controls */}
+       <div className="flex-1 flex flex-col relative rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm overflow-hidden shadow-2xl">
+         {/* Top Header - Agent Selector */}
+         <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-start z-10">
+           <div className="flex flex-col gap-1">
+             <h1 className="text-xl font-bold tracking-tight text-white drop-shadow-md">Stimm</h1>
+             <p className="text-xs text-white/70 uppercase tracking-widest">Your voice agent</p>
            </div>
-
-           {/* Visualizer Bars */}
-           <div className="flex items-center justify-center gap-3 h-32">
-              {audioLevels.map((level, i) => {
-                 // Enhance levels for better visibility
-                 const shapeMultipliers = [0.8, 1.0, 1.2, 1.0, 0.8]
-                 const height = Math.max(15, level * shapeMultipliers[i])
-                 
-                 const isActive = level > 5
-                 const isAgent = activeStreamType === 'agent'
-                 
-                 return (
-                   <div
-                     key={i}
-                     className={`w-12 rounded-full transition-all duration-75 ease-out shadow-lg 
-                       ${isActive 
-                         ? (isAgent ? 'bg-cyan-300 shadow-[0_0_20px_rgba(103,232,249,0.6)]' : 'bg-white shadow-[0_0_20px_rgba(255,255,255,0.6)]') 
-                         : (isAgent ? 'bg-cyan-900/40' : 'bg-white/20')
-                       }`}
-                     style={{
-                       height: `${Math.min(100, height)}%`,
-                       opacity: isActive ? 0.8 + (level / 200) : 0.3
-                     }}
-                   />
-                 )
-              })}
-           </div>
-           
-           {/* Connection Status Text */}
-           <div className="mt-8 text-center h-8 font-medium drop-shadow-md">
-             {connectionState === 'connecting' && <span className="text-yellow-300 animate-pulse">Connecting...</span>}
-             {connectionState === 'connected' && <span className="text-green-300">Connected to {currentAgent?.name}</span>}
-             {connectionState === 'failed' && <span className="text-red-300">{liveKitError || 'Connection Failed'}</span>}
-             {connectionState === 'disconnected' && <span className="text-white/60">Ready to start</span>}
-           </div>
-        </div>
-
-        {/* Bottom: Controls */}
-        <div className="absolute bottom-10 left-0 right-0 flex justify-center items-center gap-4 z-10">
-           <div className="flex items-center bg-black/20 backdrop-blur-md rounded-full p-1 border border-white/10 shadow-xl">
+           <div className="flex items-center gap-4">
+              {/* Agent Selection Button */}
               <Button
-                variant="ghost" 
-                size="icon"
-                onClick={handleVoiceToggle}
-                className={`w-14 h-14 rounded-full transition-all ${
-                  isConnected 
-                    ? 'bg-red-500/80 text-white hover:bg-red-600/90 shadow-[0_0_15px_rgba(220,38,38,0.5)]' 
-                    : 'bg-white text-indigo-600 hover:bg-gray-100 shadow-[0_0_15px_rgba(255,255,255,0.3)]'
-                }`}
+                onClick={() => setShowAgentOverlay(!showAgentOverlay)}
+                className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center gap-2 transition-all shadow-lg"
               >
-                {isConnected ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
-              </Button>
-              
-              <Button variant="ghost" size="icon" className="w-12 h-12 rounded-full text-white/70 hover:text-white hover:bg-white/10">
-                <MoreHorizontal className="w-5 h-5" />
+                <Bot className="w-3 h-3" />
+                <span>{currentAgent?.name || 'Select Agent'}</span>
+                <span className="text-xs text-white/60">▼</span>
               </Button>
            </div>
-           
-           {isConnected && (
-             <Button 
-               variant="ghost" 
-               size="icon" 
-               onClick={disconnect}
-               className="w-10 h-10 rounded-full bg-black/20 border border-white/10 text-white/70 hover:text-white hover:bg-red-500/20 hover:border-red-500/40 backdrop-blur-sm"
-             >
-               <X className="w-4 h-4" />
-             </Button>
-           )}
-        </div>
-        
-        {/* Hidden Audio Element */}
-        <audio ref={audioPlayerRef} className="hidden" />
-      </div>
-
-      {/* RIGHT PANEL: Sidebar */}
-      <div className="w-[380px] flex flex-col gap-6 p-4 rounded-xl border border-white/10 bg-black/20 backdrop-blur-md overflow-hidden shadow-xl">
-        
-        {/* Agent Configuration */}
-        <div className="space-y-4">
-           <h3 className="text-xs font-bold text-white/60 uppercase tracking-wider flex items-center gap-2 border-b border-white/10 pb-2">
-             <Settings className="w-3 h-3" /> Agent Configuration
-           </h3>
-           
-           <div className="grid grid-cols-[1fr_auto] gap-y-3 text-xs">
-              {/* VAD */}
-              <div className="text-white/80 font-semibold">VAD</div>
-              <div className="text-cyan-300 font-mono text-right">SILERO</div>
-              
-              {/* STT */}
-              <div className="text-white/80 font-semibold pt-1">SPEECH-TO-TEXT</div>
-              <div className="text-cyan-300 font-mono text-right pt-1 uppercase">
-                {currentAgent?.stt_provider || 'DEEPGRAM'}
-              </div>
-              <div className="text-white/50 pl-2">MODEL</div>
-              <div className="text-cyan-300/80 font-mono text-right uppercase">
-                {currentAgent?.stt_config?.model || 'NOVA-3'}
-              </div>
-              
-              {/* LLM */}
-              <div className="text-white/80 font-semibold pt-1">LLM</div>
-              <div className="text-cyan-300 font-mono text-right uppercase">
-                {currentAgent?.llm_provider || 'OPENAI'}
-              </div>
-              <div className="text-white/50 pl-2">MODEL</div>
-              <div className="text-cyan-300/80 font-mono text-right uppercase">
-                {currentAgent?.llm_config?.model || 'GPT-4.0-MINI'}
-              </div>
-              
-              {/* TTS */}
-              <div className="text-white/80 font-semibold pt-1">TEXT-TO-SPEECH</div>
-              <div className="text-cyan-300 font-mono text-right uppercase">
-                 {currentAgent?.tts_provider || 'ELEVENLABS'}
-              </div>
-              <div className="text-white/50 pl-2">MODEL</div>
-              <div className="text-cyan-300/80 font-mono text-right uppercase">
-                 {currentAgent?.tts_config?.model || 'FLASH_V2_5'}
-              </div>
-              <div className="text-white/50 pl-2">VOICE</div>
-              <div className="text-cyan-300/80 font-mono text-right uppercase truncate max-w-[150px]" title={currentAgent?.tts_config?.voice}>
-                 {currentAgent?.tts_config?.voice || '-'}
-              </div>
+         </div>
+         {/* Custom Agent Selection Overlay */}
+         {showAgentOverlay && (
+           <div className="fixed inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm z-50">
+             <div className="bg-gradient-to-br from-blue-900 to-purple-900 border border-white/20 rounded-xl p-6 shadow-2xl w-full max-w-4xl mx-4">
+               <div className="flex justify-between items-center mb-4">
+                 <h3 className="text-xl font-bold text-white">Select Voice Agent</h3>
+                 <button
+                   className="text-white/60 hover:text-white transition-colors"
+                   onClick={() => setShowAgentOverlay(false)}
+                 >
+                   <X className="w-5 h-5" />
+                 </button>
+               </div>
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                 {agents.map(agent => (
+                   <div
+                     key={agent.id}
+                     onClick={() => {
+                       setSelectedAgentId(agent.id);
+                       setShowAgentOverlay(false);
+                     }}
+                     className={`px-4 py-5 rounded-lg border-2 transition-all cursor-pointer
+                       ${selectedAgentId === agent.id
+                         ? 'border-cyan-400 bg-cyan-900/50 text-white shadow-[0_0_20px_rgba(103,232,249,0.3)]'
+                         : 'border-white/10 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white'
+                       }`}
+                   >
+                     <div className="font-bold text-white uppercase mb-2">{agent.name}</div>
+                     <div className="text-[10px] text-white/60">{agent.description || 'Voice AI Agent'}</div>
+                     <div className="mt-3 flex items-center gap-2">
+                       <span className="text-xs bg-cyan-400/20 px-2 py-1 rounded-full">{agent.stt_provider || 'Deepgram'}</span>
+                       <span className="text-xs bg-purple-400/20 px-2 py-1 rounded-full">{agent.llm_provider || 'Mistral'}</span>
+                     </div>
+                   </div>
+                 ))}
+               </div>
+             </div>
            </div>
-        </div>
-        
-        {/* Live Metrics / Status Indicators */}
-        <div className="space-y-4">
-           <h3 className="text-xs font-bold text-white/60 uppercase tracking-wider flex items-center gap-2 border-b border-white/10 pb-2">
-             <Zap className="w-3 h-3" /> Live Status
-           </h3>
-           
-           <div className="grid grid-cols-[1fr_auto] gap-y-3 text-xs items-center">
-              {/* Indicators */}
-              <div className="text-white/80">VAD ACTIVE</div>
-              <div className={`h-2 w-2 rounded-full ${turnState.vad_speech_detected && !turnState.vad_end_of_speech_detected ? 'bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)]' : 'bg-white/10'}`} />
-              
-              <div className="text-white/80">STT STREAMING</div>
-              <div className={`h-2 w-2 rounded-full ${turnState.stt_streaming_started && !turnState.stt_streaming_ended ? 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]' : 'bg-white/10'}`} />
-
-              <div className="text-white/80">LLM STREAMING</div>
-              <div className={`h-2 w-2 rounded-full ${turnState.llm_streaming_started && !turnState.llm_streaming_ended ? 'bg-purple-400 shadow-[0_0_8px_rgba(192,132,252,0.8)]' : 'bg-white/10'}`} />
-
-              <div className="text-white/80">TTS STREAMING</div>
-              <div className={`h-2 w-2 rounded-full ${turnState.tts_streaming_started && !turnState.tts_streaming_ended ? 'bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.8)]' : 'bg-white/10'}`} />
-
-              {/* Overall Latency */}
-              <div className="text-white font-bold pt-2">OVERALL LATENCY</div>
-              <div className="text-cyan-300 font-bold font-mono text-right pt-2 text-sm">
-                 {status.firstChunkLatency ? `${Math.round(status.firstChunkLatency)}ms` : '-'}
-              </div>
-           </div>
-        </div>
-
-        {/* Live Transcription */}
-        <div className="flex-1 flex flex-col min-h-0 border-t border-white/10 pt-4">
-           <h3 className="text-xs font-bold text-white/60 uppercase tracking-wider mb-4 flex items-center gap-2">
-             <MessageSquare className="w-3 h-3" /> Transcription
-           </h3>
-           
-           <div className="flex-1 overflow-y-auto text-sm space-y-4 pr-2 font-mono leading-relaxed custom-scrollbar">
-              {transcription && (
-                <div className="space-y-1 animate-in fade-in slide-in-from-bottom-2">
-                   <div className="text-xs text-white/50 uppercase">You</div>
-                   <div className="text-white/90">{transcription}</div>
+         )}
+         {/* Center: VAD Visualizer */}
+         <div className="flex-1 flex flex-col items-center justify-center p-8">
+            {/* Visualizer Icon Indicator */}
+            <div className="mb-6 flex justify-center h-8">
+              {isConnected && (
+                <div className={`
+                  flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300
+                  ${activeStreamType === 'agent' 
+                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-[0_0_15px_rgba(103,232,249,0.3)]' 
+                    : 'bg-white/10 text-white/70 border border-white/10'}
+                `}>
+                  {activeStreamType === 'agent' ? <Bot className="w-3 h-3" /> : <User className="w-3 h-3" />}
+                  <span>{activeStreamType === 'agent' ? 'Agent Speaking' : 'Listening'}</span>
                 </div>
               )}
-              
-              {response && (
-                <div className="space-y-1 animate-in fade-in slide-in-from-bottom-2">
-                   <div className="text-xs text-cyan-300/70 uppercase">Agent</div>
-                   <div className="text-cyan-200">{response}</div>
-                </div>
-              )}
-              
-              {!transcription && !response && (
-                <div className="text-white/40 italic text-xs">
-                   Waiting for conversation to start...
-                </div>
-              )}
-           </div>
-        </div>
-        
-      </div>
+            </div>
+
+            {/* Visualizer Bars */}
+            <div className="flex items-center justify-center gap-3 h-32">
+               {audioLevels.map((level, i) => {
+                  // Enhance levels for better visibility
+                  const shapeMultipliers = [0.8, 1.0, 1.2, 1.0, 0.8]
+                  const height = Math.max(15, level * shapeMultipliers[i])
+
+                  const isActive = level > 5
+                  const isAgent = activeStreamType === 'agent'
+
+                  return (
+                    <div
+                      key={i}
+                      className={`w-12 rounded-full transition-all duration-75 ease-out shadow-lg 
+                        ${isActive 
+                          ? (isAgent ? 'bg-cyan-300 shadow-[0_0_20px_rgba(103,232,249,0.6)]' : 'bg-white shadow-[0_0_20px_rgba(255,255,255,0.6)]') 
+                          : (isAgent ? 'bg-cyan-900/40' : 'bg-white/20')
+                        }`}
+                      style={{
+                        height: `${Math.min(100, height)}%`,
+                        opacity: isActive ? 0.8 + (level / 200) : 0.3
+                      }}
+                    />
+                  )
+               })}
+            </div>
+
+            {/* Connection Status Text */}
+            <div className="mt-8 text-center h-8 font-medium drop-shadow-md">
+              {connectionState === 'connecting' && <span className="text-yellow-300 animate-pulse">Connecting...</span>}
+              {connectionState === 'connected' && <span className="text-green-300">Connected to {currentAgent?.name}</span>}
+              {connectionState === 'failed' && <span className="text-red-300">{liveKitError || 'Connection Failed'}</span>}
+              {connectionState === 'disconnected' && <span className="text-white/60">Ready to start</span>}
+            </div>
+         </div>
+
+         {/* Bottom: Controls */}
+         <div className="absolute bottom-10 left-0 right-0 flex justify-center items-center gap-4 z-10">
+            <div className="flex items-center bg-black/20 backdrop-blur-md rounded-full p-1 border border-white/10 shadow-xl">
+               <Button
+                 variant="ghost" 
+                 size="icon"
+                 onClick={handleVoiceToggle}
+                 className={`w-14 h-14 rounded-full transition-all ${
+                   isConnected 
+                     ? 'bg-red-500/80 text-white hover:bg-red-600/90 shadow-[0_0_15px_rgba(220,38,38,0.5)]' 
+                     : 'bg-white text-indigo-600 hover:bg-gray-100 shadow-[0_0_15px_rgba(255,255,255,0.3)]'
+                 }`}
+               >
+                 {isConnected ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+               </Button>
+
+               <Button variant="ghost" size="icon" className="w-12 h-12 rounded-full text-white/70 hover:text-white hover:bg-white/10">
+                 <MoreHorizontal className="w-5 h-5" />
+               </Button>
+            </div>
+
+            {isConnected && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={disconnect}
+                className="w-10 h-10 rounded-full bg-black/20 border border-white/10 text-white/70 hover:text-white hover:bg-red-500/20 hover:border-red-500/40 backdrop-blur-sm"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            )}
+         </div>
+
+         {/* Hidden Audio Element */}
+         <audio ref={audioPlayerRef} className="hidden" />
+       </div>
+
+       {/* RIGHT PANEL: Sidebar */}
+       <div className="w-[380px] flex flex-col gap-6 p-4 rounded-xl border border-white/10 bg-black/20 backdrop-blur-md overflow-hidden shadow-xl">
+         {/* Agent Configuration */}
+         <div className="space-y-4">
+            <h3 className="text-xs font-bold text-white/60 uppercase tracking-wider flex items-center gap-2 border-b border-white/10 pb-2">
+              <Settings className="w-3 h-3" /> Agent details
+            </h3>
+
+            <div className="grid grid-cols-[1fr_auto] gap-y-3 text-xs">
+               {/* VAD */}
+               <div className="text-white/80 font-semibold">VAD</div>
+               <div className="text-cyan-300 font-mono text-right">SILERO</div>
+
+               {/* STT */}
+               <div className="text-white/80 font-semibold pt-1">SPEECH-TO-TEXT</div>
+               <div className="text-cyan-300 font-mono text-right pt-1 uppercase">
+                 {currentAgent?.stt_provider || 'DEEPGRAM'}
+               </div>
+               <div className="text-white/50 pl-2">MODEL</div>
+               <div className="text-cyan-300/80 font-mono text-right uppercase">
+                 {currentAgent?.stt_config?.model || 'NOVA-3'}
+               </div>
+
+               {/* LLM */}
+               <div className="text-white/80 font-semibold pt-1">LLM</div>
+               <div className="text-cyan-300 font-mono text-right uppercase">
+                 {currentAgent?.llm_provider || 'OPENAI'}
+               </div>
+               <div className="text-white/50 pl-2">MODEL</div>
+               <div className="text-cyan-300/80 font-mono text-right uppercase">
+                 {currentAgent?.llm_config?.model || 'GPT-4.0-MINI'}
+               </div>
+
+               {/* TTS */}
+               <div className="text-white/80 font-semibold pt-1">TEXT-TO-SPEECH</div>
+               <div className="text-cyan-300 font-mono text-right uppercase">
+                  {currentAgent?.tts_provider || 'ELEVENLABS'}
+               </div>
+               <div className="text-white/50 pl-2">MODEL</div>
+               <div className="text-cyan-300/80 font-mono text-right uppercase">
+                  {currentAgent?.tts_config?.model || 'FLASH_V2_5'}
+               </div>
+               <div className="text-white/50 pl-2">VOICE</div>
+               <div className="text-cyan-300/80 font-mono text-right uppercase truncate max-w-[150px]" title={currentAgent?.tts_config?.voice}>
+                  {currentAgent?.tts_config?.voice || '-'}
+               </div>
+            </div>
+         </div>
+
+         {/* Live Metrics / Status Indicators */}
+         <div className="space-y-4">
+            <h3 className="text-xs font-bold text-white/60 uppercase tracking-wider flex items-center gap-2 border-b border-white/10 pb-2">
+              <Zap className="w-3 h-3" /> Live Status
+            </h3>
+
+            <div className="grid grid-cols-[1fr_auto] gap-y-3 text-xs items-center">
+               {/* Indicators */}
+               <div className="text-white/80">SPEECH DETECTED</div>
+               <div className={`h-2 w-2 rounded-full ${turnState.vad_speech_detected && !turnState.vad_end_of_speech_detected ? 'bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)]' : 'bg-white/10'}`} />
+
+               <div className="text-white/80">STT STREAMING</div>
+               <div className={`h-2 w-2 rounded-full ${turnState.stt_streaming_started && !turnState.stt_streaming_ended ? 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]' : 'bg-white/10'}`} />
+
+               <div className="text-white/80">LLM STREAMING</div>
+               <div className={`h-2 w-2 rounded-full ${turnState.llm_streaming_started && !turnState.llm_streaming_ended ? 'bg-purple-400 shadow-[0_0_8px_rgba(192,132,252,0.8)]' : 'bg-white/10'}`} />
+
+               <div className="text-white/80">TTS STREAMING</div>
+               <div className={`h-2 w-2 rounded-full ${turnState.tts_streaming_started && !turnState.tts_streaming_ended ? 'bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.8)]' : 'bg-white/10'}`} />
+
+               {/* Overall Latency */}
+               <div className="text-white font-bold pt-2">RESPONSE LATENCY</div>
+               <div className="text-cyan-300 font-bold font-mono text-right pt-2 text-sm">
+                  {status.firstChunkLatency ? `${Math.round(status.firstChunkLatency || 0)}ms` : '-'}
+               </div>
+            </div>
+         </div>
+
+         {/* Live Transcription */}
+         <div className="flex-1 flex flex-col min-h-0 border-t border-white/10 pt-4">
+            <h3 className="text-xs font-bold text-white/60 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <MessageSquare className="w-3 h-3" /> Transcription
+            </h3>
+
+            <div className="flex-1 overflow-y-auto text-sm space-y-4 pr-2 font-mono leading-relaxed custom-scrollbar">
+               {transcription && (
+                 <div className="space-y-1 animate-in fade-in slide-in-from-bottom-2">
+                    <div className="text-xs text-white/50 uppercase">You</div>
+                    <div className="text-white/90">{transcription}</div>
+                 </div>
+               )}
+
+               {response && (
+                 <div className="space-y-1 animate-in fade-in slide-in-from-bottom-2">
+                    <div className="text-xs text-cyan-300/70 uppercase">Agent</div>
+                    <div className="text-cyan-200">{response}</div>
+                 </div>
+               )}
+
+               {!transcription && !response && (
+                 <div className="text-white/40 italic text-xs">
+                    Waiting for conversation to start...
+                 </div>
+               )}
+            </div>
+         </div>
+       </div>
     </div>
   )
 }

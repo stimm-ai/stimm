@@ -1,8 +1,8 @@
 """
-WebRTC-like streaming tests for Whisper STT service integration.
+Deepgram streaming tests for Deepgram STT service integration.
 
 This test suite verifies that the voicebot STT service can properly
-connect to and use the whisper-stt service for real-time transcription.
+connect to and use the Deepgram API for real-time transcription.
 """
 
 import asyncio
@@ -28,7 +28,7 @@ CHUNK_BYTES = CHUNK_SIZE * 2  # 16-bit samples (2 bytes per sample)
 @pytest.fixture
 def audio_file_path():
     """Get the path to the test audio file."""
-    return os.path.join(os.path.dirname(__file__), "Enregistrement.wav")
+    return os.path.join(os.path.dirname(__file__), "../../../src/services/stt/tests/Enregistrement.wav")
 
 
 @pytest.fixture
@@ -48,16 +48,20 @@ def expected_transcription_results(audio_file_path: str) -> Dict[str, Any]:
     return {
         "min_length": 1,  # Minimum number of transcripts
         "min_transcript_length": 1,  # Minimum length of transcript text
-        "expected_fields": ["transcript", "is_final", "stability"]
+        "expected_fields": ["transcript", "is_final", "confidence", "provider"]
     }
 
 
 @pytest.fixture(scope="module")
 def test_setup():
     """Setup for all tests in this module."""
-    print("Setting up test environment...")
+    print("Setting up Deepgram test environment...")
+    # Verify Deepgram API key is available
+    api_key = os.getenv("DEEPGRAM_STT_API_KEY")
+    if not api_key:
+        pytest.skip("DEEPGRAM_STT_API_KEY environment variable is required for Deepgram tests")
     yield
-    print("Tearing down test environment...")
+    print("Tearing down Deepgram test environment...")
 
 
 def load_pcm16_from_wav(wav_path: str) -> bytes:
@@ -121,25 +125,29 @@ def verify_transcription_results(
 
 
 @pytest.mark.asyncio
-async def test_stt_service_initialization():
-    """Test that STT service initializes correctly with whisper.local provider."""
+async def test_deepgram_service_initialization():
+    """Test that STT service initializes correctly with deepgram.com provider."""
+    # Skip if Deepgram API key is not available
+    if not os.getenv("DEEPGRAM_STT_API_KEY"):
+        pytest.skip("DEEPGRAM_STT_API_KEY environment variable is required")
+    
     stt_service = STTService()
     
     # Verify service is initialized
     assert stt_service is not None
     assert stt_service.provider is not None
-    assert stt_service.config.get_provider() == "whisper.local"
+    assert stt_service.config.get_provider() == "deepgram.com"
 
 
 @pytest.mark.asyncio
-async def test_whisper_streaming_transcription(
+async def test_deepgram_streaming_transcription(
     test_setup,
     audio_file_path: str,
     audio_pcm_data: bytes,
     expected_transcription_results: Dict[str, Any]
 ):
     """
-    Test WebRTC-like streaming to the Whisper STT service.
+    Test WebRTC-like streaming to the Deepgram STT service.
 
     This test:
     1. Loads the WAV file (pre-converted from M4A)
@@ -150,8 +158,9 @@ async def test_whisper_streaming_transcription(
     """
     stt_service = STTService()
     
-    # Verify service is initialized
+    # Verify service is initialized with Deepgram provider
     assert stt_service.provider is not None
+    assert stt_service.config.get_provider() == "deepgram.com"
 
     try:
         # Create a generator that streams audio in real-time using sounddevice
@@ -191,7 +200,7 @@ async def test_whisper_streaming_transcription(
         transcripts = []
         async for transcript in stt_service.transcribe_streaming(audio_chunk_generator()):
             transcripts.append(transcript)
-            print(f"[VOICEBOT-APP TEST] Received transcript: {transcript}")
+            print(f"[DEEPGRAM TEST] Received transcript: {transcript}")
 
         # Verify basic structure
         assert len(transcripts) > 0, "No transcripts received"
@@ -203,19 +212,51 @@ async def test_whisper_streaming_transcription(
         final_transcript = final_transcripts[-1]
         assert "transcript" in final_transcript
         assert "is_final" in final_transcript
+        assert "provider" in final_transcript
+        assert final_transcript["provider"] == "deepgram"
         assert final_transcript["transcript"], "Empty final transcript"
 
         # Verify against expected results
         success, message = verify_transcription_results(transcripts, expected_transcription_results)
         assert success, message
 
-        print(f"Received {len(transcripts)} transcripts")
+        print(f"Received {len(transcripts)} transcripts from Deepgram")
         print(f"Final transcript: {final_transcript['transcript']}")
 
     except Exception as e:
-        pytest.fail(f"Streaming transcription failed: {e}")
+        pytest.fail(f"Deepgram streaming transcription failed: {e}")
 
 
+@pytest.mark.asyncio
+async def test_deepgram_empty_chunks_handling():
+    """
+    Test that the Deepgram provider handles empty chunks gracefully.
+    """
+    # Skip if Deepgram API key is not available
+    if not os.getenv("DEEPGRAM_STT_API_KEY"):
+        pytest.skip("DEEPGRAM_STT_API_KEY environment variable is required")
+    
+    stt_service = STTService()
+
+    # Generator with some empty chunks
+    async def audio_with_empty_chunks():
+        yield b"chunk1"
+        yield b""  # Empty chunk
+        yield b"chunk3"
+        yield b""  # Another empty chunk
+
+    try:
+        # This should not raise an exception
+        async for transcript in stt_service.transcribe_streaming(audio_with_empty_chunks()):
+            pass  # Just verify it doesn't crash
+
+    except Exception as e:
+        # If the Deepgram connection fails, this might be expected
+        if "Connection" in str(e) or "API" in str(e):
+            # This might be expected if there are network issues
+            pytest.skip(f"Deepgram connection issue: {e}")
+        else:
+            raise  # Re-raise other exceptions
 
 
 # Note: Additional test cases would include:
@@ -223,3 +264,4 @@ async def test_whisper_streaming_transcription(
 # - Testing error handling
 # - Testing with silence and noise
 # - Testing connection recovery
+# - Testing different Deepgram models and languages

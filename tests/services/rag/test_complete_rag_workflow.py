@@ -14,7 +14,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.http import models as qmodels
 
 # Add the parent directory to Python path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', 'src'))
 
 # Mock the LLM service to avoid configuration issues in test environment
 class MockLLMService:

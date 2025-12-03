@@ -1,6 +1,7 @@
 .env
 venv
 .venv
+.pytest_cache
 data
 riva_quickstart_2.19.0
 ngc-cli

@@ -9,8 +9,9 @@ import logging
 
 # Add project root and src to path
 project_root = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, project_root)
-sys.path.insert(0, os.path.join(project_root, "src"))
+actual_root = os.path.join(project_root, "..", "..")
+sys.path.insert(0, actual_root)
+sys.path.insert(0, os.path.join(actual_root, "src"))
 
 logging.basicConfig(level=logging.DEBUG)
 

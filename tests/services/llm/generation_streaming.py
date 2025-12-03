@@ -8,7 +8,7 @@ import sys
 import os
 
 # Add the parent directory to Python path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../..'))
 
 from services.llm.llm import LLMService
 

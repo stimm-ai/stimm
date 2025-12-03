@@ -491,6 +491,99 @@ LOG_LEVEL=debug python src/main.py
 └── README.md
 ```
 
+## 🧪 Testing
+
+The test suite is organized by **feature** (STT, TTS, RAG, etc.) rather than provider, enabling cross-provider testing and better maintainability.
+
+### Test Structure
+
+```
+tests/
+├── conftest.py              # Auto-loads .env, provides fixtures
+├── fixtures/                # Shared utilities and verification functions
+├── unit/                    # Unit tests (no external dependencies)
+│   ├── test_audio_utils.py
+│   └── test_vad_silero.py
+└── integration/             # Integration tests (require providers)
+    ├── stt/                 # STT tests (all providers)
+    ├── tts/                 # TTS tests
+    ├── llm/                 # LLM tests
+    ├── rag/                 # RAG tests
+    ├── vad/                 # VAD tests
+    └── webrtc/              # WebRTC tests
+```
+
+### Quick Start
+
+1. **Set up environment** (copy `.env.example` to `.env` and add your API keys):
+   ```bash
+   cp .env.example .env
+   # Edit .env to add provider API keys (DEEPGRAM_STT_API_KEY, etc.)
+   ```
+
+2. **Run tests**:
+   ```bash
+   # Unit tests (no API keys needed)
+   PYTHONPATH=./src uv run pytest tests/unit/ -v
+
+   # Integration tests (auto-skip if API keys missing)
+   PYTHONPATH=./src uv run pytest tests/integration/ -v
+
+   # Specific feature tests
+   PYTHONPATH=./src uv run pytest tests/integration/stt/ -v
+   ```
+
+### Test Organization
+
+**Unit Tests** - No external dependencies:
+- Audio utilities (PCM conversion, chunking, validation)
+- Silero VAD (local model, no API key)
+
+**Integration Tests** - Require providers:
+- **STT**: Parametrized tests run against all available providers (Deepgram, Whisper)
+- **TTS**: Text-to-speech streaming with multiple providers
+- **LLM**: Generation and streaming tests
+- **RAG**: Knowledge base and retrieval
+- **WebRTC**: Real-time communication
+
+### Environment Variables
+
+Tests load configuration from `.env` automatically. See [`.env.example`](file:///home/etienne/repos/voicebot/.env.example) for all available variables.
+
+**Key variables for tests:**
+- `DEEPGRAM_STT_API_KEY` - Required for Deepgram STT tests
+- `DEEPGRAM_MODEL` - Model selection (default: nova-2)
+- `WHISPER_LOCAL_STT_URL` - Whisper service URL
+- Provider-specific keys for TTS and LLM (see `.env.example`)
+
+**Tests auto-skip when API keys are missing** - no manual configuration needed.
+
+### Running Specific Tests
+
+```bash
+# By test type
+PYTHONPATH=./src uv run pytest -m unit -v              # Unit tests only
+PYTHONPATH=./src uv run pytest -m integration -v       # Integration tests only
+
+# By feature
+PYTHONPATH=./src uv run pytest tests/integration/stt/ -v    # STT tests
+PYTHONPATH=./src uv run pytest tests/integration/rag/ -v    # RAG tests
+
+# By provider
+PYTHONPATH=./src uv run pytest tests/integration/stt/ -k deepgram -v  # Deepgram only
+PYTHONPATH=./src uv run pytest tests/integration/stt/ -k whisper -v   # Whisper only
+
+# With coverage
+PYTHONPATH=./src uv run pytest --cov=src/services --cov-report=html -v
+```
+
+### Test Markers
+
+- `@pytest.mark.unit` - Unit tests (no external dependencies)
+- `@pytest.mark.integration` - Integration tests (may require services)
+- `@pytest.mark.requires_provider("stt"|"tts"|"llm")` - Provider-dependent tests
+- `@pytest.mark.slow` - Long-running tests
+
 ---
 
 ## ⚖️ Legal & Licensing

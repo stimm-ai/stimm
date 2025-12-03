@@ -88,8 +88,14 @@ export function VoicebotInterface() {
   // Update current agent object when selection changes or agents load
   useEffect(() => {
     if (agents.length > 0) {
-      const agent = agents.find(a => a.id === selectedAgentId) || agents[0]
-      setCurrentAgent(agent)
+      const agent = agents.find(a => a.id === selectedAgentId)
+      if (agent) {
+        setCurrentAgent(agent)
+      } else {
+        // If selectedAgentId doesn't match any agent, select the first one
+        setSelectedAgentId(agents[0].id)
+        setCurrentAgent(agents[0])
+      }
     }
   }, [selectedAgentId, agents])
 
@@ -227,6 +233,23 @@ export function VoicebotInterface() {
         const agentsData = await response.json()
         setAgents(agentsData)
         console.log('Loaded agents:', agentsData.length)
+        
+        // Fetch and select the default agent
+        try {
+          const defaultResponse = await fetch(`http://${WSL2_IP}:8001/api/agents/default/current`)
+          if (defaultResponse.ok) {
+            const defaultAgent = await defaultResponse.json()
+            setSelectedAgentId(defaultAgent.id)
+            setCurrentAgent(defaultAgent)
+            console.log('Selected default agent:', defaultAgent.name)
+          }
+        } catch (defaultErr) {
+          console.warn('Failed to load default agent, using first agent:', defaultErr)
+          if (agentsData.length > 0) {
+            setSelectedAgentId(agentsData[0].id)
+            setCurrentAgent(agentsData[0])
+          }
+        }
       } else {
         console.warn('Failed to load agents, status:', response.status)
         setAgents([])

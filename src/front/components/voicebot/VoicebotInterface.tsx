@@ -310,90 +310,104 @@ export function VoicebotInterface() {
            </div>
          )}
          {/* Center: VAD Visualizer */}
-         <div className="flex-1 flex flex-col items-center justify-center p-8">
-            {/* Visualizer Icon Indicator */}
-            <div className="mb-6 flex justify-center h-8">
-              {isConnected && (
-                <div className={`
-                  flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300
-                  ${activeStreamType === 'agent' 
-                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-[0_0_15px_rgba(103,232,249,0.3)]' 
-                    : 'bg-white/10 text-white/70 border border-white/10'}
-                `}>
-                  {activeStreamType === 'agent' ? <Bot className="w-3 h-3" /> : <User className="w-3 h-3" />}
-                  <span>{activeStreamType === 'agent' ? 'Agent Speaking' : 'Listening'}</span>
-                </div>
-              )}
-            </div>
+         <div className="flex-1 flex flex-col items-center justify-center p-8 relative">
+           {/* Container for both start button and visualizer with transition */}
+           <div className="flex flex-col items-center justify-center h-52 w-full relative">
+             {/* Transition container */}
+             <div className={`flex flex-col items-center justify-center h-full w-full absolute
+               ${isConnected ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'}
+               transition-opacity duration-300 ease-in-out transition-transform duration-300 ease-in-out`}>
+               {/* Visualizer Icon Indicator */}
+               <div className="mb-6 flex justify-center h-8">
+                 <div className={`
+                   flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300
+                   ${activeStreamType === 'agent'
+                     ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-[0_0_15px_rgba(103,232,249,0.3)]'
+                     : 'bg-white/10 text-white/70 border border-white/10'}
+                 `}>
+                   {activeStreamType === 'agent' ? <Bot className="w-3 h-3" /> : <User className="w-3 h-3" />}
+                   <span>{activeStreamType === 'agent' ? 'Agent Speaking' : 'Listening'}</span>
+                 </div>
+               </div>
 
-            {/* Visualizer Bars */}
-            <div className="flex items-center justify-center gap-3 h-32">
-               {audioLevels.map((level, i) => {
-                  // Enhance levels for better visibility
-                  const shapeMultipliers = [0.8, 1.0, 1.2, 1.0, 0.8]
-                  const height = Math.max(15, level * shapeMultipliers[i])
+               {/* Visualizer Bars */}
+               <div className="flex items-center justify-center gap-3 h-32">
+                 {audioLevels.map((level, i) => {
+                   // Enhance levels for better visibility
+                   const shapeMultipliers = [0.8, 1.0, 1.2, 1.0, 0.8]
+                   const height = Math.max(15, level * shapeMultipliers[i])
 
-                  const isActive = level > 5
-                  const isAgent = activeStreamType === 'agent'
+                   const isActive = level > 5
+                   const isAgent = activeStreamType === 'agent'
 
-                  return (
-                    <div
-                      key={i}
-                      className={`w-12 rounded-full transition-all duration-75 ease-out shadow-lg 
-                        ${isActive 
-                          ? (isAgent ? 'bg-cyan-300 shadow-[0_0_20px_rgba(103,232,249,0.6)]' : 'bg-white shadow-[0_0_20px_rgba(255,255,255,0.6)]') 
-                          : (isAgent ? 'bg-cyan-900/40' : 'bg-white/20')
-                        }`}
-                      style={{
-                        height: `${Math.min(100, height)}%`,
-                        opacity: isActive ? 0.8 + (level / 200) : 0.3
-                      }}
-                    />
-                  )
-               })}
-            </div>
+                   return (
+                     <div
+                       key={i}
+                       className={`w-12 rounded-full transition-all duration-75 ease-out shadow-lg
+                         ${isActive
+                           ? (isAgent ? 'bg-cyan-300 shadow-[0_0_20px_rgba(103,232,249,0.6)]' : 'bg-white shadow-[0_0_20px_rgba(255,255,255,0.6)]')
+                           : (isAgent ? 'bg-cyan-900/40' : 'bg-white/20')
+                         }`}
+                       style={{
+                         height: `${Math.min(100, height)}%`,
+                         opacity: isActive ? 0.8 + (level / 200) : 0.3
+                       }}
+                     />
+                   )
+                 })}
+               </div>
+             </div>
 
-            {/* Connection Status Text */}
-            <div className="mt-8 text-center h-8 font-medium drop-shadow-md">
-              {connectionState === 'connecting' && <span className="text-yellow-300 animate-pulse">Connecting...</span>}
-              {connectionState === 'connected' && <span className="text-green-300">Connected to {currentAgent?.name}</span>}
-              {connectionState === 'failed' && <span className="text-red-300">{liveKitError || 'Connection Failed'}</span>}
-              {connectionState === 'disconnected' && <span className="text-white/60">Ready to start</span>}
-            </div>
-         </div>
-
-         {/* Bottom: Controls */}
-         <div className="absolute bottom-10 left-0 right-0 flex justify-center items-center gap-4 z-10">
-            <div className="flex items-center bg-black/20 backdrop-blur-md rounded-full p-1 border border-white/10 shadow-xl">
+             {/* Start Button Container with transition */}
+             <div className={`flex flex-col items-center justify-center h-60 absolute
+               ${isConnected ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 scale-100'}
+               transition-all duration-300 ease-in-out`}>
                <Button
-                 variant="ghost" 
-                 size="icon"
                  onClick={handleVoiceToggle}
-                 className={`w-14 h-14 rounded-full transition-all ${
-                   isConnected 
-                     ? 'bg-red-500/80 text-white hover:bg-red-600/90 shadow-[0_0_15px_rgba(220,38,38,0.5)]' 
-                     : 'bg-white text-indigo-600 hover:bg-gray-100 shadow-[0_0_15px_rgba(255,255,255,0.3)]'
-                 }`}
+                 className="w-24 h-24 rounded-full bg-white text-indigo-600 hover:bg-gray-100 shadow-[0_0_30px_rgba(255,255,255,0.9)] flex items-center justify-center mb-2 transition-all transform hover:scale-105"
                >
-                 {isConnected ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+                 <Mic className="w-12 h-12" />
                </Button>
+               <span className="text-white/80 text-sm">Start Conversation</span>
+             </div>
+           </div>
 
-               <Button variant="ghost" size="icon" className="w-12 h-12 rounded-full text-white/70 hover:text-white hover:bg-white/10">
-                 <MoreHorizontal className="w-5 h-5" />
-               </Button>
-            </div>
+           {/* Connection Status Text */}
+           <div className="mt-8 text-center h-8 font-medium drop-shadow-md">
+             {connectionState === 'connecting' && <span className="text-yellow-300 animate-pulse">Connecting...</span>}
+             {connectionState === 'connected' && <span className="text-green-300">Connected to {currentAgent?.name}</span>}
+             {connectionState === 'failed' && <span className="text-red-300">{liveKitError || 'Connection Failed'}</span>}
+           </div>
 
-            {isConnected && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={disconnect}
-                className="w-10 h-10 rounded-full bg-black/20 border border-white/10 text-white/70 hover:text-white hover:bg-red-500/20 hover:border-red-500/40 backdrop-blur-sm"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            )}
+           {/* Microphone Settings Button - positioned in bottom right of center panel */}
+           <div className="absolute bottom-4 right-4">
+             <Button
+               variant="ghost"
+               size="icon"
+               onClick={() => alert('Microphone settings will be implemented')}
+               className="w-12 h-12 rounded-full bg-black/30 border border-white/10 text-white/70 hover:text-white hover:bg-white/20 z-10"
+               aria-label="Microphone settings"
+             >
+               <Settings className="w-5 h-5" />
+             </Button>
+           </div>
          </div>
+
+         {/* Bottom: Hangup Button - only shown when connected */}
+         {isConnected && (
+           <div className="absolute bottom-10 left-0 right-0 flex justify-center items-center z-10">
+             <div className="flex items-center bg-black/20 backdrop-blur-md rounded-full p-1 border border-white/10 shadow-xl">
+               <Button
+                 variant="ghost"
+                 size="icon"
+                 onClick={disconnect}
+                 className="w-14 h-14 rounded-full bg-red-500/80 text-white hover:bg-red-600/90 shadow-[0_0_15px_rgba(220,38,38,0.5)] transition-all"
+               >
+                 <X className="w-6 h-6" />
+               </Button>
+             </div>
+           </div>
+         )}
 
          {/* Hidden Audio Element */}
          <audio ref={audioPlayerRef} className="hidden" />
@@ -505,6 +519,7 @@ export function VoicebotInterface() {
             </div>
          </div>
        </div>
+
     </div>
   )
 }

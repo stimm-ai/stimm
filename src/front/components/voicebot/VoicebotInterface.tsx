@@ -69,7 +69,8 @@ export function VoicebotInterface() {
     metrics,
     turnState,
     connect,
-    disconnect
+    disconnect,
+    switchMicrophone
   } = useLiveKit()
 
   // Microphone devices
@@ -112,6 +113,22 @@ export function VoicebotInterface() {
       }
     }
   }, [selectedAgentId, agents])
+
+  // Track previous selected device ID to avoid unnecessary switches
+  const prevDeviceIdRef = useRef<string | undefined>(selectedDeviceId)
+
+  // Switch microphone when device changes while connected
+  useEffect(() => {
+    if (isConnected && selectedDeviceId !== prevDeviceIdRef.current) {
+      prevDeviceIdRef.current = selectedDeviceId
+      switchMicrophone(selectedDeviceId || undefined).catch(err => {
+        console.error('Failed to switch microphone:', err)
+        // Optionally show error to user
+      })
+    } else {
+      prevDeviceIdRef.current = selectedDeviceId
+    }
+  }, [selectedDeviceId, isConnected, switchMicrophone])
 
   // Handle Audio Stream
   useEffect(() => {

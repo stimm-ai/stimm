@@ -1,6 +1,6 @@
 'use client'
 
-import { Room, RoomEvent, RemoteParticipant, LocalParticipant, RemoteTrackPublication } from 'livekit-client'
+import { Room, RoomEvent, RemoteParticipant, LocalParticipant, RemoteTrackPublication, LocalTrackPublication } from 'livekit-client'
 import { apiClient } from './frontend-config'
 
 interface LiveKitEvents {
@@ -20,6 +20,8 @@ export class LiveKitVoiceClient {
   private events: LiveKitEvents = {}
   private sessionId: string | null = null
   private agentParticipant: RemoteParticipant | null = null
+  private localAudioPublication: LocalTrackPublication | null = null
+  private localStream: MediaStream | null = null
 
   constructor() {
     // The new config logs itself, so this is just for confirmation
@@ -134,7 +136,10 @@ export class LiveKitVoiceClient {
           },
           video: false,
         }
+        console.log('Requesting microphone with deviceId:', options?.deviceId || 'default')
         localStream = await navigator.mediaDevices.getUserMedia(constraints)
+        const track = localStream.getAudioTracks()[0]
+        console.log('Acquired microphone:', track.label, 'deviceId:', track.getSettings().deviceId)
       } catch (err: any) {
         // If exact device fails, try without deviceId
         if (err.name === 'NotFoundError' || err.name === 'OverconstrainedError') {
@@ -150,6 +155,8 @@ export class LiveKitVoiceClient {
             video: false,
           }
           localStream = await navigator.mediaDevices.getUserMedia(fallbackConstraints)
+          const track = localStream.getAudioTracks()[0]
+          console.log('Fell back to microphone:', track.label, 'deviceId:', track.getSettings().deviceId)
         } else {
           throw err
         }
@@ -182,7 +189,8 @@ export class LiveKitVoiceClient {
       })
 
       // 4. Publier le microphone
-      await this.room.localParticipant.publishTrack(localStream.getAudioTracks()[0], {
+      this.localStream = localStream
+      this.localAudioPublication = await this.room.localParticipant.publishTrack(localStream.getAudioTracks()[0], {
         name: 'microphone',
         // Optimisations pour la voix
         dtx: true, // Discontinuous Transmission
@@ -201,6 +209,77 @@ export class LiveKitVoiceClient {
     }
   }
 
+  async switchMicrophone(deviceId?: string): Promise<void> {
+    if (!this.room || this.room.state !== 'connected') {
+      throw new Error('Not connected to a room')
+    }
+    if (!this.localAudioPublication) {
+      throw new Error('No local audio track published')
+    }
+
+    let newStream: MediaStream
+    try {
+      const constraints: MediaStreamConstraints = {
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 16000,
+          channelCount: 1,
+          ...(deviceId && { deviceId: { exact: deviceId } }),
+        },
+        video: false,
+      }
+      console.log('Switching microphone to deviceId:', deviceId || 'default')
+      newStream = await navigator.mediaDevices.getUserMedia(constraints)
+      const track = newStream.getAudioTracks()[0]
+      console.log('Switched to microphone:', track.label, 'deviceId:', track.getSettings().deviceId)
+    } catch (err: any) {
+      // If exact device fails, try without deviceId
+      if (err.name === 'NotFoundError' || err.name === 'OverconstrainedError') {
+        console.warn(`Device ${deviceId} not available, falling back to default`)
+        const fallbackConstraints: MediaStreamConstraints = {
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            sampleRate: 16000,
+            channelCount: 1,
+          },
+          video: false,
+        }
+        newStream = await navigator.mediaDevices.getUserMedia(fallbackConstraints)
+        const track = newStream.getAudioTracks()[0]
+        console.log('Fell back to microphone:', track.label, 'deviceId:', track.getSettings().deviceId)
+      } else {
+        throw err
+      }
+    }
+
+    // Unpublish old track
+    const oldTrack = this.localAudioPublication.track
+    if (oldTrack) {
+      this.room.localParticipant.unpublishTrack(oldTrack)
+    }
+    // Stop old stream
+    if (this.localStream) {
+      this.localStream.getTracks().forEach(track => track.stop())
+    }
+
+    // Publish new track
+    this.localStream = newStream
+    this.localAudioPublication = await this.room.localParticipant.publishTrack(newStream.getAudioTracks()[0], {
+      name: 'microphone',
+      dtx: true,
+      red: true,
+    })
+
+    // Notify listeners about new local audio track for visualization
+    this.events.onLocalAudioTrack?.(newStream)
+
+    console.log('✅ Successfully switched microphone')
+  }
+
   async disconnect(): Promise<void> {
     if (this.room) {
       await this.room.disconnect()
@@ -209,6 +288,19 @@ export class LiveKitVoiceClient {
   }
 
   private cleanup() {
+    // Stop local stream tracks
+    if (this.localStream) {
+      this.localStream.getTracks().forEach(track => track.stop())
+      this.localStream = null
+    }
+    // Unpublish track if still published
+    if (this.localAudioPublication && this.room?.localParticipant) {
+      const track = this.localAudioPublication.track
+      if (track) {
+        this.room.localParticipant.unpublishTrack(track)
+      }
+      this.localAudioPublication = null
+    }
     this.agentParticipant = null
     this.sessionId = null
   }

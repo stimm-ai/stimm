@@ -23,6 +23,7 @@ export interface UseLiveKitReturn {
   turnState: TurnState
   connect: (agentId: string, options?: { deviceId?: string }) => Promise<void>
   disconnect: () => Promise<void>
+  switchMicrophone: (deviceId?: string) => Promise<void>
 }
 
 export function useLiveKit(): UseLiveKitReturn {
@@ -229,6 +230,19 @@ export function useLiveKit(): UseLiveKitReturn {
     }
   }, [])
 
+  const switchMicrophone = useCallback(async (deviceId?: string) => {
+    try {
+      await liveKitClient.switchMicrophone(deviceId)
+      // The local audio stream will be updated via onLocalAudioTrack event
+    } catch (err) {
+      if (isMounted.current) {
+        const message = err instanceof Error ? err.message : 'Failed to switch microphone'
+        setError(message)
+      }
+      throw err
+    }
+  }, [])
+
   return {
     isConnected: connectionState === 'connected',
     connectionState,
@@ -244,6 +258,7 @@ export function useLiveKit(): UseLiveKitReturn {
     metrics,
     turnState,
     connect,
-    disconnect
+    disconnect,
+    switchMicrophone
   }
 }

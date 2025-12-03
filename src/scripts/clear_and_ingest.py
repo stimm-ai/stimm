@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Script to clear the Qdrant collection and ingest a document."""
+"""DEPRECATED: Script to clear the Qdrant collection and ingest a document.
+
+This script is deprecated in favor of the new RAG admin management API.
+Use the upload endpoints via /rag-configs/{rag_config_id}/documents/upload instead.
+"""
 
 import argparse
 import os

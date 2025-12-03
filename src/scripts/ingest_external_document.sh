@@ -1,5 +1,7 @@
 #!/bin/bash
-# Script to ingest an external markdown document into voicebot-app
+# DEPRECATED: Script to ingest an external markdown document into voicebot-app
+# This script is deprecated in favor of the new RAG admin management API.
+# Use the upload endpoints via /rag-configs/{rag_config_id}/documents/upload instead.
 
 DOCUMENT_PATH="$1"
 DOCUMENT_NAME=$(basename "$DOCUMENT_PATH")

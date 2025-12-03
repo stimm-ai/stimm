@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Utility script to chunk markdown files and ingest them into the RAG service."""
+"""LEGACY: Utility script to chunk markdown files and ingest them into the RAG service.
+
+This script uses the legacy /knowledge/documents endpoint.
+For new RAG admin management, consider using the upload endpoints via
+/rag-configs/{rag_config_id}/documents/upload instead.
+"""
 
 from __future__ import annotations
 

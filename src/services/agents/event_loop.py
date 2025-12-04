@@ -151,9 +151,11 @@ class VoicebotEventLoop:
                                 agent_config.rag_config_id
                             )
                             self.rag_state.retrieval_engine = retrieval_engine
+                            self.rag_state.skip_retrieval = False
                             logger.info(f"✅ Attached retrieval engine for RAG config {agent_config.rag_config_id} (collection: {retrieval_engine.collection_name})")
                         else:
-                            logger.info("ℹ️ Agent has no RAG config, using default collection")
+                            self.rag_state.skip_retrieval = True
+                            logger.info("ℹ️ Agent has no RAG config, skipping retrieval (bypassing RAG)")
                     except Exception as e:
                         logger.warning(f"⚠️ Could not attach retrieval engine: {e}")
                 
@@ -544,9 +546,11 @@ class VoicebotEventLoop:
                                     agent_config.rag_config_id
                                 )
                                 self.rag_state.retrieval_engine = retrieval_engine
+                                self.rag_state.skip_retrieval = False
                                 logger.info(f"✅ Attached retrieval engine for RAG config {agent_config.rag_config_id} (collection: {retrieval_engine.collection_name})")
                             else:
-                                logger.info("ℹ️ Agent has no RAG config, using default collection")
+                                self.rag_state.skip_retrieval = True
+                                logger.info("ℹ️ Agent has no RAG config, skipping retrieval (bypassing RAG)")
                         except Exception as e:
                             logger.warning(f"⚠️ Could not attach retrieval engine: {e}")
                     

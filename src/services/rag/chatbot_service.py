@@ -84,8 +84,26 @@ class ChatbotService:
             if not self._is_prewarmed:
                 await self.prewarm_models(agent_id=agent_id, session_id=session_id)
             
+            # Check if RAG retrieval should be skipped (no RAG config)
+            if rag_state.skip_retrieval:
+                LOGGER.info("RAG retrieval skipped (no RAG configuration)")
+                rag_time = 0
+                contexts = []
+                context_text = ""
+                # Still add user message to conversation for history
+                async with rag_state.lock:
+                    await rag_state.ensure_ready()
+                    user_message = {
+                        "role": "user",
+                        "content": message,
+                        "metadata": {},
+                        "created_at": time.time(),
+                    }
+                    conversation_messages = await _touch_conversation(
+                        rag_state, conversation_id, user_message
+                    )
             # Check if RAG state is properly initialized
-            if rag_state.client is None or rag_state.embedder is None:
+            elif rag_state.client is None or rag_state.embedder is None:
                 LOGGER.warning("RAG state not fully initialized - falling back to basic LLM response")
                 yield {
                     "type": "chunk",
@@ -97,6 +115,8 @@ class ChatbotService:
                     "content": "I'll answer your question without access to the knowledge base: ",
                     "conversation_id": conversation_id
                 }
+                rag_time = 0
+                contexts = []
                 context_text = ""
             else:
                 # Step 1: Retrieve relevant contexts using RAG

@@ -562,8 +562,8 @@ Tests load configuration from `.env` automatically. See [`.env.example`](file://
 
 ```bash
 # By test type
-PYTHONPATH=./src uv run pytest -m unit -v              # Unit tests only
-PYTHONPATH=./src uv run pytest -m integration -v       # Integration tests only
+PYTHONPATH=./src uv run pytest tests/unit/ -v          # Unit tests (directory-based)
+PYTHONPATH=./src uv run pytest tests/integration/ -v   # Integration tests (directory-based)
 
 # By feature
 PYTHONPATH=./src uv run pytest tests/integration/stt/ -v    # STT tests
@@ -579,8 +579,8 @@ PYTHONPATH=./src uv run pytest --cov=src/services --cov-report=html -v
 
 ### Test Markers
 
-- `@pytest.mark.unit` - Unit tests (no external dependencies)
-- `@pytest.mark.integration` - Integration tests (may require services)
+- `@pytest.mark.unit` - (Optional) Unit tests (no external dependencies). Typically run via directory selection (`pytest tests/unit/`).
+- `@pytest.mark.integration` - (Optional) Integration tests (may require services). Typically run via directory selection (`pytest tests/integration/`).
 - `@pytest.mark.requires_provider("stt"|"tts"|"llm")` - Provider-dependent tests
 - `@pytest.mark.slow` - Long-running tests
 

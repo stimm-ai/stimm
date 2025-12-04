@@ -45,7 +45,6 @@ async def test_tts_streaming_basic():
             # Simulate LLM generation delay
             await asyncio.sleep(0.05)
     
-    audio_chunks = []
     session_id = "test_session"
     
     async def text_generator():
@@ -66,11 +65,20 @@ async def test_tts_streaming_basic():
         }
         yield json.dumps(final_payload)
     
-    # Stream text to audio
-    async for audio_chunk in shared_streaming_manager.stream_text_to_audio_no_websocket(
-        text_generator(), tts_service, session_id
-    ):
-        audio_chunks.append(audio_chunk)
+    async def collect_audio():
+        """Collect audio chunks with a timeout."""
+        audio_chunks = []
+        async for audio_chunk in shared_streaming_manager.stream_text_to_audio_no_websocket(
+            text_generator(), tts_service, session_id
+        ):
+            audio_chunks.append(audio_chunk)
+        return audio_chunks
+    
+    # Stream text to audio with timeout
+    try:
+        audio_chunks = await asyncio.wait_for(collect_audio(), timeout=5.0)
+    except asyncio.TimeoutError:
+        pytest.fail("Test timed out after 5 seconds")
     
     # Verify we received audio chunks
     assert len(audio_chunks) > 0, "No audio chunks received"

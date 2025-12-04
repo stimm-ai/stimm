@@ -105,7 +105,7 @@ def _check_provider_requirements(provider_type: str) -> str | None:
 @pytest.fixture
 def audio_file_path() -> str:
     """Get the path to the standard test audio file."""
-    audio_path = Path(__file__).parent.parent / "src" / "services" / "stt" / "tests" / "Enregistrement.wav"
+    audio_path = Path(__file__).parent / "resources" / "Enregistrement.wav"
     if not audio_path.exists():
         pytest.skip(f"Test audio file not found at {audio_path}")
     return str(audio_path)

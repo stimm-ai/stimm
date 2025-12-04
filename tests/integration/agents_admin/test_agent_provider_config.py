@@ -141,8 +141,8 @@ def test_tts_provider_validation_elevenlabs(agent_service, valid_provider_config
         provider="elevenlabs.io",
         config={
             "api_key": "test_key",
-            "voice_id": "test_voice",
-            "model_id": "eleven_turbo_v2_5"
+            "voice": "test_voice",
+            "model": "eleven_turbo_v2_5"
         }
     )
     
@@ -177,7 +177,7 @@ def test_multiple_provider_combinations(agent_service):
         ),
         tts_config=ProviderConfig(
             provider="elevenlabs.io",
-            config={"api_key": "test", "voice_id": "test", "model_id": "eleven_turbo_v2_5"}
+            config={"api_key": "test", "voice": "test", "model": "eleven_turbo_v2_5"}
         ),
         stt_config=ProviderConfig(
             provider="deepgram.com",

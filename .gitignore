@@ -23,3 +23,4 @@ tts_chunks_test_analysis/
 src/services/tts/tests/audio_chunks
 voicebot_cli.egg-info
 .coverage
+htmlcov

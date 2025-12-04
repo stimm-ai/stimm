@@ -36,18 +36,18 @@ class TestSileroVADService:
         assert len(events) == 0
     
     @pytest.mark.asyncio
-    async def test_process_speech_file(self, audio_file_path):
+    async def test_process_speech_file(self, audio_file_path_vad):
         """Test processing a real audio file with speech."""
         import wave
         import os
         
-        if not os.path.exists(audio_file_path):
-            pytest.skip(f"Test file {audio_file_path} not found")
+        if not os.path.exists(audio_file_path_vad):
+            pytest.skip(f"Test file {audio_file_path_vad} not found")
         
         vad = SileroVADService(threshold=0.5)
         events_found = []
         
-        with wave.open(audio_file_path, 'rb') as wf:
+        with wave.open(audio_file_path_vad, 'rb') as wf:
             # Ensure 16k mono
             if wf.getframerate() != 16000 or wf.getnchannels() != 1:
                 pytest.skip(f"Test file is {wf.getframerate()}Hz {wf.getnchannels()}ch, needs 16000Hz mono")

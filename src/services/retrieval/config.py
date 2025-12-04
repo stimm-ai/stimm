@@ -30,7 +30,7 @@ class RetrievalConfig:
             self.qdrant_port = int(os.getenv("QDRANT_PORT", "6333"))
             
         # Other Qdrant configuration
-        self.qdrant_collection = os.getenv("QDRANT_COLLECTION", "voicebot_knowledge")
+        self.qdrant_collection = os.getenv("QDRANT_COLLECTION_NAME", os.getenv("QDRANT_COLLECTION", "voicebot_knowledge"))
         self.qdrant_use_tls = os.getenv("QDRANT_USE_TLS", "false").lower() in {"1", "true", "yes"}
         self.qdrant_api_key = os.getenv("QDRANT_API_KEY")
 

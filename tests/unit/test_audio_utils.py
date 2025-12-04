@@ -30,9 +30,9 @@ class TestAudioUtils:
         assert CHUNK_SIZE == 640  # 16000 * 40 / 1000
         assert CHUNK_BYTES == 1280  # 640 * 2 bytes
     
-    def test_pcm16_loading(self, audio_file_path):
+    def test_pcm16_loading(self, audio_file_path_vad):
         """Test loading PCM16 audio from WAV file."""
-        with wave.open(audio_file_path, 'rb') as wav_file:
+        with wave.open(audio_file_path_vad, 'rb') as wav_file:
             # Verify format
             assert wav_file.getnchannels() == 1, "Audio must be mono"
             assert wav_file.getsampwidth() == 2, "Audio must be 16-bit"

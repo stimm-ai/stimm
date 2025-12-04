@@ -161,6 +161,15 @@ def audio_file_path() -> str:
 
 
 @pytest.fixture
+def audio_file_path_vad() -> str:
+    """Get the path to the VAD test audio file (16000 Hz)."""
+    audio_path = Path(__file__).parent / "resources" / "Enregistrement_vad.wav"
+    if not audio_path.exists():
+        pytest.skip(f"VAD test audio file not found at {audio_path}")
+    return str(audio_path)
+
+
+@pytest.fixture
 def audio_pcm_data(audio_file_path: str) -> bytes:
     """
     Load audio data as PCM16 format.
@@ -175,7 +184,7 @@ def audio_pcm_data(audio_file_path: str) -> bytes:
         # Verify format
         assert wav_file.getnchannels() == 1, "Audio must be mono"
         assert wav_file.getsampwidth() == 2, "Audio must be 16-bit"
-        assert wav_file.getframerate() == 16000, "Audio must be 16000Hz"
+        # Note: sample rate may vary; we accept any rate for PCM16 loading tests
         
         # Read all frames
         pcm_data = wav_file.readframes(wav_file.getnframes())

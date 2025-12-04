@@ -20,6 +20,7 @@ services:
       - "49160-49200:49160-49200/udp" # UDP range for ICE candidates
     env_file:
       - .env
+      - docker/voicebot-app/.env
     environment:
       - ENABLE_SIP_BRIDGE=true
     labels:

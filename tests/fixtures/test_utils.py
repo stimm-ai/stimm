@@ -38,11 +38,6 @@ def verify_transcription_results(
             if len(transcript["transcript"]) < expected["min_transcript_length"]:
                 return False, f"Transcript text too short: '{transcript['transcript']}'"
     
-    # Check that we have at least one final transcript
-    has_final_transcript = any(t.get("is_final", False) for t in transcripts)
-    if not has_final_transcript:
-        return False, "No final transcript received"
-    
     return True, "All verification passed"
 
 

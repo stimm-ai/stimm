@@ -96,6 +96,11 @@ def _check_provider_requirements(provider_type: str) -> str | None:
             "openrouter.ai": ["OPENROUTER_LLM_API_KEY"],
             "llama-cpp.local": [],  # Local service, no API key needed
         },
+        "rag": {
+            "qdrant.internal": [],
+            "pinecone.io": ["PINECONE_API_KEY"],
+            "rag.saas": ["RAG_SAAS_API_KEY"],
+        },
     }
     
     if provider_type not in requirements:
@@ -103,9 +108,9 @@ def _check_provider_requirements(provider_type: str) -> str | None:
     
     provider_reqs = requirements[provider_type]
     
-    # For TTS and LLM, we consider at least one provider available if any API key is present
+    # For TTS, LLM, and RAG, we consider at least one provider available if any API key is present
     # or if a local provider is configured (always). If none are available, skip.
-    if provider_type in ("tts", "llm"):
+    if provider_type in ("tts", "llm", "rag"):
         # Check each provider's required env vars
         any_available = False
         for provider_name, env_vars in provider_reqs.items():
@@ -123,11 +128,17 @@ def _check_provider_requirements(provider_type: str) -> str | None:
                     "Set at least one of: ASYNC_API_KEY, DEEPGRAM_TTS_API_KEY, ELEVENLABS_TTS_API_KEY "
                     "or ensure kokoro.local service is running."
                 )
-            else:  # llm
+            elif provider_type == "llm":
                 return (
                     "No LLM provider configuration found. "
                     "Set at least one of: GROQ_LLM_API_KEY, MISTRAL_LLM_API_KEY, OPENROUTER_LLM_API_KEY "
                     "or ensure llama-cpp.local service is running."
+                )
+            else:  # rag
+                return (
+                    "No RAG provider configuration found. "
+                    "Set at least one of: QDRANT_COLLECTION_NAME (for qdrant.internal), PINECONE_API_KEY, RAG_SAAS_API_KEY "
+                    "or ensure qdrant.internal service is running."
                 )
         return None
     
@@ -494,6 +505,123 @@ def llm_provider_ids(available_llm_providers) -> List[str]:
         List of provider names
     """
     return [name for name, _ in available_llm_providers]
+
+
+# RAG Provider Configuration Fixtures
+
+@pytest.fixture
+def qdrant_internal_config() -> Dict[str, Any]:
+    """
+    Get Qdrant internal provider configuration from environment.
+    
+    Returns:
+        Configuration dict (always available, uses defaults)
+    """
+    # Mapping from UI labels to model IDs (as defined in provider field definitions)
+    embedding_model_map = {
+        "BGE Base En v1.5": "BAAI/bge-base-en-v1.5",
+        "MiniLM L6 v2": "sentence-transformers/all-MiniLM-L6-v2",
+        "MPNet Base v2": "sentence-transformers/all-mpnet-base-v2",
+        "E5 Base v2": "intfloat/e5-base-v2",
+    }
+    env_model = os.getenv("QDRANT_EMBEDDING_MODEL", "BAAI/bge-base-en-v1.5")
+    # If env matches a label, map to value; otherwise assume it's already a value
+    embedding_model = embedding_model_map.get(env_model, env_model)
+    
+    # Collection name: prefer QDRANT_COLLECTION_NAME, fallback to QDRANT_COLLECTION, then default
+    collection_name = os.getenv("QDRANT_COLLECTION_NAME") or os.getenv("QDRANT_COLLECTION", "voicebot_knowledge")
+    
+    return {
+        "collection_name": collection_name,
+        "embedding_model": embedding_model,
+        "top_k": int(os.getenv("QDRANT_TOP_K", 2)),
+        "enable_reranker": False,  # not configurable via env
+        "ultra_low_latency": os.getenv("QDRANT_ULTRA_LOW_LATENCY", "true").lower() == "true",
+    }
+
+
+@pytest.fixture
+def pinecone_io_config() -> Dict[str, Any] | None:
+    """
+    Get Pinecone.io provider configuration from environment.
+    
+    Returns:
+        Configuration dict or None if API key not available
+    """
+    api_key = os.getenv("PINECONE_API_KEY")
+    if not api_key:
+        return None
+    
+    return {
+        "index_name": os.getenv("PINECONE_INDEX_NAME", "voicebot"),
+        "api_key": api_key,
+        "top_k": int(os.getenv("PINECONE_TOP_K", 2)),
+        "namespace": os.getenv("PINECONE_NAMESPACE", ""),
+        "embedding_model": os.getenv("PINECONE_EMBEDDING_MODEL", "BAAI/bge-base-en-v1.5"),
+        "enable_reranker": False,
+        "ultra_low_latency": True,
+    }
+
+
+@pytest.fixture
+def rag_saas_config() -> Dict[str, Any] | None:
+    """
+    Get RAG SaaS provider configuration from environment.
+    
+    Returns:
+        Configuration dict or None if API key not available
+    """
+    api_key = os.getenv("RAG_SAAS_API_KEY")
+    if not api_key:
+        return None
+    
+    return {
+        "api_key": api_key,
+        "url": os.getenv("RAG_SAAS_URL", "https://api.rag.saas.example.com"),
+        "top_k": int(os.getenv("RAG_SAAS_TOP_K", 2)),
+        "embedding_model": os.getenv("RAG_SAAS_EMBEDDING_MODEL", "BAAI/bge-base-en-v1.5"),
+        "enable_reranker": False,
+        "ultra_low_latency": True,
+    }
+
+
+@pytest.fixture
+def available_rag_providers(
+    qdrant_internal_config,
+    pinecone_io_config,
+    rag_saas_config,
+) -> List[tuple[str, Dict[str, Any]]]:
+    """
+    Get list of available RAG providers for parametrized testing.
+    
+    Returns:
+        List of (provider_name, config) tuples for available providers
+    """
+    providers = []
+    
+    # Always include qdrant.internal (local, no API key needed)
+    providers.append(("qdrant.internal", qdrant_internal_config))
+    
+    # Include pinecone.io only if API key is available
+    if pinecone_io_config:
+        providers.append(("pinecone.io", pinecone_io_config))
+    
+    # Include rag.saas only if API key is available
+    if rag_saas_config:
+        providers.append(("rag.saas", rag_saas_config))
+    
+    return providers
+
+
+@pytest.fixture
+def rag_provider_ids(available_rag_providers) -> List[str]:
+    """
+    Get list of available RAG provider IDs for pytest.mark.parametrize.
+    
+    Returns:
+        List of provider names
+    """
+    return [name for name, _ in available_rag_providers]
 
 
 # ============================================================================

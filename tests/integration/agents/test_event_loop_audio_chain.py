@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Test script to validate the WebRTC STT fix.
+Integration test for voicebot event loop audio processing chain.
 
-This script tests the complete audio chain:
-1. VAD processing
-2. Audio routing to STT
-3. STT streaming
-4. Data channel communication
+This test validates the complete audio processing pipeline:
+1. VAD (Voice Activity Detection) processing
+2. Audio routing to STT service
+3. STT streaming and transcription
+4. Event-driven state management
 
-Run this to verify the fix is working correctly.
+Tests the VoicebotEventLoop orchestration of VAD → STT integration.
 """
 
 import asyncio
@@ -36,8 +36,8 @@ class MockChatbotService:
         yield
 
 async def test_vad_to_stt_chain():
-    """Test the complete VAD -> STT chain"""
-    logger.info("🧪 Starting WebRTC STT chain test...")
+    """Test the complete VAD → STT audio processing chain."""
+    logger.info("🧪 Starting event loop audio chain test...")
     
     # Create services
     vad_service = SileroVADService()
@@ -140,7 +140,7 @@ async def test_vad_to_stt_chain():
         success = False
     
     if event_loop.audio_chunks_sent_to_stt == 0:
-        errors.append("No audio chunks were sent to STT (THIS WAS THE MAIN BUG)")
+        errors.append("No audio chunks were sent to STT")
         success = False
     
     if event_loop.audio_chunks_sent_to_stt != event_loop.audio_chunks_received:
@@ -152,8 +152,8 @@ async def test_vad_to_stt_chain():
         success = False
     
     if success:
-        logger.info("🎉 TEST PASSED: WebRTC STT chain is working correctly!")
-        logger.info("✅ The main bug (no audio sent to STT) has been fixed")
+        logger.info("🎉 TEST PASSED: Event loop audio chain is working correctly!")
+        logger.info("✅ VAD → STT integration validated successfully")
     else:
         logger.error("❌ TEST FAILED:")
         for error in errors:
@@ -167,7 +167,7 @@ async def test_vad_to_stt_chain():
 
 async def main():
     """Main test function"""
-    logger.info("🚀 Starting WebRTC STT Fix Validation Test")
+    logger.info("🚀 Starting Event Loop Audio Chain Integration Test")
     logger.info("=" * 60)
     
     try:
@@ -175,9 +175,9 @@ async def main():
         
         logger.info("=" * 60)
         if success:
-            logger.info("🎊 ALL TESTS PASSED - WebRTC STT is now functional!")
+            logger.info("🎊 ALL TESTS PASSED - Audio chain is functional!")
         else:
-            logger.error("💥 TESTS FAILED - WebRTC STT still has issues")
+            logger.error("💥 TESTS FAILED - Audio chain has issues")
             
         return success
         

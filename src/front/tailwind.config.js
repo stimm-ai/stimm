@@ -51,6 +51,17 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Voicebot gradient theme colors
+        'voicebot-blue': {
+          400: '#60a5fa',
+          500: '#3b82f6',
+          600: '#2563eb',
+        },
+        'voicebot-purple': {
+          400: '#c084fc',
+          500: '#a855f7',
+          600: '#9333ea',
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

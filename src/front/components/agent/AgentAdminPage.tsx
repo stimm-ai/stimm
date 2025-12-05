@@ -1,12 +1,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { PageLayout } from '@/components/ui/PageLayout'
+import { NavigationBar } from '@/components/ui/NavigationBar'
 import { AgentGrid } from './AgentGrid'
 import { AgentCard } from './AgentCard'
 import { Agent } from './types'
+import { Bot, Plus, Mic } from 'lucide-react'
+import { THEME } from '@/lib/theme'
 
 export function AgentAdminPage() {
   const [agents, setAgents] = useState<Agent[]>([])
@@ -22,16 +25,16 @@ export function AgentAdminPage() {
     try {
       setLoading(true)
       setError(null)
-      
+
       // Fetch agents from FastAPI backend
       const response = await fetch('http://localhost:8001/api/agents/')
       if (!response.ok) {
         throw new Error(`Failed to load agents: ${response.statusText}`)
       }
-      
+
       const agents = await response.json()
       setAgents(agents || [])
-      
+
       // Fetch default agent separately
       const defaultResponse = await fetch('http://localhost:8001/api/agents/default/current/')
       if (defaultResponse.ok) {
@@ -88,65 +91,69 @@ export function AgentAdminPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-8">
+      <PageLayout title="Agent Management" icon={<Bot className="w-8 h-8" />}>
+        <NavigationBar />
         <div className="flex justify-center items-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading agents...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
+            <p className={THEME.text.secondary}>Loading agents...</p>
           </div>
         </div>
-      </div>
+      </PageLayout>
     )
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>Agent Management</CardTitle>
-            <div className="flex gap-2">
-              <Button asChild variant="outline">
-                <a href="/voicebot">🎤 Voicebot Interface</a>
-              </Button>
-              <Button asChild>
-                <a href="/agent/create">Create New Agent</a>
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {error && (
-            <Alert variant="destructive" className="mb-6">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+    <PageLayout
+      title="Agent Management"
+      icon={<Bot className="w-8 h-8" />}
+      actions={
+        <>
+          <Button asChild className={`${THEME.button.ghost} rounded-full px-4`}>
+            <a href="/voicebot" className="flex items-center gap-2">
+              <Mic className="w-4 h-4" />
+              Voicebot
+            </a>
+          </Button>
+          <Button asChild className={`${THEME.button.secondary} rounded-full px-4`}>
+            <a href="/agent/create" className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Create Agent
+            </a>
+          </Button>
+        </>
+      }
+      error={error}
+    >
+      <NavigationBar />
 
-          {agents.length === 0 ? (
-            <div className="text-center py-12">
-              <h3 className="text-lg font-semibold mb-2">No Agents Found</h3>
-              <p className="text-muted-foreground mb-4">
-                Create your first agent to get started with the voicebot system.
-              </p>
-              <Button asChild>
-                <a href="/agent/create">Create First Agent</a>
-              </Button>
-            </div>
-          ) : (
-            <AgentGrid>
-              {agents.map((agent) => (
-                <AgentCard
-                  key={agent.id}
-                  agent={agent}
-                  isDefault={defaultAgent?.id === agent.id}
-                  onSetDefault={handleSetDefault}
-                  onDelete={handleDelete}
-                />
-              ))}
-            </AgentGrid>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+      {agents.length === 0 ? (
+        <div className={`${THEME.card.base} p-12 text-center`}>
+          <Bot className={`w-16 h-16 mx-auto mb-4 ${THEME.text.muted}`} />
+          <h3 className="text-xl font-semibold mb-2">No Agents Found</h3>
+          <p className={`${THEME.text.secondary} mb-6`}>
+            Create your first agent to get started with the voicebot system.
+          </p>
+          <Button asChild className={`${THEME.button.secondary} rounded-full px-6`}>
+            <a href="/agent/create" className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Create First Agent
+            </a>
+          </Button>
+        </div>
+      ) : (
+        <AgentGrid>
+          {agents.map((agent) => (
+            <AgentCard
+              key={agent.id}
+              agent={agent}
+              isDefault={defaultAgent?.id === agent.id}
+              onSetDefault={handleSetDefault}
+              onDelete={handleDelete}
+            />
+          ))}
+        </AgentGrid>
+      )}
+    </PageLayout>
   )
 }

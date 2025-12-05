@@ -1,7 +1,11 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { PageLayout } from '@/components/ui/PageLayout'
+import { PageCard } from '@/components/ui/PageCard'
+import { NavigationBar } from '@/components/ui/NavigationBar'
+import { ModalWrapper } from '@/components/ui/ModalWrapper'
+import { useModalRouter } from '@/hooks/use-modal-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,6 +21,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { RagConfig } from './types'
 import { DocumentUpload } from './DocumentUpload'
 import { DocumentList } from './DocumentList'
+import { THEME } from '@/lib/theme'
+import { Database, ArrowLeft, Save, Trash2, FileText } from 'lucide-react'
 
 interface ProviderConfig {
   providers: { value: string; label: string }[]
@@ -43,6 +49,8 @@ interface RagEditPageProps {
 }
 
 export function RagEditPage({ configId }: RagEditPageProps) {
+  const { isModalMode, closeModal } = useModalRouter()
+
   const [config, setConfig] = useState<Partial<RagConfig>>({
     name: '',
     description: '',
@@ -114,7 +122,6 @@ export function RagEditPage({ configId }: RagEditPageProps) {
     }
   }, [configId, loadProviders, loadConfig])
 
-  // Load provider fields when provider is selected
   useEffect(() => {
     if (config.provider) {
       loadProviderFields(config.provider)
@@ -122,21 +129,17 @@ export function RagEditPage({ configId }: RagEditPageProps) {
   }, [config.provider, loadProviderFields])
 
   const handleProviderChange = async (providerName: string) => {
-    // Update the provider selection
     handleInputChange('provider', providerName)
 
-    // Load provider-specific fields
     if (providerName) {
       const fields = await loadProviderFields(providerName)
 
-      // Initialize config with default values for the new provider
       const newConfig: Record<string, any> = {}
       Object.entries(fields).forEach(([field, fieldDef]) => {
         newConfig[field] = fieldDef.default !== undefined ? fieldDef.default : ''
       })
       handleInputChange('provider_config', newConfig)
     } else {
-      // Clear config when no provider is selected
       handleInputChange('provider_config', {})
     }
   }
@@ -146,7 +149,6 @@ export function RagEditPage({ configId }: RagEditPageProps) {
       setSaving(true)
       setError(null)
 
-      // Build payload with proper ProviderConfig structure
       const payload = {
         name: config.name || '',
         description: config.description || '',
@@ -177,8 +179,11 @@ export function RagEditPage({ configId }: RagEditPageProps) {
         throw new Error(`Failed to save RAG config: ${response.statusText} - ${errorText}`)
       }
 
-      // Redirect back to admin page after successful save
-      window.location.href = '/rag/admin'
+      if (isModalMode) {
+        closeModal()
+      } else {
+        window.location.href = '/rag/admin'
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save RAG config')
     } finally {
@@ -219,236 +224,300 @@ export function RagEditPage({ configId }: RagEditPageProps) {
       if (!response.ok) {
         throw new Error('Failed to delete RAG config')
       }
-      window.location.href = '/rag/admin'
+      if (isModalMode) {
+        closeModal()
+      } else {
+        window.location.href = '/rag/admin'
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete RAG config')
     }
   }
 
-  if (loading) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="flex justify-center items-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading RAG configuration...</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const content = (
+    <>
+      {error && (
+        <Alert variant="destructive" className="mb-6 bg-red-900/50 border-red-500/50">
+          <AlertDescription className="text-white">{error}</AlertDescription>
+        </Alert>
+      )}
 
-  return (
-    <div className="container mx-auto py-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {configId ? 'Edit RAG Configuration' : 'Create New RAG Configuration'}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {error && (
-            <Alert variant="destructive" className="mb-6">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className={`mb-6 ${THEME.panel.base} ${THEME.panel.border} border p-1`}>
+          <TabsTrigger
+            value="configuration"
+            className={`${THEME.text.secondary} data-[state=active]:${THEME.accent.cyanBg} data-[state=active]:${THEME.accent.cyan}`}
+          >
+            Configuration
+          </TabsTrigger>
+          {configId && (
+            <TabsTrigger
+              value="documents"
+              className={`${THEME.text.secondary} data-[state=active]:${THEME.accent.cyanBg} data-[state=active]:${THEME.accent.cyan}`}
+            >
+              Documents
+            </TabsTrigger>
           )}
+        </TabsList>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-6">
-              <TabsTrigger value="configuration">Configuration</TabsTrigger>
-              {configId && <TabsTrigger value="documents">Documents</TabsTrigger>}
-            </TabsList>
-
-            <TabsContent value="configuration" className="space-y-6">
+        <TabsContent value="configuration">
+          <PageCard>
+            <div className="space-y-6">
+              {/* Basic Info */}
               <div className="space-y-4">
+                <h3 className={`text-lg font-semibold ${THEME.text.accent} flex items-center gap-2`}>
+                  <Database className="w-5 h-5" />
+                  Basic Information
+                </h3>
+
                 <div>
-                  <Label htmlFor="name">Configuration Name *</Label>
+                  <Label htmlFor="name" className={THEME.text.secondary}>Configuration Name *</Label>
                   <Input
                     id="name"
                     value={config.name || ''}
                     onChange={(e) => handleInputChange('name', e.target.value)}
                     placeholder="Enter RAG configuration name"
+                    className={`${THEME.input.base} mt-1`}
                     required
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description" className={THEME.text.secondary}>Description</Label>
                   <Input
                     id="description"
                     value={config.description || ''}
                     onChange={(e) => handleInputChange('description', e.target.value)}
                     placeholder="Enter description (optional)"
+                    className={`${THEME.input.base} mt-1`}
                   />
-                </div>
-
-                {/* Provider Section */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">RAG Provider</h3>
-                  <div>
-                    <Label htmlFor="provider">Provider</Label>
-                    <Select value={config.provider || ''} onValueChange={(value) => handleProviderChange(value)}>
-                      <SelectTrigger id="provider">
-                        <SelectValue placeholder="Select RAG Provider" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {providers?.providers.map((provider) => (
-                          <SelectItem key={provider.value} value={provider.value}>
-                            {provider.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Provider Configuration */}
-                  {config.provider && (
-                    <div className="space-y-4 pl-4 border-l-2 border-gray-200">
-                      <h4 className="text-md font-medium">Provider Configuration</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {Object.entries(providerFields).map(([field, fieldDef]) => {
-                          const value = (config.provider_config as Record<string, any>)?.[field];
-                          if (fieldDef.type === 'select') {
-                            return (
-                              <div key={field}>
-                                <Label htmlFor={`provider_${field}`}>{fieldDef.label}</Label>
-                                <Select
-                                  value={value || fieldDef.default || ''}
-                                  onValueChange={(val) => handleConfigChange(field, val)}
-                                >
-                                  <SelectTrigger id={`provider_${field}`}>
-                                    <SelectValue placeholder={`Select ${fieldDef.label}`} />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {fieldDef.options?.map((opt) => (
-                                      <SelectItem key={opt.value} value={opt.value}>
-                                        {opt.label}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            );
-                          }
-                          if (fieldDef.type === 'boolean') {
-                            return (
-                              <div key={field} className="flex items-center space-x-2">
-                                <input
-                                  type="checkbox"
-                                  id={`provider_${field}`}
-                                  checked={!!value}
-                                  onChange={(e) => handleConfigChange(field, e.target.checked)}
-                                  className="h-4 w-4 rounded border-gray-300"
-                                />
-                                <Label htmlFor={`provider_${field}`}>{fieldDef.label}</Label>
-                              </div>
-                            );
-                          }
-                          if (fieldDef.type === 'number') {
-                            return (
-                              <div key={field}>
-                                <Label htmlFor={`provider_${field}`}>{fieldDef.label}</Label>
-                                <Input
-                                  id={`provider_${field}`}
-                                  type="number"
-                                  min={fieldDef.min}
-                                  max={fieldDef.max}
-                                  value={value || fieldDef.default || ''}
-                                  onChange={(e) => handleConfigChange(field, e.target.valueAsNumber || parseInt(e.target.value) || 0)}
-                                  placeholder={`Enter ${fieldDef.label}`}
-                                />
-                              </div>
-                            );
-                          }
-                          // text, password, etc.
-                          return (
-                            <div key={field}>
-                              <Label htmlFor={`provider_${field}`}>{fieldDef.label}</Label>
-                              <Input
-                                id={`provider_${field}`}
-                                type={fieldDef.type === 'password' ? 'password' : 'text'}
-                                value={value || ''}
-                                onChange={(e) => handleConfigChange(field, e.target.value)}
-                                placeholder={`Enter ${fieldDef.label}`}
-                              />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Options */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Options</h3>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="is_default"
-                      checked={config.is_default || false}
-                      onChange={(e) => handleInputChange('is_default', e.target.checked)}
-                      className="h-4 w-4 rounded border-gray-300"
-                    />
-                    <Label htmlFor="is_default">Set as default RAG configuration</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="is_active"
-                      checked={config.is_active ?? true}
-                      onChange={(e) => handleInputChange('is_active', e.target.checked)}
-                      className="h-4 w-4 rounded border-gray-300"
-                    />
-                    <Label htmlFor="is_active">Active (can be used by agents)</Label>
-                  </div>
                 </div>
               </div>
 
-              <div className="flex gap-4">
+              {/* Provider Section */}
+              <div className="space-y-4 pt-6 border-t border-white/10">
+                <h3 className={`text-lg font-semibold ${THEME.text.accent}`}>RAG Provider</h3>
+
+                <div>
+                  <Label htmlFor="provider" className={THEME.text.secondary}>Provider</Label>
+                  <Select value={config.provider || ''} onValueChange={(value) => handleProviderChange(value)}>
+                    <SelectTrigger id="provider" className={`${THEME.input.select} mt-1`}>
+                      <SelectValue placeholder="Select RAG Provider" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-900 border-white/20">
+                      {providers?.providers.map((provider) => (
+                        <SelectItem key={provider.value} value={provider.value} className="text-white">
+                          {provider.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {config.provider && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-4 border-l-2 border-green-500/30">
+                    {Object.entries(providerFields).map(([field, fieldDef]) => {
+                      const value = (config.provider_config as Record<string, any>)?.[field];
+                      if (fieldDef.type === 'select') {
+                        return (
+                          <div key={field}>
+                            <Label htmlFor={`provider_${field}`} className={THEME.text.secondary}>{fieldDef.label}</Label>
+                            <Select
+                              value={value || fieldDef.default || ''}
+                              onValueChange={(val) => handleConfigChange(field, val)}
+                            >
+                              <SelectTrigger id={`provider_${field}`} className={`${THEME.input.select} mt-1`}>
+                                <SelectValue placeholder={`Select ${fieldDef.label}`} />
+                              </SelectTrigger>
+                              <SelectContent className="bg-gray-900 border-white/20">
+                                {fieldDef.options?.map((opt) => (
+                                  <SelectItem key={opt.value} value={opt.value} className="text-white">
+                                    {opt.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        );
+                      }
+                      if (fieldDef.type === 'boolean') {
+                        return (
+                          <div key={field} className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id={`provider_${field}`}
+                              checked={!!value}
+                              onChange={(e) => handleConfigChange(field, e.target.checked)}
+                              className="h-4 w-4 rounded border-white/20 bg-white/10"
+                            />
+                            <Label htmlFor={`provider_${field}`} className={THEME.text.secondary}>{fieldDef.label}</Label>
+                          </div>
+                        );
+                      }
+                      if (fieldDef.type === 'number') {
+                        return (
+                          <div key={field}>
+                            <Label htmlFor={`provider_${field}`} className={THEME.text.secondary}>{fieldDef.label}</Label>
+                            <Input
+                              id={`provider_${field}`}
+                              type="number"
+                              min={fieldDef.min}
+                              max={fieldDef.max}
+                              value={value || fieldDef.default || ''}
+                              onChange={(e) => handleConfigChange(field, e.target.valueAsNumber || parseInt(e.target.value) || 0)}
+                              placeholder={`Enter ${fieldDef.label}`}
+                              className={`${THEME.input.base} mt-1`}
+                            />
+                          </div>
+                        );
+                      }
+                      return (
+                        <div key={field}>
+                          <Label htmlFor={`provider_${field}`} className={THEME.text.secondary}>{fieldDef.label}</Label>
+                          <Input
+                            id={`provider_${field}`}
+                            type={fieldDef.type === 'password' ? 'password' : 'text'}
+                            value={value || ''}
+                            onChange={(e) => handleConfigChange(field, e.target.value)}
+                            placeholder={`Enter ${fieldDef.label}`}
+                            className={`${THEME.input.base} mt-1`}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Options */}
+              <div className="space-y-4 pt-6 border-t border-white/10">
+                <h3 className={`text-lg font-semibold ${THEME.text.accent}`}>Options</h3>
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="is_default"
+                    checked={config.is_default || false}
+                    onChange={(e) => handleInputChange('is_default', e.target.checked)}
+                    className="h-4 w-4 rounded border-white/20 bg-white/10"
+                  />
+                  <Label htmlFor="is_default" className={THEME.text.secondary}>Set as default RAG configuration</Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="is_active"
+                    checked={config.is_active ?? true}
+                    onChange={(e) => handleInputChange('is_active', e.target.checked)}
+                    className="h-4 w-4 rounded border-white/20 bg-white/10"
+                  />
+                  <Label htmlFor="is_active" className={THEME.text.secondary}>Active (can be used by agents)</Label>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-4 pt-6 border-t border-white/10">
                 <Button
                   onClick={handleSave}
                   disabled={saving}
+                  className={`${THEME.button.secondary} rounded-full px-6 flex items-center gap-2`}
                 >
+                  <Save className="w-4 h-4" />
                   {saving ? 'Saving...' : 'Save Configuration'}
                 </Button>
-                <Button variant="outline" asChild>
-                  <a href="/rag/admin">Cancel</a>
+
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (isModalMode) {
+                      closeModal()
+                    } else {
+                      window.location.href = '/rag/admin'
+                    }
+                  }}
+                  className={`${THEME.button.ghost} rounded-full px-6 flex items-center gap-2`}
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Cancel
                 </Button>
+
                 {configId && (
                   <Button
                     variant="destructive"
                     onClick={handleDelete}
                     disabled={saving}
+                    className={`${THEME.button.danger} rounded-full px-6 flex items-center gap-2`}
                   >
-                    Delete Configuration
+                    <Trash2 className="w-4 h-4" />
+                    Delete
                   </Button>
                 )}
               </div>
-            </TabsContent>
+            </div>
+          </PageCard>
+        </TabsContent>
 
-            {configId && (
-              <TabsContent value="documents" className="space-y-6">
+        {configId && (
+          <TabsContent value="documents">
+            <PageCard title="Document Management" icon={<FileText className="w-5 h-5" />}>
+              <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">Upload Documents</h3>
+                  <h3 className={`text-md font-semibold ${THEME.text.secondary} mb-4`}>Upload Documents</h3>
                   <DocumentUpload
                     ragConfigId={configId}
                     onUploadComplete={handleUploadComplete}
                   />
                 </div>
 
-                <div>
-                  <h3 className="text-lg font-semibold mb-4">Uploaded Documents</h3>
+                <div className="pt-6 border-t border-white/10">
+                  <h3 className={`text-md font-semibold ${THEME.text.secondary} mb-4`}>Uploaded Documents</h3>
                   <DocumentList
                     ragConfigId={configId}
                     refreshTrigger={documentsRefresh}
                   />
                 </div>
-              </TabsContent>
-            )}
-          </Tabs>
-        </CardContent>
-      </Card>
-    </div>
+              </div>
+            </PageCard>
+          </TabsContent>
+        )}
+      </Tabs>
+    </>
+  )
+
+  if (loading) {
+    return (
+      <PageLayout title={configId ? 'Edit RAG Configuration' : 'Create RAG Configuration'} icon={<Database className="w-8 h-8" />}>
+        <NavigationBar />
+        <div className="flex justify-center items-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
+            <p className={THEME.text.secondary}>Loading RAG configuration...</p>
+          </div>
+        </div>
+      </PageLayout>
+    )
+  }
+
+  if (isModalMode) {
+    return (
+      <ModalWrapper isOpen={true} onClose={closeModal} title={configId ? 'Edit RAG Configuration' : 'Create RAG Configuration'}>
+        {content}
+      </ModalWrapper>
+    )
+  }
+
+  return (
+    <PageLayout
+      title={configId ? 'Edit RAG Configuration' : 'Create RAG Configuration'}
+      icon={<Database className="w-8 h-8" />}
+      breadcrumbs={[
+        { label: 'RAG Configs', href: '/rag/admin' },
+        { label: configId ? 'Edit' : 'Create', href: '#' },
+      ]}
+    >
+      <NavigationBar />
+      {content}
+    </PageLayout>
   )
 }

@@ -1,7 +1,11 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { PageLayout } from '@/components/ui/PageLayout'
+import { PageCard } from '@/components/ui/PageCard'
+import { NavigationBar } from '@/components/ui/NavigationBar'
+import { ModalWrapper } from '@/components/ui/ModalWrapper'
+import { useModalRouter } from '@/hooks/use-modal-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -14,6 +18,8 @@ import {
   SelectValue
 } from '@/components/ui/select'
 import { Agent } from './types'
+import { THEME } from '@/lib/theme'
+import { Bot, Database, ArrowLeft, Save } from 'lucide-react'
 
 interface ProviderConfig {
   providers: { value: string; label: string }[]
@@ -35,6 +41,8 @@ interface AgentEditPageProps {
 }
 
 export function AgentEditPage({ agentId }: AgentEditPageProps) {
+  const { isModalMode, closeModal } = useModalRouter()
+
   const [agent, setAgent] = useState<Partial<Agent>>({
     name: '',
     description: '',
@@ -57,7 +65,6 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
   const [loading, setLoading] = useState(!!agentId)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-
 
   const loadProviders = useCallback(async () => {
     try {
@@ -89,12 +96,12 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
     try {
       setLoading(true)
       setError(null)
-      
+
       const response = await fetch(`http://localhost:8001/api/agents/${agentId}`)
       if (!response.ok) {
         throw new Error(`Failed to load agent: ${response.statusText}`)
       }
-      
+
       const agentData = await response.json()
       setAgent(agentData)
     } catch (err) {
@@ -111,7 +118,7 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
         throw new Error(`Failed to load provider fields: ${response.statusText}`)
       }
       const fields = await response.json()
-      
+
       setProviderFields(prev => ({
         ...prev,
         [providerType]: fields
@@ -120,6 +127,7 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
       console.error(`Failed to load fields for ${providerType}.${providerName}:`, err)
     }
   }, [])
+
   useEffect(() => {
     loadProviders()
     loadRagConfigs()
@@ -128,10 +136,8 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
     }
   }, [agentId, loadProviders, loadRagConfigs, loadAgent])
 
-  // Load provider fields when agent data is loaded and providers are available
   useEffect(() => {
     if (agent && providers) {
-      // Load provider fields for existing agent providers
       const loadExistingProviderFields = async () => {
         if (agent.llm_provider) {
           await loadProviderFields('llm', agent.llm_provider)
@@ -143,30 +149,26 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
           await loadProviderFields('stt', agent.stt_provider)
         }
       }
-      
+
       loadExistingProviderFields()
     }
   }, [agent, providers, loadProviderFields])
 
   const handleProviderChange = async (providerType: string, providerName: string) => {
-    // Update the provider selection
     handleInputChange(`${providerType}_provider`, providerName)
-    
-    // Load provider-specific fields
+
     if (providerName) {
       await loadProviderFields(providerType, providerName)
-      
-      // Initialize config with empty values for the new provider
+
       const configFields = providerFields[providerType]
       const newConfig: Record<string, string> = {}
-      
+
       Object.keys(configFields).forEach(field => {
         newConfig[field] = ''
       })
-      
+
       handleInputChange(`${providerType}_config`, newConfig)
     } else {
-      // Clear config when no provider is selected
       handleInputChange(`${providerType}_config`, {})
     }
   }
@@ -176,7 +178,6 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
       setSaving(true)
       setError(null)
 
-      // Build payload with proper ProviderConfig structure using dynamic fields
       const payload = {
         name: agent.name || '',
         description: agent.description || '',
@@ -196,12 +197,12 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
         } : undefined
       }
 
-      const url = agentId 
+      const url = agentId
         ? `http://localhost:8001/api/agents/${agentId}/`
         : 'http://localhost:8001/api/agents/'
-      
+
       const method = agentId ? 'PUT' : 'POST'
-      
+
       const response = await fetch(url, {
         method,
         headers: {
@@ -215,8 +216,11 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
         throw new Error(`Failed to save agent: ${response.statusText} - ${errorText}`)
       }
 
-      // Redirect back to admin page after successful save
-      window.location.href = '/agent/admin'
+      if (isModalMode) {
+        closeModal()
+      } else {
+        window.location.href = '/agent/admin'
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save agent')
     } finally {
@@ -241,226 +245,268 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
     }))
   }
 
-  if (loading) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="flex justify-center items-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading agent...</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const content = (
+    <>
+      {error && (
+        <Alert variant="destructive" className="mb-6 bg-red-900/50 border-red-500/50">
+          <AlertDescription className="text-white">{error}</AlertDescription>
+        </Alert>
+      )}
 
-  return (
-    <div className="container mx-auto py-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {agentId ? 'Edit Agent' : 'Create New Agent'}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
+      <PageCard>
+        <div className="space-y-6">
+          {/* Basic Info */}
           <div className="space-y-4">
+            <h3 className={`text-lg font-semibold ${THEME.text.accent} flex items-center gap-2`}>
+              <Bot className="w-5 h-5" />
+              Basic Information
+            </h3>
+
             <div>
-              <Label htmlFor="name">Agent Name</Label>
+              <Label htmlFor="name" className={THEME.text.secondary}>Agent Name *</Label>
               <Input
                 id="name"
                 value={agent.name || ''}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 placeholder="Enter agent name"
+                className={`${THEME.input.base} mt-1`}
               />
             </div>
 
             <div>
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description" className={THEME.text.secondary}>Description</Label>
               <Input
                 id="description"
                 value={agent.description || ''}
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 placeholder="Enter agent description"
+                className={`${THEME.input.base} mt-1`}
               />
             </div>
 
             <div>
-              <Label htmlFor="system_prompt">System Prompt</Label>
+              <Label htmlFor="system_prompt" className={THEME.text.secondary}>System Prompt</Label>
               <textarea
                 id="system_prompt"
                 value={agent.system_prompt || ''}
                 onChange={(e) => handleInputChange('system_prompt', e.target.value)}
                 placeholder="Enter system prompt for the agent (optional)"
-                className="w-full min-h-[120px] p-3 border rounded-md bg-transparent text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className={`${THEME.input.base} w-full min-h-[120px] p-3 rounded-md mt-1 resize-none`}
               />
             </div>
+          </div>
 
-            {/* LLM Section */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">LLM</h3>
-              <div>
-                <Label htmlFor="llm_provider">Provider</Label>
-                <Select value={agent.llm_provider || ''} onValueChange={(value) => handleProviderChange('llm', value)}>
-                  <SelectTrigger id="llm_provider">
-                    <SelectValue placeholder="Select LLM Provider" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {providers?.llm.providers.map((provider) => (
-                      <SelectItem key={provider.value} value={provider.value}>
-                        {provider.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+          {/* LLM Configuration */}
+          <div className="space-y-4 pt-6 border-t border-white/10">
+            <h3 className={`text-lg font-semibold ${THEME.text.accent}`}>LLM Provider</h3>
 
-              {/* LLM Configuration */}
-              {agent.llm_provider && (
-                <div className="space-y-4 pl-4 border-l-2 border-gray-200">
-                  <h4 className="text-md font-medium">Configuration</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Object.entries(providerFields.llm).map(([field, fieldDef]) => (
-                      <div key={field}>
-                        <Label htmlFor={`llm_${field}`}>{fieldDef.label}</Label>
-                        <Input
-                          id={`llm_${field}`}
-                          type={fieldDef.type === 'password' ? 'password' : 'text'}
-                          value={(agent.llm_config as Record<string, string>)?.[field] || ''}
-                          onChange={(e) => handleConfigChange('llm_config', field, e.target.value)}
-                          placeholder={`Enter ${fieldDef.label}`}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+            <div>
+              <Label htmlFor="llm_provider" className={THEME.text.secondary}>Provider</Label>
+              <Select value={agent.llm_provider || ''} onValueChange={(value) => handleProviderChange('llm', value)}>
+                <SelectTrigger id="llm_provider" className={`${THEME.input.select} mt-1`}>
+                  <SelectValue placeholder="Select LLM Provider" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-900 border-white/20">
+                  {providers?.llm.providers.map((provider) => (
+                    <SelectItem key={provider.value} value={provider.value} className="text-white">
+                      {provider.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* TTS Section */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">TTS</h3>
-              <div>
-                <Label htmlFor="tts_provider">Provider</Label>
-                <Select value={agent.tts_provider || ''} onValueChange={(value) => handleProviderChange('tts', value)}>
-                  <SelectTrigger id="tts_provider">
-                    <SelectValue placeholder="Select TTS Provider" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {providers?.tts.providers.map((provider) => (
-                      <SelectItem key={provider.value} value={provider.value}>
-                        {provider.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* TTS Configuration */}
-              {agent.tts_provider && (
-                <div className="space-y-4 pl-4 border-l-2 border-gray-200">
-                  <h4 className="text-md font-medium">Configuration</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Object.entries(providerFields.tts).map(([field, fieldDef]) => (
-                      <div key={field}>
-                        <Label htmlFor={`tts_${field}`}>{fieldDef.label}</Label>
-                        <Input
-                          id={`tts_${field}`}
-                          type={fieldDef.type === 'password' ? 'password' : 'text'}
-                          value={(agent.tts_config as Record<string, string>)?.[field] || ''}
-                          onChange={(e) => handleConfigChange('tts_config', field, e.target.value)}
-                          placeholder={`Enter ${fieldDef.label}`}
-                        />
-                      </div>
-                    ))}
+            {agent.llm_provider && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-4 border-l-2 border-cyan-500/30">
+                {Object.entries(providerFields.llm).map(([field, fieldDef]) => (
+                  <div key={field}>
+                    <Label htmlFor={`llm_${field}`} className={THEME.text.secondary}>{fieldDef.label}</Label>
+                    <Input
+                      id={`llm_${field}`}
+                      type={fieldDef.type === 'password' ? 'password' : 'text'}
+                      value={(agent.llm_config as Record<string, string>)?.[field] || ''}
+                      onChange={(e) => handleConfigChange('llm_config', field, e.target.value)}
+                      placeholder={`Enter ${fieldDef.label}`}
+                      className={`${THEME.input.base} mt-1`}
+                    />
                   </div>
-                </div>
-              )}
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* TTS Configuration */}
+          <div className="space-y-4 pt-6 border-t border-white/10">
+            <h3 className={`text-lg font-semibold ${THEME.text.accent}`}>TTS Provider</h3>
+
+            <div>
+              <Label htmlFor="tts_provider" className={THEME.text.secondary}>Provider</Label>
+              <Select value={agent.tts_provider || ''} onValueChange={(value) => handleProviderChange('tts', value)}>
+                <SelectTrigger id="tts_provider" className={`${THEME.input.select} mt-1`}>
+                  <SelectValue placeholder="Select TTS Provider" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-900 border-white/20">
+                  {providers?.tts.providers.map((provider) => (
+                    <SelectItem key={provider.value} value={provider.value} className="text-white">
+                      {provider.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* STT Section */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">STT</h3>
-              <div>
-                <Label htmlFor="stt_provider">Provider</Label>
-                <Select value={agent.stt_provider || ''} onValueChange={(value) => handleProviderChange('stt', value)}>
-                  <SelectTrigger id="stt_provider">
-                    <SelectValue placeholder="Select STT Provider" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {providers?.stt.providers.map((provider) => (
-                      <SelectItem key={provider.value} value={provider.value}>
-                        {provider.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* STT Configuration */}
-              {agent.stt_provider && (
-                <div className="space-y-4 pl-4 border-l-2 border-gray-200">
-                  <h4 className="text-md font-medium">Configuration</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Object.entries(providerFields.stt).map(([field, fieldDef]) => (
-                      <div key={field}>
-                        <Label htmlFor={`stt_${field}`}>{fieldDef.label}</Label>
-                        <Input
-                          id={`stt_${field}`}
-                          type={fieldDef.type === 'password' ? 'password' : 'text'}
-                          value={(agent.stt_config as Record<string, string>)?.[field] || ''}
-                          onChange={(e) => handleConfigChange('stt_config', field, e.target.value)}
-                          placeholder={`Enter ${fieldDef.label}`}
-                        />
-                      </div>
-                    ))}
+            {agent.tts_provider && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-4 border-l-2 border-purple-500/30">
+                {Object.entries(providerFields.tts).map(([field, fieldDef]) => (
+                  <div key={field}>
+                    <Label htmlFor={`tts_${field}`} className={THEME.text.secondary}>{fieldDef.label}</Label>
+                    <Input
+                      id={`tts_${field}`}
+                      type={fieldDef.type === 'password' ? 'password' : 'text'}
+                      value={(agent.tts_config as Record<string, string>)?.[field] || ''}
+                      onChange={(e) => handleConfigChange('tts_config', field, e.target.value)}
+                      placeholder={`Enter ${fieldDef.label}`}
+                      className={`${THEME.input.base} mt-1`}
+                    />
                   </div>
-                </div>
-              )}
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* STT Configuration */}
+          <div className="space-y-4 pt-6 border-t border-white/10">
+            <h3 className={`text-lg font-semibold ${THEME.text.accent}`}>STT Provider</h3>
+
+            <div>
+              <Label htmlFor="stt_provider" className={THEME.text.secondary}>Provider</Label>
+              <Select value={agent.stt_provider || ''} onValueChange={(value) => handleProviderChange('stt', value)}>
+                <SelectTrigger id="stt_provider" className={`${THEME.input.select} mt-1`}>
+                  <SelectValue placeholder="Select STT Provider" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-900 border-white/20">
+                  {providers?.stt.providers.map((provider) => (
+                    <SelectItem key={provider.value} value={provider.value} className="text-white">
+                      {provider.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            {/* RAG Configuration */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">RAG Configuration</h3>
-              <div>
-                <Label htmlFor="rag_config_id">RAG Configuration</Label>
-                <Select value={agent.rag_config_id === '' ? 'none' : (agent.rag_config_id || '')} onValueChange={(value) => handleInputChange('rag_config_id', value === 'none' ? '' : value)}>
-                 <SelectTrigger id="rag_config_id">
-                   <SelectValue placeholder="Select RAG Configuration (optional)" />
-                 </SelectTrigger>
-                 <SelectContent>
-                   <SelectItem value="none">None</SelectItem>
-                   {ragConfigs.map((config) => (
-                     <SelectItem key={config.id} value={config.id}>
-                       {config.name}
-                     </SelectItem>
-                   ))}
-                 </SelectContent>
-               </Select>
-                <div className="mt-2 text-sm text-muted-foreground">
-                  <a href="/rag/admin" className="text-primary hover:underline">Manage RAG configurations</a>
-                </div>
+
+            {agent.stt_provider && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-4 border-l-2 border-orange-500/30">
+                {Object.entries(providerFields.stt).map(([field, fieldDef]) => (
+                  <div key={field}>
+                    <Label htmlFor={`stt_${field}`} className={THEME.text.secondary}>{fieldDef.label}</Label>
+                    <Input
+                      id={`stt_${field}`}
+                      type={fieldDef.type === 'password' ? 'password' : 'text'}
+                      value={(agent.stt_config as Record<string, string>)?.[field] || ''}
+                      onChange={(e) => handleConfigChange('stt_config', field, e.target.value)}
+                      placeholder={`Enter ${fieldDef.label}`}
+                      className={`${THEME.input.base} mt-1`}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* RAG Configuration */}
+          <div className="space-y-4 pt-6 border-t border-white/10">
+            <h3 className={`text-lg font-semibold ${THEME.text.accent} flex items-center gap-2`}>
+              <Database className="w-5 h-5" />
+              RAG Configuration
+            </h3>
+
+            <div>
+              <Label htmlFor="rag_config_id" className={THEME.text.secondary}>RAG Configuration (Optional)</Label>
+              <Select value={agent.rag_config_id === '' ? 'none' : (agent.rag_config_id || '')} onValueChange={(value) => handleInputChange('rag_config_id', value === 'none' ? '' : value)}>
+                <SelectTrigger id="rag_config_id" className={`${THEME.input.select} mt-1`}>
+                  <SelectValue placeholder="Select RAG Configuration (optional)" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-900 border-white/20">
+                  <SelectItem value="none" className="text-white">None</SelectItem>
+                  {ragConfigs.map((config) => (
+                    <SelectItem key={config.id} value={config.id} className="text-white">
+                      {config.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="mt-2 text-sm">
+                <a href="/rag/admin" className={`${THEME.text.accent} hover:underline`}>
+                  → Manage RAG configurations
+                </a>
               </div>
             </div>
           </div>
 
-          <div className="flex gap-4">
-            <Button 
-              onClick={handleSave} 
+          {/* Action Buttons */}
+          <div className="flex gap-4 pt-6 border-t border-white/10">
+            <Button
+              onClick={handleSave}
               disabled={saving}
+              className={`${THEME.button.secondary} rounded-full px-6 flex items-center gap-2`}
             >
+              <Save className="w-4 h-4" />
               {saving ? 'Saving...' : 'Save Agent'}
             </Button>
-            <Button variant="outline" asChild>
-              <a href="/agent/admin">Cancel</a>
+
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (isModalMode) {
+                  closeModal()
+                } else {
+                  window.location.href = '/agent/admin'
+                }
+              }}
+              className={`${THEME.button.ghost} rounded-full px-6 flex items-center gap-2`}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Cancel
             </Button>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </PageCard>
+    </>
+  )
+
+  if (loading) {
+    return (
+      <PageLayout title={agentId ? 'Edit Agent' : 'Create Agent'} icon={<Bot className="w-8 h-8" />}>
+        <NavigationBar />
+        <div className="flex justify-center items-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
+            <p className={THEME.text.secondary}>Loading agent...</p>
+          </div>
+        </div>
+      </PageLayout>
+    )
+  }
+
+  if (isModalMode) {
+    return (
+      <ModalWrapper isOpen={true} onClose={closeModal} title={agentId ? 'Edit Agent' : 'Create Agent'}>
+        {content}
+      </ModalWrapper>
+    )
+  }
+
+  return (
+    <PageLayout
+      title={agentId ? 'Edit Agent' : 'Create Agent'}
+      icon={<Bot className="w-8 h-8" />}
+      breadcrumbs={[
+        { label: 'Agents', href: '/agent/admin' },
+        { label: agentId ? 'Edit' : 'Create', href: '#' },
+      ]}
+    >
+      <NavigationBar />
+      {content}
+    </PageLayout>
   )
 }

@@ -1,5 +1,5 @@
 """
-Central Event Loop for Voicebot Orchestration.
+Central Event Loop for Stimm Orchestration.
 
 This module implements an event-driven architecture inspired by LiveKit Agents.
 It manages the agent's state (LISTENING, THINKING, SPEAKING) and orchestrates
@@ -22,9 +22,9 @@ class AgentState(Enum):
     THINKING = "thinking"
     SPEAKING = "speaking"
 
-class VoicebotEventLoop:
+class StimmEventLoop:
     """
-    Central event loop for managing voicebot interaction.
+    Central event loop for managing stimm interaction.
     
     Replaces the previous flag-based orchestration with a state machine.
     """
@@ -68,8 +68,8 @@ class VoicebotEventLoop:
         self.max_pre_speech_buffer_size = 15 # ~500ms at 32ms/chunk
         
         # TTS Buffering
-        from .config import voicebot_config
-        self.buffering_level = voicebot_config.PRE_TTS_BUFFERING_LEVEL
+        from .config import stimm_config
+        self.buffering_level = stimm_config.PRE_TTS_BUFFERING_LEVEL
         self.text_buffer = ""
         self.punctuation_chars = ".!?;:"
         
@@ -90,7 +90,7 @@ class VoicebotEventLoop:
         self.vad_events_logged = []
         self.last_transcript_received = None
         
-        logger.info(f"🎙️ VoicebotEventLoop initialized for conversation {conversation_id}")
+        logger.info(f"🎙️ StimmEventLoop initialized for conversation {conversation_id}")
         logger.debug(f"🔧 Agent ID: {agent_id}, Session ID: {session_id}")
         logger.debug(f"🎤 STT Service: {stt_service.provider.__class__.__name__ if stt_service.provider else 'None'}")
         logger.debug(f"🔊 TTS Service: {tts_service.provider.__class__.__name__ if tts_service.provider else 'None'}")

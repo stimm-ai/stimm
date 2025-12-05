@@ -47,5 +47,5 @@ volumes:
 
 networks:
   default:
-    name: voicebot-network
+    name: stimm-network
     external: true

@@ -1,7 +1,7 @@
 """
 LiveKit Agent Bridge - Real-time audio connection for voice agents.
 
-This bridge connects our voicebot agents to LiveKit rooms, enabling real-time
+This bridge connects our stimm agents to LiveKit rooms, enabling real-time
 audio conversations between users and agents.
 """
 
@@ -11,19 +11,19 @@ import uuid
 from typing import Optional, Dict, Any
 from livekit import rtc
 
-from services.agents.voicebot_service import VoicebotService
-from services.agents.event_loop import VoicebotEventLoop
+from services.agents.stimm_service import StimmService
+from services.agents.event_loop import StimmEventLoop
 
 logger = logging.getLogger(__name__)
 
 
 class LiveKitAgentBridge:
     """
-    Bridge that connects voicebot agents to LiveKit rooms.
+    Bridge that connects stimm agents to LiveKit rooms.
     
     This bridge:
     1. Connects to a LiveKit room as an agent participant
-    2. Listens to user audio tracks and sends them to VoicebotService
+    2. Listens to user audio tracks and sends them to StimmService
     3. Receives agent audio responses and publishes them to the room
     4. Manages the conversation lifecycle
     """
@@ -46,8 +46,8 @@ class LiveKitAgentBridge:
         self.audio_task: Optional[asyncio.Task] = None
         self.interruption_signal = asyncio.Event() # Event to signal interruption
         
-        # Voicebot integration
-        self.voicebot_service = None
+        # Stimm integration
+        self.stimm_service = None
         self.event_loop = None
         self.conversation_id = f"livekit_{agent_id}_{room_name}_{uuid.uuid4().hex[:8]}"
         
@@ -166,8 +166,8 @@ class LiveKitAgentBridge:
             logger.debug(f"⏭️ Skipping audio from agent participant: {participant.identity}")
             return
             
-        if not self.voicebot_service:
-            logger.warning("⚠️ Voicebot service not connected, cannot process user audio")
+        if not self.stimm_service:
+            logger.warning("⚠️ Stimm service not connected, cannot process user audio")
             return
             
         logger.debug(f"🎤 Setting up audio processing for user {participant.identity}")
@@ -250,10 +250,10 @@ class LiveKitAgentBridge:
                         #         logger.info(f"   - Audio stats (after extraction): int16_range=[{min_val}, {max_val}], RMS={rms:.2f}")
                         #         logger.info(f"   - Data size: {len(audio_data)} bytes")
                         
-                        # Send to voicebot service for processing
-                        if self.voicebot_service:
+                        # Send to stimm service for processing
+                        if self.stimm_service:
                             asyncio.create_task(
-                                self.voicebot_service.process_audio(self.conversation_id, audio_data)
+                                self.stimm_service.process_audio(self.conversation_id, audio_data)
                             )
                     else:
                         logger.warning(f"⚠️ Audio frame from {participant.identity} has no data attribute")
@@ -353,57 +353,57 @@ class LiveKitAgentBridge:
             logger.error(f"❌ Error sending agent audio response: {e}")
             logger.error(f"🔧 Audio chunk size: {len(audio_chunk)} bytes")
     
-    def set_voicebot_service(self, voicebot_service: VoicebotService):
+    def set_stimm_service(self, stimm_service: StimmService):
         """
-        Set the voicebot service and create a session.
+        Set the stimm service and create a session.
         
         Args:
-            voicebot_service: VoicebotService instance
+            stimm_service: StimmService instance
         """
-        self.voicebot_service = voicebot_service
+        self.stimm_service = stimm_service
         
-        # Create voicebot session for this conversation
-        asyncio.create_task(self._create_voicebot_session())
+        # Create stimm session for this conversation
+        asyncio.create_task(self._create_stimm_session())
         
-        logger.debug(f"🔧 Agent bridge connected to voicebot service for {self.agent_id}")
+        logger.debug(f"🔧 Agent bridge connected to stimm service for {self.agent_id}")
     
-    async def _create_voicebot_session(self):
-        """Create a voicebot session and set up event handlers"""
+    async def _create_stimm_session(self):
+        """Create a stimm session and set up event handlers"""
         try:
             # Create session
-            self.event_loop = await self.voicebot_service.create_session(
+            self.event_loop = await self.stimm_service.create_session(
                 conversation_id=self.conversation_id,
                 session_id=f"livekit_{self.agent_id}"
             )
             
             # Set up event handler for agent audio responses
-            self.voicebot_service.register_event_handler(
+            self.stimm_service.register_event_handler(
                 "audio_chunk",
                 self._handle_agent_audio_response
             )
             
             # Register handler for interruption
-            self.voicebot_service.register_event_handler("interrupt", self._handle_interrupt_event)
+            self.stimm_service.register_event_handler("interrupt", self._handle_interrupt_event)
             
             # Register handlers for text/data events
-            self.voicebot_service.register_event_handler("transcript_update", self._handle_data_event)
-            self.voicebot_service.register_event_handler("assistant_response", self._handle_data_event)
-            self.voicebot_service.register_event_handler("vad_update", self._handle_data_event)
-            self.voicebot_service.register_event_handler("speech_start", self._handle_data_event)
-            self.voicebot_service.register_event_handler("speech_end", self._handle_data_event)
-            self.voicebot_service.register_event_handler("bot_responding_start", self._handle_data_event)
-            self.voicebot_service.register_event_handler("bot_responding_end", self._handle_data_event)
-            self.voicebot_service.register_event_handler("telemetry_update", self._handle_data_event)
-            self.voicebot_service.register_event_handler("audio_stream_end", self._handle_audio_stream_end)
+            self.stimm_service.register_event_handler("transcript_update", self._handle_data_event)
+            self.stimm_service.register_event_handler("assistant_response", self._handle_data_event)
+            self.stimm_service.register_event_handler("vad_update", self._handle_data_event)
+            self.stimm_service.register_event_handler("speech_start", self._handle_data_event)
+            self.stimm_service.register_event_handler("speech_end", self._handle_data_event)
+            self.stimm_service.register_event_handler("bot_responding_start", self._handle_data_event)
+            self.stimm_service.register_event_handler("bot_responding_end", self._handle_data_event)
+            self.stimm_service.register_event_handler("telemetry_update", self._handle_data_event)
+            self.stimm_service.register_event_handler("audio_stream_end", self._handle_audio_stream_end)
             
-            logger.debug(f"🎙️ Voicebot session created for conversation {self.conversation_id}")
+            logger.debug(f"🎙️ Stimm session created for conversation {self.conversation_id}")
             
         except Exception as e:
-            logger.error(f"❌ Failed to create voicebot session: {e}")
+            logger.error(f"❌ Failed to create stimm session: {e}")
     
     async def _handle_interrupt_event(self, event: Dict[str, Any]):
         """
-        Handle interrupt event from voicebot service.
+        Handle interrupt event from stimm service.
         Stop current playback and clear queues.
         """
         logger.info("🛑 Interruption signal received in LiveKit bridge - Stopping playback")
@@ -438,13 +438,13 @@ class LiveKitAgentBridge:
         self.interruption_signal.clear()
 
     async def _handle_audio_stream_end(self, event: Dict[str, Any]):
-        """Handle end of audio stream from voicebot."""
+        """Handle end of audio stream from stimm."""
         # Put sentinel in queue to mark end of stream
         await self.agent_audio_queue.put(None)
 
     async def _handle_agent_audio_response(self, event: Dict[str, Any]):
         """
-        Handle agent audio response from voicebot service.
+        Handle agent audio response from stimm service.
         
         Args:
             event: Event containing audio chunk data
@@ -545,9 +545,9 @@ class LiveKitAgentBridge:
             if self.is_connected:
                 logger.info(f"🔌 Agent {self.agent_id} disconnecting from LiveKit...")
                 
-                # Close voicebot session
-                if self.voicebot_service and self.conversation_id:
-                    await self.voicebot_service.close_session(self.conversation_id)
+                # Close stimm session
+                if self.stimm_service and self.conversation_id:
+                    await self.stimm_service.close_session(self.conversation_id)
                 
                 # Disconnect from room
                 self.is_connected = False
@@ -566,18 +566,18 @@ class LiveKitAgentBridge:
         if self.audio_task and not self.audio_task.done():
             self.audio_task.cancel()
         
-        if self.voicebot_service:
-            self.voicebot_service.unregister_event_handler("audio_chunk")
-            self.voicebot_service.unregister_event_handler("interrupt")
-            self.voicebot_service.unregister_event_handler("transcript_update")
-            self.voicebot_service.unregister_event_handler("assistant_response")
-            self.voicebot_service.unregister_event_handler("vad_update")
-            self.voicebot_service.unregister_event_handler("speech_start")
-            self.voicebot_service.unregister_event_handler("speech_end")
-            self.voicebot_service.unregister_event_handler("bot_responding_start")
-            self.voicebot_service.unregister_event_handler("bot_responding_end")
-            self.voicebot_service.unregister_event_handler("telemetry_update")
-            self.voicebot_service.unregister_event_handler("audio_stream_end")
+        if self.stimm_service:
+            self.stimm_service.unregister_event_handler("audio_chunk")
+            self.stimm_service.unregister_event_handler("interrupt")
+            self.stimm_service.unregister_event_handler("transcript_update")
+            self.stimm_service.unregister_event_handler("assistant_response")
+            self.stimm_service.unregister_event_handler("vad_update")
+            self.stimm_service.unregister_event_handler("speech_start")
+            self.stimm_service.unregister_event_handler("speech_end")
+            self.stimm_service.unregister_event_handler("bot_responding_start")
+            self.stimm_service.unregister_event_handler("bot_responding_end")
+            self.stimm_service.unregister_event_handler("telemetry_update")
+            self.stimm_service.unregister_event_handler("audio_stream_end")
     
     async def start_session(self):
         """

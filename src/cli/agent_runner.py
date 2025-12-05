@@ -24,7 +24,7 @@ class AgentRunner:
         self.room_name = room_name or f"cli-{agent_name}-{uuid.uuid4().hex[:8]}"
         self.verbose = verbose
         self.is_local = is_local
-        self.base_url = base_url or config.voicebot_api_url
+        self.base_url = base_url or config.stimm_api_url
         self.livekit_url = config.livekit_url
         self.session: Optional[aiohttp.ClientSession] = None
         self.logger = logging.getLogger(__name__)

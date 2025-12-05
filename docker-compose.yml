@@ -2,17 +2,17 @@ services:
   postgres:
     extends:
       file: ./docker/postgres/docker-compose.yml
-      service: voicebot-postgres
+      service: stimm-postgres
     networks:
-      - voicebot-network
+      - stimm-network
     env_file:
       - .env
-  voicebot-app:
+  stimm:
     extends:
-      file: ./docker/voicebot-app/docker-compose.yml
-      service: voicebot-app
+      file: ./docker/stimm/docker-compose.yml
+      service: stimm
     networks:
-      - voicebot-network
+      - stimm-network
     # Expose UDP ports for WebRTC ICE connectivity
     ports:
       - "8001:8001" # HTTP API
@@ -20,7 +20,7 @@ services:
       - "49160-49200:49160-49200/udp" # UDP range for ICE candidates
     env_file:
       - .env
-      - docker/voicebot-app/.env
+      - docker/stimm/.env
     environment:
       - ENABLE_SIP_BRIDGE=true
     labels:
@@ -28,12 +28,12 @@ services:
       - "traefik.http.routers.api.rule=Host(`api.localhost`)"
       - "traefik.http.routers.api.entrypoints=web"
       - "traefik.http.services.api.loadbalancer.server.port=8001"
-  voicebot-app-front:
+  stimm-front:
     extends:
-      file: ./docker/voicebot-app-front/docker-compose.yml
-      service: voicebot-app-front
+      file: ./docker/stimm-front/docker-compose.yml
+      service: stimm-front
     networks:
-      - voicebot-network
+      - stimm-network
     env_file:
       - ./src/front/.env
     labels:
@@ -46,7 +46,7 @@ services:
       file: ./docker/qdrant/docker-compose.yml
       service: qdrant
     networks:
-      - voicebot-network
+      - stimm-network
   traefik:
     image: traefik:v3.2
     container_name: traefik
@@ -63,7 +63,7 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
     networks:
-      - voicebot-network
+      - stimm-network
     labels:
       - "traefik.enable=true"
 
@@ -72,7 +72,7 @@ services:
       file: ./docker-compose.livekit.yml
       service: livekit
     networks:
-      - voicebot-network
+      - stimm-network
     env_file:
       - .env
 
@@ -81,18 +81,18 @@ services:
       file: ./docker-compose.livekit.yml
       service: redis
     networks:
-      - voicebot-network
+      - stimm-network
 
   sip:
     extends:
       file: ./docker-compose.livekit.yml
       service: sip
     networks:
-      - voicebot-network
+      - stimm-network
 
 networks:
-  voicebot-network:
-    name: voicebot-network
+  stimm-network:
+    name: stimm-network
     driver: bridge
 
 volumes:

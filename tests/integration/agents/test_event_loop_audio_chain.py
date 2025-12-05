@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Integration test for voicebot event loop audio processing chain.
+Integration test for stimm event loop audio processing chain.
 
 This test validates the complete audio processing pipeline:
 1. VAD (Voice Activity Detection) processing
@@ -8,7 +8,7 @@ This test validates the complete audio processing pipeline:
 3. STT streaming and transcription
 4. Event-driven state management
 
-Tests the VoicebotEventLoop orchestration of VAD → STT integration.
+Tests the StimmEventLoop orchestration of VAD → STT integration.
 """
 
 import asyncio
@@ -17,7 +17,7 @@ import time
 import numpy as np
 from services.vad.silero_service import SileroVADService
 from services.stt.stt import STTService
-from services.agents.event_loop import VoicebotEventLoop
+from services.agents.event_loop import StimmEventLoop
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -50,7 +50,7 @@ async def test_vad_to_stt_chain():
     # Create output queue and event loop
     output_queue = asyncio.Queue()
     
-    event_loop = VoicebotEventLoop(
+    event_loop = StimmEventLoop(
         conversation_id="test-session",
         output_queue=output_queue,
         stt_service=stt_service,

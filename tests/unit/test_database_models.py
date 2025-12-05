@@ -175,14 +175,14 @@ class TestAgentSessionModel:
         session = AgentSession(
             user_id=user_id,
             agent_id=agent_id,
-            session_type="voicebot",
+            session_type="stimm",
             ip_address="192.168.1.1",
             user_agent="Mozilla/5.0",
         )
         
         assert session.user_id == user_id
         assert session.agent_id == agent_id
-        assert session.session_type == "voicebot"
+        assert session.session_type == "stimm"
         assert session.ip_address == "192.168.1.1"
         assert session.user_agent == "Mozilla/5.0"
     
@@ -207,7 +207,7 @@ class TestAgentSessionModel:
         user_id = uuid4()
         agent_id = uuid4()
         
-        session_types = ["voicebot", "chat", "tts", "stt"]
+        session_types = ["stimm", "chat", "tts", "stt"]
         
         for session_type in session_types:
             session = AgentSession(

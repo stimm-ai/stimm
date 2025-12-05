@@ -1,17 +1,17 @@
 services:
-  voicebot-postgres:
+  stimm-postgres:
     image: postgres:15
-    container_name: voicebot-postgres
+    container_name: stimm-postgres
     environment:
-      POSTGRES_DB: voicebot
-      POSTGRES_USER: voicebot_user
-      POSTGRES_PASSWORD: voicebot_password
+      POSTGRES_DB: stimm
+      POSTGRES_USER: stimm_user
+      POSTGRES_PASSWORD: stimm_password
     ports:
       - "5432:5432"
     volumes:
       - postgres_storage:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U voicebot_user -d voicebot"]
+      test: ["CMD-SHELL", "pg_isready -U stimm_user -d stimm"]
       interval: 10s
       timeout: 5s
       retries: 5

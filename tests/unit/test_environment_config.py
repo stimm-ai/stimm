@@ -21,7 +21,7 @@ class TestEnvironmentConfig:
         config = EnvironmentConfig()
         
         # Should have service URLs set
-        assert hasattr(config, 'voicebot_api_url')
+        assert hasattr(config, 'stimm_api_url')
         assert hasattr(config, 'livekit_url')
         assert hasattr(config, 'database_url')
         assert hasattr(config, 'qdrant_url')
@@ -36,14 +36,14 @@ class TestEnvironmentConfig:
             config = EnvironmentConfig()
             
             # Verify defaults
-            assert "localhost" in config.voicebot_api_url
+            assert "localhost" in config.stimm_api_url
             assert "localhost" in config.livekit_url
             assert "localhost" in config.database_url
             assert "localhost" in config.qdrant_url
             assert "localhost" in config.redis_url
     
     @patch.dict(os.environ, {
-        "VOICEBOT_API_URL": "http://custom-api:9000",
+        "STIMM_API_URL": "http://custom-api:9000",
         "LIVEKIT_URL": "ws://custom-livekit:7000"
     })
     def test_environment_variable_overrides(self):
@@ -52,7 +52,7 @@ class TestEnvironmentConfig:
         
         config = EnvironmentConfig()
         
-        assert config.voicebot_api_url == "http://custom-api:9000"
+        assert config.stimm_api_url == "http://custom-api:9000"
         assert config.livekit_url == "ws://custom-livekit:7000"
     
     def test_get_service_config_voicebot(self):
@@ -60,7 +60,7 @@ class TestEnvironmentConfig:
         from environment_config import EnvironmentConfig
         
         config = EnvironmentConfig()
-        voicebot_config = config.get_service_config("voicebot")
+        voicebot_config = config.get_service_config("stimm")
         
         assert isinstance(voicebot_config, dict)
         assert "api_url" in voicebot_config
@@ -109,7 +109,7 @@ class TestEnvironmentConfig:
         assert isinstance(all_configs, dict)
         
         # Should contain all services
-        expected_services = ["voicebot", "livekit", "database", "qdrant", "redis", "frontend"]
+        expected_services = ["stimm", "livekit", "database", "qdrant", "redis", "frontend"]
         for service in expected_services:
             assert service in all_configs
         
@@ -126,7 +126,7 @@ class TestEnvironmentConfig:
         
         assert isinstance(config_str, str)
         assert "Environment:" in config_str
-        assert "VoiceBot API:" in config_str
+        assert "Stimm API:" in config_str
         assert "LiveKit:" in config_str
     
     def test_global_config_instance(self):
@@ -134,7 +134,7 @@ class TestEnvironmentConfig:
         from environment_config import config
         
         assert config is not None
-        assert hasattr(config, 'voicebot_api_url')
+        assert hasattr(config, 'stimm_api_url')
     
     def test_get_environment_config_function(self):
         """Test get_environment_config() function."""
@@ -149,11 +149,11 @@ class TestEnvironmentConfig:
         """Test get_service_url() convenience function."""
         from environment_config import get_service_url
         
-        voicebot_url = get_service_url("voicebot")
+        voicebot_url = get_service_url("stimm")
         
         assert isinstance(voicebot_url, str)
         # Should return one of the URL fields
-        assert voicebot_url != f"Unknown service: voicebot"
+        assert voicebot_url != f"Unknown service: stimm"
     
     def test_get_service_url_with_fallback(self):
         """Test get_service_url() with fallback."""
@@ -168,7 +168,7 @@ class TestEnvironmentConfig:
         """Test all convenience functions."""
         from environment_config import (
             get_livekit_url,
-            get_voicebot_api_url,
+            get_stimm_api_url,
             get_database_url,
             get_redis_url,
             get_qdrant_url
@@ -176,7 +176,7 @@ class TestEnvironmentConfig:
         
         # All should return strings
         assert isinstance(get_livekit_url(), str)
-        assert isinstance(get_voicebot_api_url(), str)
+        assert isinstance(get_stimm_api_url(), str)
         assert isinstance(get_database_url(), str)
         assert isinstance(get_redis_url(), str)
         assert isinstance(get_qdrant_url(), str)

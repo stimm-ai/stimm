@@ -1,5 +1,5 @@
 """
-Database session management for voicebot application.
+Database session management for stimm application.
 """
 import os
 from sqlalchemy import create_engine

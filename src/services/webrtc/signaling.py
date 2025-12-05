@@ -30,7 +30,7 @@ except ImportError as e:
             self.type = type
 
 from services.webrtc.media_handler import WebRTCMediaHandler
-from services.agents.event_loop import VoicebotEventLoop
+from services.agents.event_loop import StimmEventLoop
 from services.vad.silero_service import SileroVADService
 from services.stt.stt import STTService
 from services.tts.tts import TTSService
@@ -48,7 +48,7 @@ class OfferRequest(BaseModel):
     type: str
     agent_id: str = None
 
-@router.post("/voicebot/webrtc/offer")
+@router.post("/stimm/webrtc/offer")
 async def webrtc_offer(request: OfferRequest):
     """
     Handle WebRTC SDP offer.
@@ -101,7 +101,7 @@ async def webrtc_offer(request: OfferRequest):
         # Initialize Event Loop
         output_queue = asyncio.Queue()
         
-        event_loop = VoicebotEventLoop(
+        event_loop = StimmEventLoop(
             conversation_id=conversation_id,
             output_queue=output_queue,
             stt_service=stt_service,

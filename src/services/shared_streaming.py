@@ -2,7 +2,7 @@
 Shared Streaming Module
 
 This module provides centralized logic for parallel live streaming that can be used
-by both TTS and voicebot interfaces. It encapsulates the core streaming patterns
+by both TTS and stimm interfaces. It encapsulates the core streaming patterns
 that enable true parallel live streaming with progress tracking.
 """
 
@@ -155,7 +155,7 @@ class SharedStreamingManager:
         """
         Streaming method for cases where WebSocket sending is handled externally.
         
-        This is used by services like voicebot that need to handle WebSocket
+        This is used by services like stimm that need to handle WebSocket
         sending manually with additional logic (like interruption detection).
         """
         session = self.get_session(session_id)

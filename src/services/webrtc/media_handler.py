@@ -5,7 +5,7 @@ import fractions
 import av
 import numpy as np
 from aiortc import MediaStreamTrack
-from services.agents.event_loop import VoicebotEventLoop
+from services.agents.event_loop import StimmEventLoop
 
 logger = logging.getLogger(__name__)
 
@@ -13,9 +13,9 @@ AUDIO_PTIME = 0.020  # 20ms audio packetization
 AUDIO_RATE = 24000   # 24kHz sample rate (matches Kokoro TTS default)
 AUDIO_CHANNELS = 1
 
-class VoicebotAudioSender(MediaStreamTrack):
+class StimmAudioSender(MediaStreamTrack):
     """
-    MediaStreamTrack that yields audio frames from the VoicebotEventLoop.
+    MediaStreamTrack that yields audio frames from the StimmEventLoop.
     """
     kind = "audio"
 
@@ -52,7 +52,7 @@ class VoicebotAudioSender(MediaStreamTrack):
             # or we can generate silence frames if we want to keep the clock ticking strictly.
             
             # Let's try to get data. If empty, maybe send silence?
-            # But VoicebotEventLoop sends chunks as they are generated.
+            # But StimmEventLoop sends chunks as they are generated.
             
             # Ideally, we should have a buffer here.
             
@@ -95,14 +95,14 @@ class VoicebotAudioSender(MediaStreamTrack):
             return frame
             
         except Exception as e:
-            logger.error(f"Error in VoicebotAudioSender: {e}")
+            logger.error(f"Error in StimmAudioSender: {e}")
             raise
 
 class WebRTCMediaHandler:
     """
     Manages the media tracks for a WebRTC session.
     """
-    def __init__(self, event_loop: VoicebotEventLoop):
+    def __init__(self, event_loop: StimmEventLoop):
         self.event_loop = event_loop
         self.audio_sender = None
         self.audio_queue = asyncio.Queue() # Queue for outgoing audio frames (bytes)
@@ -135,7 +135,7 @@ class WebRTCMediaHandler:
 
     def add_outgoing_audio_track(self):
         """Creates and returns the outgoing audio track."""
-        self.audio_sender = VoicebotAudioSender(self.audio_queue)
+        self.audio_sender = StimmAudioSender(self.audio_queue)
         return self.audio_sender
 
     async def handle_incoming_audio_track(self, track: MediaStreamTrack):

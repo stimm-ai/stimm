@@ -1,4 +1,4 @@
-#Main entry point for the voicebot application.
+#Main entry point for the stimm application.
 
 
 import asyncio
@@ -17,7 +17,7 @@ from services.rag.chatbot_routes import router as chatbot_router
 from services.rag.rag_config_routes import router as rag_config_router
 from services.stt.routes import router as stt_router
 from services.tts.routes import router as tts_router
-from services.agents.routes import router as voicebot_router
+from services.agents.routes import router as stimm_router
 from services.agents_admin.routes import router as agent_router
 from services.provider_constants import get_provider_constants
 from services.webrtc.signaling import router as signaling_router
@@ -34,7 +34,7 @@ configure_logging()
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Voicebot API", version="1.0.0")
+app = FastAPI(title="Stimm API", version="1.0.0")
 
 # Detect if we're running from src/ directory or root
 current_dir = Path.cwd()
@@ -113,7 +113,7 @@ async def startup_event():
         except Exception as e:
             logger.error(f"Failed to initialize SIP Bridge Integration: {e}")
         
-        # Note: Voicebot services are now initialized per-session in LiveKit service
+        # Note: Stimm services are now initialized per-session in LiveKit service
         # to avoid concurrency issues with providers like Deepgram
         
     except Exception as e:
@@ -141,7 +141,7 @@ app.include_router(llm_router, prefix="/api", tags=["llm"])
 app.include_router(chatbot_router, prefix="/rag", tags=["chatbot"])
 app.include_router(stt_router, prefix="/api", tags=["stt"])
 app.include_router(tts_router, prefix="/api", tags=["tts"])
-app.include_router(voicebot_router, prefix="/api", tags=["voicebot"])
+app.include_router(stimm_router, prefix="/api", tags=["stimm"])
 app.include_router(agent_router, prefix="/api", tags=["agents"])
 app.include_router(rag_config_router, prefix="/api", tags=["rag-configs"])
 app.include_router(signaling_router, prefix="/api", tags=["webrtc"])
@@ -150,7 +150,7 @@ app.include_router(livekit_router, prefix="/api", tags=["livekit"])
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the Voicebot API"}
+    return {"message": "Welcome to the Stimm API"}
 
 @app.get("/health")
 def health_check():

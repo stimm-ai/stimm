@@ -1,4 +1,4 @@
-// Centralized theme configuration for the voicebot application
+// Centralized theme configuration for the stimm application
 // This file contains all theme constants and utilities used across the app
 
 export const THEME = {

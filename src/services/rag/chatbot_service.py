@@ -135,7 +135,7 @@ class ChatbotService:
                         rag_state, conversation_id, user_message
                     )
                     
-                    # Always use ultra-low latency retrieval for voicebot  
+                    # Always use ultra-low latency retrieval for stimm
                     LOGGER.info("Using ultra-low latency retrieval mode")
                     if rag_state.retrieval_engine is not None:
                         # Use per‑agent retrieval engine (respects RAG config collection)

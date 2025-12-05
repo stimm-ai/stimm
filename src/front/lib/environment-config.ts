@@ -13,7 +13,7 @@ interface FrontendEnvironmentConfig {
   
   // Service configuration
   services: {
-    voicebotApiUrl: string  // SSR + Client: localhost:8001
+    stimmApiUrl: string  // SSR + Client: localhost:8001
     liveKitWsUrl: string    // SSR + Client: localhost:7880
   }
   
@@ -48,7 +48,7 @@ function detectServerEnvironment(): { isDocker: boolean; hostname: string } {
     if (fs.existsSync('/.dockerenv')) {
       return {
         isDocker: true,
-        hostname: 'voicebot-app'
+        hostname: 'stimm'
       }
     }
     
@@ -63,7 +63,7 @@ function detectServerEnvironment(): { isDocker: boolean; hostname: string } {
       if (process.env[envVar]) {
         return {
           isDocker: true,
-          hostname: 'voicebot-app'
+          hostname: 'stimm'
         }
       }
     }
@@ -77,7 +77,7 @@ function detectServerEnvironment(): { isDocker: boolean; hostname: string } {
         if (cgroupContent.includes(pattern)) {
           return {
             isDocker: true,
-            hostname: 'voicebot-app'
+            hostname: 'stimm'
           }
         }
       }
@@ -130,7 +130,7 @@ export function createFrontendEnvironmentConfig(): FrontendEnvironmentConfig {
       liveKitUrl: backendLiveKitUrl,
     },
     services: {
-      voicebotApiUrl: `http://localhost:8001`, // Always localhost
+      stimmApiUrl: `http://localhost:8001`, // Always localhost
       liveKitWsUrl: `ws://localhost:7880`,     // Always localhost
     },
     metadata: {
@@ -172,9 +172,9 @@ export class FrontendApiClient {
     
     // For client-side calls, always use localhost
     // For SSR calls, use environment-aware URLs
-    const baseUrl = isServerSide 
+    const baseUrl = isServerSide
       ? this.config.backend.apiBaseUrl
-      : this.config.services.voicebotApiUrl
+      : this.config.services.stimmApiUrl
     
     const url = `${baseUrl}${endpoint}`
     

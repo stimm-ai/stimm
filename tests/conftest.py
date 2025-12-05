@@ -450,8 +450,8 @@ def openrouter_config() -> Dict[str, Any] | None:
         "model": os.getenv("OPENROUTER_LLM_MODEL", "anthropic/claude-3.5-sonnet"),
         "api_url": os.getenv("OPENROUTER_LLM_API_URL", "https://openrouter.ai/api/v1"),
         "completions_path": os.getenv("OPENROUTER_LLM_COMPLETIONS_PATH", "/chat/completions"),
-        "app_name": os.getenv("OPENROUTER_LLM_APP_NAME", "VoiceBot"),
-        "app_url": os.getenv("OPENROUTER_LLM_APP_URL", "https://github.com/etienne/voicebot"),
+        "app_name": os.getenv("OPENROUTER_LLM_APP_NAME", "Stimm"),
+        "app_url": os.getenv("OPENROUTER_LLM_APP_URL", "https://github.com/EtienneLescot/stimm"),
     }
 
 
@@ -538,7 +538,7 @@ def qdrant_internal_config() -> Dict[str, Any]:
     embedding_model = embedding_model_map.get(env_model, env_model)
     
     # Collection name: prefer QDRANT_COLLECTION_NAME, fallback to QDRANT_COLLECTION, then default
-    collection_name = os.getenv("QDRANT_COLLECTION_NAME") or os.getenv("QDRANT_COLLECTION", "voicebot_knowledge")
+    collection_name = os.getenv("QDRANT_COLLECTION_NAME") or os.getenv("QDRANT_COLLECTION", "stimm_knowledge")
     
     return {
         "collection_name": collection_name,
@@ -562,7 +562,7 @@ def pinecone_io_config() -> Dict[str, Any] | None:
         return None
     
     return {
-        "index_name": os.getenv("PINECONE_INDEX_NAME", "voicebot"),
+        "index_name": os.getenv("PINECONE_INDEX_NAME", "stimm"),
         "api_key": api_key,
         "top_k": int(os.getenv("PINECONE_TOP_K", 2)),
         "namespace": os.getenv("PINECONE_NAMESPACE", ""),

@@ -61,7 +61,7 @@ export function useMicrophoneDevices(): UseMicrophoneDevicesReturn {
 
   // Load saved device from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('voicebot_selected_microphone')
+    const saved = localStorage.getItem('stimm_selected_microphone')
     if (saved && devices.some(d => d.deviceId === saved)) {
       setSelectedDeviceId(saved)
     }
@@ -70,7 +70,7 @@ export function useMicrophoneDevices(): UseMicrophoneDevicesReturn {
   // Persist selected device to localStorage when it changes
   useEffect(() => {
     if (selectedDeviceId) {
-      localStorage.setItem('voicebot_selected_microphone', selectedDeviceId)
+      localStorage.setItem('stimm_selected_microphone', selectedDeviceId)
     }
   }, [selectedDeviceId])
 

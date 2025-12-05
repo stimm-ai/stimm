@@ -10,7 +10,7 @@ from livekit import api
 
 from environment_config import config
 
-from services.agents.voicebot_service import get_voicebot_service, VoicebotService
+from services.agents.stimm_service import get_stimm_service, StimmService
 from services.agents_admin.agent_service import AgentService
 from .agent_bridge import create_agent_bridge
 
@@ -29,7 +29,7 @@ class LiveKitService:
         self.api_secret = api_secret or config.livekit_api_secret
         
         # Initialiser les services existants
-        self.voicebot_service = None  # Sera initialisé plus tard si nécessaire
+        self.stimm_service = None  # Sera initialisé plus tard si nécessaire
         self.agent_service = AgentService()
         
         # Suivi des sessions actives
@@ -79,7 +79,7 @@ class LiveKitService:
         try:
             # Utiliser le nom de salle fourni ou générer un nom unique
             if not room_name:
-                room_name = f"voicebot_{agent_id}_{uuid.uuid4().hex[:8]}"
+                room_name = f"stimm_{agent_id}_{uuid.uuid4().hex[:8]}"
             
             # Générer un token d'accès pour le frontend
             token = api.AccessToken(self.api_key, self.api_secret) \
@@ -146,7 +146,7 @@ class LiveKitService:
             self.active_sessions[session_id] = {
                 "agent_id": agent_id,
                 "room_name": room_name,
-                "voicebot_service": session_data["voicebot_service"],
+                "stimm_service": session_data["stimm_service"],
                 "agent_bridge": agent_bridge,
                 "created_at": asyncio.get_event_loop().time()
             }

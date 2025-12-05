@@ -62,7 +62,7 @@ class RagConfigService:
                 system_user = User(
                     id=uuid.UUID('00000000-0000-0000-0000-000000000000'),
                     username='system',
-                    email='system@voicebot.local'
+                    email='system@stimm.local'
                 )
                 session.add(system_user)
                 session.commit()

@@ -1,9 +1,9 @@
 services:
-  voicebot-app:
+  stimm:
     build:
       context: ../../
-      dockerfile: ./docker/voicebot-app/Dockerfile
-    container_name: voicebot-app
+      dockerfile: ./docker/stimm/Dockerfile
+    container_name: stimm
     volumes:
       # Mount source files to src subdirectory to preserve Python environment (read-write for development)
       - ../../src:/app/src
@@ -12,13 +12,13 @@ services:
     environment:
       - PULSE_SERVER=unix:/mnt/wslg/PulseServer
       - LOG_LEVEL=${LOG_LEVEL:-info}
-      - VOICEBOT_API_URL=http://voicebot-app:8001
+      - STIMM_API_URL=http://stimm:8001
       - LIVEKIT_URL=ws://livekit:7880
       - LIVEKIT_API_URL=http://livekit:7880
-      - DATABASE_URL=postgresql://voicebot_user:voicebot_password@postgres:5432/voicebot
+      - DATABASE_URL=postgresql://stimm_user:stimm_password@postgres:5432/stimm
       - QDRANT_URL=http://qdrant:6333
       - REDIS_URL=redis://redis:6379
-      - FRONTEND_URL=http://voicebot-app-front:3000
+      - FRONTEND_URL=http://stimm-front:3000
       - ENVIRONMENT=docker
     command: >
       sh -c "uv run uvicorn src.main:app --host 0.0.0.0 --port 8001 --reload --log-level info"

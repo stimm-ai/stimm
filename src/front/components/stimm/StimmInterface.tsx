@@ -11,7 +11,7 @@ import { useMicrophoneDevices } from '@/hooks/use-microphone-devices'
 import { Mic, MicOff, MoreHorizontal, X, MessageSquare, Activity, Settings, Zap, Bot, User, Edit, Database } from 'lucide-react'
 import { Logo } from '@/components/ui/Logo'
 
-interface VoicebotStatus {
+interface StimmStatus {
   energy: number
   state: 'silence' | 'speaking' | 'processing' | 'responding'
   llmStatus: boolean
@@ -35,12 +35,12 @@ const THEME = {
   error: 'text-red-300'
 }
 
-export function VoicebotInterface() {
+export function StimmInterface() {
   const [agents, setAgents] = useState<Agent[]>([])
   const [selectedAgentId, setSelectedAgentId] = useState<string>('default')
   const [currentAgent, setCurrentAgent] = useState<Agent | null>(null)
 
-  const [status, setStatus] = useState<VoicebotStatus>({
+  const [status, setStatus] = useState<StimmStatus>({
     energy: 0,
     state: 'silence',
     llmStatus: false,
@@ -348,7 +348,7 @@ export function VoicebotInterface() {
         {/* Top Header - Agent Selector */}
         <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-start z-10">
           <div className="flex flex-col gap-1">
-            <Logo href="/voicebot" />
+            <Logo href="/stimm" />
           </div>
           <div className="flex items-center gap-4">
             {/* Agent Selection Button */}

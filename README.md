@@ -1,4 +1,4 @@
-# Voicebot Platform
+# Stimm Platform
 
 A modular, real-time AI voice assistant platform built with Python (FastAPI) and Next.js. This project provides a flexible infrastructure for creating, managing, and interacting with voice agents using various LLM, TTS, and STT providers.
 
@@ -84,7 +84,7 @@ sequenceDiagram
 
 | Directory | Description |
 |-----------|-------------|
-| `src/services/agents` | Core voicebot logic and event loop |
+| `src/services/agents` | Core stimm logic and event loop |
 | `src/services/agents_admin` | Agent configuration management |
 | `src/services/rag` | Knowledge base and retrieval logic |
 | `src/services/webrtc` | WebRTC signaling and media handling |
@@ -110,7 +110,7 @@ sequenceDiagram
 ```bash
 # Clone and enter the repository
 git clone <repository-url>
-cd voicebot
+cd stimm
 
 # Create .env file (see Environment Configuration below)
 
@@ -126,12 +126,12 @@ docker-compose up --build
 ### Environment Configuration
 
 Create a `.env` file in the root directory by copying `.env.example` and filling in the required values.
-Create a `.env` file in the docker/voicebot-app directory by copying `docker/voicebot-app/.env.example` and filling in the required values.
+Create a `.env` file in the docker/stimm directory by copying `docker/stimm/.env.example` and filling in the required values.
 Create a `.env` file in the src/front directory by copying `src/front/.env.example` and filling in the required values.
 
 ```bash
 cp .env.example .env
-cp docker/voicebot-app/.env.example docker/voicebot-app/.env
+cp docker/stimm/.env.example docker/stimm/.env
 cp src/front/.env.example src/front/.env
 ```
 
@@ -144,7 +144,7 @@ Here are some of the key variables:
 VOICEBOT_API_URL=http://localhost:8001
 LIVEKIT_URL=ws://localhost:7880
 LIVEKIT_API_URL=http://localhost:7880
-DATABASE_URL=postgresql://voicebot_user:voicebot_password@localhost:5432/voicebot
+DATABASE_URL=postgresql://stimm_user:stimm_password@localhost:5432/stimm
 QDRANT_URL=http://localhost:6333
 REDIS_URL=redis://localhost:6379
 FRONTEND_URL=http://localhost:3000
@@ -377,7 +377,7 @@ curl http://localhost:8001/health/sip-bridge
 curl http://localhost:8001/health/sip-bridge-status
 
 # View logs
-docker logs voicebot‑app | grep "SIP"
+docker logs stimm‑app | grep "SIP"
 ```
 
 ### Cleanup
@@ -552,7 +552,7 @@ tests/
 
 ### Environment Variables
 
-Tests load configuration and keys from `.env` automatically. See [`.env.example`](file:///home/etienne/repos/voicebot/.env.example) for all available variables.
+Tests load configuration and keys from `.env` automatically. See [`.env.example`](file:///home/etienne/repos/stimm/.env.example) for all available variables.
 
 **Tests auto-skip when API keys are missing** - no manual configuration needed.
 

@@ -345,7 +345,7 @@ async def _ultra_fast_retrieve_contexts(
     text: str,
     namespace: Optional[str],
 ) -> List[Any]:
-    """Ultra-fast context retrieval optimized for voicebot latency requirements"""
+    """Ultra-fast context retrieval optimized for stimm latency requirements"""
     from services.rag.rag_models import QueryContext
     
     # Check cache first with ultra-fast lookup

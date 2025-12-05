@@ -23,7 +23,7 @@ export function PageHeaderActions({ type }: PageHeaderActionsProps) {
     return (
         <>
             <Button asChild className={`${THEME.button.ghost} rounded-full px-4`}>
-                <a href="/voicebot" className="flex items-center gap-2">
+                <a href="/stimm" className="flex items-center gap-2">
                     <Mic className="w-4 h-4" />
                     Speak with an agent
                 </a>

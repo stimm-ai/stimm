@@ -159,8 +159,8 @@ class DevAgentCreator:
                 "model": os.getenv("OPENROUTER_LLM_MODEL", "anthropic/claude-3.5-sonnet"),
                 "api_url": os.getenv("OPENROUTER_LLM_API_URL", "https://openrouter.ai/api/v1"),
                 "completions_path": os.getenv("OPENROUTER_LLM_COMPLETIONS_PATH", "/chat/completions"),
-                "app_name": os.getenv("OPENROUTER_LLM_APP_NAME", "VoiceBot"),
-                "app_url": os.getenv("OPENROUTER_LLM_APP_URL", "https://github.com/etienne/voicebot")
+                "app_name": os.getenv("OPENROUTER_LLM_APP_NAME", "Stimm"),
+                "app_url": os.getenv("OPENROUTER_LLM_APP_URL", "https://github.com/etienne/stimm")
             })
         elif provider == "llama-cpp.local":
             config.update({

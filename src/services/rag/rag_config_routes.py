@@ -353,7 +353,7 @@ async def upload_documents(
                 )
             
             # Upsert to Qdrant
-            collection_name = config.get("collection_name", "voicebot_knowledge")
+            collection_name = config.get("collection_name", "stimm_knowledge")
             engine.client.upsert(collection_name=collection_name, points=points)
             
             # Create document record
@@ -450,7 +450,7 @@ async def delete_document(
         )
         
         # Delete chunks from Qdrant
-        collection_name = config.get("collection_name", "voicebot_knowledge")
+        collection_name = config.get("collection_name", "stimm_knowledge")
         engine.client.delete(
             collection_name=collection_name,
             points_selector=document.chunk_ids,
@@ -499,7 +499,7 @@ async def delete_all_documents(
                 all_chunk_ids.extend(doc.chunk_ids)
             
             # Delete from Qdrant
-            collection_name = config.get("collection_name", "voicebot_knowledge")
+            collection_name = config.get("collection_name", "stimm_knowledge")
             engine.client.delete(
                 collection_name=collection_name,
                 points_selector=all_chunk_ids,

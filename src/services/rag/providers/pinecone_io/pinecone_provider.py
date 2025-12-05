@@ -43,7 +43,7 @@ class PineconeProvider:
                 "label": "Index Name",
                 "required": True,
                 "description": "Name of the Pinecone index to query",
-                "default": "voicebot"
+                "default": "stimm"
             },
             "api_key": {
                 "type": "password",
@@ -90,7 +90,7 @@ class PineconeProvider:
                 "type": "boolean",
                 "label": "Ultra Low Latency Mode",
                 "required": False,
-                "description": "Optimize for voicebot latency (reduces retrieval quality)",
+                "description": "Optimize for stimm latency (reduces retrieval quality)",
                 "default": True
             }
         }

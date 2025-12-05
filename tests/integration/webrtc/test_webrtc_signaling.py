@@ -12,7 +12,7 @@ client = TestClient(app)
 @pytest.mark.asyncio
 async def test_webrtc_offer():
     """
-    Test the /voicebot/webrtc/offer endpoint.
+    Test the /stimm/webrtc/offer endpoint.
     """
     # Create a local PC to generate an offer
     pc = RTCPeerConnection()
@@ -23,7 +23,7 @@ async def test_webrtc_offer():
     
     # Send offer to backend
     response = client.post(
-        "/api/voicebot/webrtc/offer",
+        "/api/stimm/webrtc/offer",
         json={
             "sdp": pc.localDescription.sdp,
             "type": pc.localDescription.type,

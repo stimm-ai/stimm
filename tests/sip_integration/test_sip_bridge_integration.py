@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Test script for SIP Bridge Integration
-Teste l'intégration du SIP Bridge dans le conteneur voicebot-app
+Teste l'intégration du SIP Bridge dans le conteneur stimm-app
 """
 
 import asyncio
@@ -111,7 +111,7 @@ if __name__ == "__main__":
             sys.exit(1)
     except Exception as e:
         print(f"❌ Cannot connect to application: {e}")
-        print("Make sure the voicebot-app is running with: docker compose up")
+        print("Make sure the stimm-app is running with: docker compose up")
         sys.exit(1)
     
     # Lancer les tests

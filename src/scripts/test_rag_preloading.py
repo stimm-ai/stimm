@@ -4,8 +4,8 @@ Test Script for RAG Preloading Performance
 This script tests the RAG preloading functionality and measures
 performance improvements compared to the original lazy loading.
 
-NOTE: This script should be run from within the voicebot-app container:
-  docker exec -it voicebot-app-1 python src/scripts/test_rag_preloading.py
+NOTE: This script should be run from within the stimm container:
+  docker exec -it stimm-1 python src/scripts/test_rag_preloading.py
 """
 
 import asyncio

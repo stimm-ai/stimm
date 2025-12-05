@@ -269,11 +269,11 @@ class TestAgentSessionCreate:
         agent_id = uuid4()
         session = AgentSessionCreate(
             agent_id=agent_id,
-            session_type="voicebot",
+            session_type="stimm",
         )
         
         assert session.agent_id == agent_id
-        assert session.session_type == "voicebot"
+        assert session.session_type == "stimm"
     
     def test_agent_session_create_with_metadata(self):
         """Test AgentSessionCreate with IP and user agent."""
@@ -291,7 +291,7 @@ class TestAgentSessionCreate:
     def test_agent_session_valid_types(self):
         """Test all valid session types."""
         agent_id = uuid4()
-        valid_types = ["voicebot", "chat", "tts", "stt"]
+        valid_types = ["stimm", "chat", "tts", "stt"]
         
         for session_type in valid_types:
             session = AgentSessionCreate(

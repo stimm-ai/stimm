@@ -9,7 +9,7 @@ class QdrantInternalProvider:
     """
     Provider for internal Qdrant vector database.
     
-    This provider connects to a Qdrant instance managed within the voicebot-app.
+    This provider connects to a Qdrant instance managed within stimm.
     Non-configurable parameters (host, port, TLS, API key) are retrieved from
     provider constants.
     """
@@ -43,7 +43,7 @@ class QdrantInternalProvider:
                 "label": "Collection Name",
                 "required": True,
                 "description": "Name of the Qdrant collection to query",
-                "default": "voicebot_knowledge"
+                "default": "stimm_knowledge"
             },
             "embedding_model": {
                 "type": "select",
@@ -78,7 +78,7 @@ class QdrantInternalProvider:
                 "type": "boolean",
                 "label": "Ultra Low Latency Mode",
                 "required": False,
-                "description": "Optimize for voicebot latency (reduces retrieval quality)",
+                "description": "Optimize for stimm latency (reduces retrieval quality)",
                 "default": True
             },
             "qdrant_use_tls": {

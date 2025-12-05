@@ -1,5 +1,5 @@
 """
-Database package for voicebot application.
+Database package for stimm application.
 """
 from .session import get_db, get_engine
 from .models import Base, User, Agent, AgentSession, RagConfig

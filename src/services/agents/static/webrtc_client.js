@@ -6,7 +6,7 @@
 class WebRTCClient {
     constructor(config = {}) {
         this.config = {
-            url: '/api/voicebot/webrtc/offer',
+            url: '/api/stimm/webrtc/offer',
             ...config
         };
 

@@ -19,8 +19,8 @@ class EnvironmentConfig:
     def _setup_service_urls(self):
         """Load service URLs from environment variables"""
         
-        # VoiceBot API URL
-        self.voicebot_api_url = os.getenv("VOICEBOT_API_URL", "http://localhost:8001")
+        # Stimm API URL
+        self.stimm_api_url = os.getenv("STIMM_API_URL", "http://localhost:8001")
         
         # LiveKit URLs
         self.livekit_url = os.getenv("LIVEKIT_URL", "ws://localhost:7880")
@@ -29,7 +29,7 @@ class EnvironmentConfig:
         self.livekit_api_secret = os.getenv("LIVEKIT_API_SECRET", "secret")
         
         # Database URLs
-        self.database_url = os.getenv("DATABASE_URL", "postgresql://voicebot_user:voicebot_password@localhost:5432/voicebot")
+        self.database_url = os.getenv("DATABASE_URL", "postgresql://stimm_user:stimm_password@localhost:5432/stimm")
         
         # Qdrant URL
         self.qdrant_url = os.getenv("QDRANT_URL", "http://localhost:6333")
@@ -43,9 +43,9 @@ class EnvironmentConfig:
     def get_service_config(self, service_name: str) -> Dict[str, str]:
         """Get configuration for a specific service"""
         configs = {
-            "voicebot": {
-                "api_url": self.voicebot_api_url,
-                "health_url": f"{self.voicebot_api_url}/health"
+            "stimm": {
+                "api_url": self.stimm_api_url,
+                "health_url": f"{self.stimm_api_url}/health"
             },
             "livekit": {
                 "ws_url": self.livekit_url,
@@ -70,7 +70,7 @@ class EnvironmentConfig:
     def get_all_configs(self) -> Dict[str, Dict[str, str]]:
         """Get all service configurations"""
         return {
-            "voicebot": self.get_service_config("voicebot"),
+            "stimm": self.get_service_config("stimm"),
             "livekit": self.get_service_config("livekit"), 
             "database": self.get_service_config("database"),
             "qdrant": self.get_service_config("qdrant"),
@@ -85,7 +85,7 @@ class EnvironmentConfig:
         """String representation showing key URLs"""
         config = self.get_all_configs()
         return f"Environment: {config['metadata']['environment']}\n" + \
-               f"VoiceBot API: {config['voicebot']['api_url']}\n" + \
+               f"Stimm API: {config['stimm']['api_url']}\n" + \
                f"LiveKit: {config['livekit']['ws_url']}"
 
 
@@ -124,9 +124,9 @@ def get_livekit_url() -> str:
     return config.livekit_url
 
 
-def get_voicebot_api_url() -> str:
-    """Get VoiceBot API URL"""
-    return config.voicebot_api_url
+def get_stimm_api_url() -> str:
+    """Get Stimm API URL"""
+    return config.stimm_api_url
 
 
 def get_database_url() -> str:

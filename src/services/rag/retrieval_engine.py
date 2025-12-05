@@ -351,7 +351,7 @@ class RetrievalEngine:
         use_cache: bool = True,
     ) -> List[Any]:
         """
-        Ultra-fast context retrieval optimized for voicebot latency requirements.
+        Ultra-fast context retrieval optimized for stimm latency requirements.
         Uses dense search only and skips lexical/reranker.
         """
         from services.rag.rag_models import QueryContext

@@ -6,7 +6,7 @@ from services.stt.stt import STTService
 from services.tts.tts import TTSService
 from services.vad.silero_service import SileroVADService
 from services.rag.chatbot_service import chatbot_service
-from services.agents.voicebot_service import VoicebotService
+from services.agents.stimm_service import StimmService
 from services.livekit.agent_bridge import create_agent_bridge
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ async def create_agent_session(
     Creates and initializes a complete Agent Session (Services + Bridge).
     
     Returns a dictionary containing:
-    - voicebot_service: The orchestrated service
+    - stimm_service: The orchestrated service
     - agent_bridge: The connection to LiveKit
     - session_id: Unique session ID
     """
@@ -32,8 +32,8 @@ async def create_agent_session(
     tts = TTSService(agent_id=agent_id)
     vad = SileroVADService()
     
-    # 2. Initialize Voicebot Orchestrator
-    voicebot = VoicebotService(
+    # 2. Initialize Stimm Orchestrator
+    stimm = StimmService(
         stt_service=stt,
         chatbot_service=chatbot_service,
         tts_service=tts,
@@ -56,10 +56,10 @@ async def create_agent_session(
         sample_rate=sample_rate
     )
     
-    agent_bridge.set_voicebot_service(voicebot)
+    agent_bridge.set_stimm_service(stimm)
     
     return {
-        "voicebot_service": voicebot,
+        "stimm_service": stimm,
         "agent_bridge": agent_bridge,
         "session_id": f"{agent_id}_{room_name}"
     }

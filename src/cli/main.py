@@ -40,7 +40,7 @@ def get_base_url(args):
     if args.url:
         return args.url
     if args.http:
-        return config.voicebot_api_url
+        return config.stimm_api_url
     return None
 
 async def list_agents_local():
@@ -314,7 +314,7 @@ async def run_chat_mode_http(args):
     use_rag = not args.disable_rag
     logging.info(f"RAG enabled: {use_rag}")
     
-    base_url = get_base_url(args) or config.voicebot_api_url
+    base_url = get_base_url(args) or config.stimm_api_url
     
     try:
         text_interface = TextInterface(args.agent_name, use_rag=use_rag, verbose=args.verbose, base_url=base_url)
@@ -343,7 +343,7 @@ async def run_talk_mode(args):
     is_local = not (args.http or args.url)
     logging.info(f"Starting full audio mode for agent: {args.agent_name} (Local: {is_local})")
     
-    base_url = get_base_url(args) or config.voicebot_api_url
+    base_url = get_base_url(args) or config.stimm_api_url
 
     try:
         agent_runner = AgentRunner(

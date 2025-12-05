@@ -1,5 +1,5 @@
 """
-LiveKit integration module for voicebot application.
+LiveKit integration module for stimm application.
 """
 from .livekit_service import livekit_service, LiveKitService
 from .routes import router

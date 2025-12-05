@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class VADProcessor:
     """
-    Higher-level VAD processor that integrates Silero VAD with the voicebot pipeline.
+    Higher-level VAD processor that integrates Silero VAD with the stimm pipeline.
     """
     
     def __init__(self, threshold: float = 0.5):

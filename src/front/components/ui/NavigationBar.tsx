@@ -23,7 +23,7 @@ export function NavigationBar() {
     const pathname = usePathname()
 
     const isActive = (href: string) => {
-        if (href === '/voicebot') return pathname === href
+        if (href === '/stimm') return pathname === href
         return pathname?.startsWith(href)
     }
 

@@ -1,5 +1,5 @@
 """
-Database models for voicebot application.
+Database models for stimm application.
 """
 from sqlalchemy import Column, String, Boolean, DateTime, Text, ForeignKey, Index, Integer
 from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
@@ -24,7 +24,7 @@ class User(Base):
 
 
 class Agent(Base):
-    """Agent model representing a voicebot configuration."""
+    """Agent model representing a stimm configuration."""
     
     __tablename__ = "agents"
     
@@ -100,7 +100,7 @@ class AgentSession(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     agent_id = Column(UUID(as_uuid=True), ForeignKey("agents.id", ondelete="CASCADE"), nullable=False)
-    session_type = Column(String(50), nullable=False)  # 'voicebot', 'chat', 'tts', 'stt'
+    session_type = Column(String(50), nullable=False)  # 'stimm', 'chat', 'tts', 'stt'
     ip_address = Column(String(45))  # IPv6 support
     user_agent = Column(Text)
     

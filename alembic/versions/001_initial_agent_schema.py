@@ -76,8 +76,8 @@ def upgrade():
     
     # Insert system user
     op.execute("""
-        INSERT INTO users (id, username, email) 
-        VALUES ('00000000-0000-0000-0000-000000000000', 'system', 'system@voicebot.local')
+        INSERT INTO users (id, username, email)
+        VALUES ('00000000-0000-0000-0000-000000000000', 'system', 'system@stimm.local')
     """)
 
 

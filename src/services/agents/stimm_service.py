@@ -1,23 +1,23 @@
 """
-Voicebot Service - Main service class for voice assistant functionality.
+Stimm Service - Main service class for voice assistant functionality.
 
-This service wraps the VoicebotEventLoop and provides a simple interface
-for managing voicebot conversations.
+This service wraps the StimmEventLoop and provides a simple interface
+for managing stimm conversations.
 """
 
 import asyncio
 import logging
 from typing import Optional, Dict, Any, Callable
-from .event_loop import VoicebotEventLoop, AgentState
+from .event_loop import StimmEventLoop, AgentState
 
 logger = logging.getLogger(__name__)
 
-class VoicebotService:
+class StimmService:
     """
-    Main voicebot service class.
+    Main stimm service class.
     
-    Provides a high-level interface for managing voicebot interactions
-    using the event-driven VoicebotEventLoop architecture.
+    Provides a high-level interface for managing stimm interactions
+    using the event-driven StimmEventLoop architecture.
     """
     
     def __init__(
@@ -35,25 +35,25 @@ class VoicebotService:
         self.agent_id = agent_id
         
         # Active sessions
-        self.active_sessions: Dict[str, VoicebotEventLoop] = {}
+        self.active_sessions: Dict[str, StimmEventLoop] = {}
         
         # Event handlers for real-time updates
         self.event_handlers: Dict[str, Callable] = {}
         
     async def create_session(
-        self, 
-        conversation_id: str, 
+        self,
+        conversation_id: str,
         session_id: str = None
-    ) -> VoicebotEventLoop:
+    ) -> StimmEventLoop:
         """
-        Create a new voicebot session.
+        Create a new stimm session.
         
         Args:
             conversation_id: Unique identifier for the conversation
             session_id: Optional session identifier
             
         Returns:
-            VoicebotEventLoop instance for the new session
+            StimmEventLoop instance for the new session
         """
         if conversation_id in self.active_sessions:
             logger.warning(f"Session {conversation_id} already exists")
@@ -63,7 +63,7 @@ class VoicebotService:
         output_queue = asyncio.Queue()
         
         # Create event loop for the session
-        event_loop = VoicebotEventLoop(
+        event_loop = StimmEventLoop(
             conversation_id=conversation_id,
             output_queue=output_queue,
             stt_service=self.stt_service,
@@ -83,12 +83,12 @@ class VoicebotService:
         # Start a task to forward events to registered handlers
         asyncio.create_task(self._forward_events(conversation_id, output_queue))
         
-        logger.info(f"Created voicebot session: {conversation_id}")
+        logger.info(f"Created stimm session: {conversation_id}")
         return event_loop
         
     async def close_session(self, conversation_id: str):
         """
-        Close a voicebot session.
+        Close a stimm session.
         
         Args:
             conversation_id: ID of the session to close
@@ -101,7 +101,7 @@ class VoicebotService:
         await event_loop.stop()
         del self.active_sessions[conversation_id]
         
-        logger.info(f"Closed voicebot session: {conversation_id}")
+        logger.info(f"Closed stimm session: {conversation_id}")
         
     async def process_audio(
         self, 
@@ -225,33 +225,33 @@ class VoicebotService:
             for conv_id in self.active_sessions.keys()
         }
 
-# Global voicebot service instance
-voicebot_service = None
+# Global stimm service instance
+stimm_service = None
 
-def get_voicebot_service(
-    stt_service=None, 
-    chatbot_service=None, 
-    tts_service=None, 
+def get_stimm_service(
+    stt_service=None,
+    chatbot_service=None,
+    tts_service=None,
     vad_service=None,
     agent_id: str = None
-) -> VoicebotService:
+) -> StimmService:
     """
-    Get or create the global voicebot service instance.
+    Get or create the global stimm service instance.
     
     Args:
         stt_service: STT service instance
-        chatbot_service: Chatbot service instance  
+        chatbot_service: Chatbot service instance
         tts_service: TTS service instance
         vad_service: VAD service instance
         agent_id: Optional agent ID
         
     Returns:
-        VoicebotService instance
+        StimmService instance
     """
-    global voicebot_service
+    global stimm_service
     
-    if voicebot_service is None:
-        voicebot_service = VoicebotService(
+    if stimm_service is None:
+        stimm_service = StimmService(
             stt_service=stt_service,
             chatbot_service=chatbot_service,
             tts_service=tts_service,
@@ -259,4 +259,4 @@ def get_voicebot_service(
             agent_id=agent_id
         )
         
-    return voicebot_service
+    return stimm_service

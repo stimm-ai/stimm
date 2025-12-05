@@ -82,7 +82,7 @@ class RagSaaSProvider:
                 "type": "boolean",
                 "label": "Ultra Low Latency Mode",
                 "required": False,
-                "description": "Optimize for voicebot latency (reduces retrieval quality)",
+                "description": "Optimize for stimm latency (reduces retrieval quality)",
                 "default": True
             }
         }

@@ -1,10 +1,10 @@
 [project]
-name = "voicebot"
+name = "stimm"
 version = "0.1.0"
-description = "VoiceBot application with real-time audio processing"
+description = "Stimm application with real-time audio processing"
 requires-python = ">=3.10"
 authors = [
-    {name = "VoiceBot Team", email = "team@voicebot.dev"}
+    {name = "Stimm Team", email = "team@stimm.dev"}
 ]
 dependencies = [
     # Core web framework
@@ -134,4 +134,4 @@ test = "pytest tests/ -v"
 lint = "black src/ && isort src/ && flake8 src/"
 
 [project.scripts]
-voicebot-start = "uvicorn.run:app"
+stimm-start = "uvicorn.run:app"

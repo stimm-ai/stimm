@@ -119,14 +119,14 @@ class AgentSessionCreate(BaseModel):
     """Model for creating an agent session."""
     
     agent_id: UUID
-    session_type: str = Field(..., description="Session type: 'voicebot', 'chat', 'tts', 'stt'")
+    session_type: str = Field(..., description="Session type: 'stimm', 'chat', 'tts', 'stt'")
     ip_address: Optional[str] = Field(None, description="Client IP address")
     user_agent: Optional[str] = Field(None, description="Client user agent")
     
     @validator('session_type')
     def validate_session_type(cls, v):
         """Validate session type."""
-        valid_types = {'voicebot', 'chat', 'tts', 'stt'}
+        valid_types = {'stimm', 'chat', 'tts', 'stt'}
         if v not in valid_types:
             raise ValueError(f"Session type must be one of: {', '.join(valid_types)}")
         return v

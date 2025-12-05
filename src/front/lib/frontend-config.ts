@@ -32,7 +32,7 @@ export const config = {
    * Always connects to localhost, assuming Docker ports are exposed.
    */
   browser: {
-    voicebotApiUrl: 'http://localhost:8001',
+    stimmApiUrl: 'http://localhost:8001',
     liveKitWsUrl: `ws://localhost:7880`,
   },
 };
@@ -44,7 +44,7 @@ export class FrontendApiClient {
    */
   async apiCall(endpoint: string, options: RequestInit = {}): Promise<Response> {
     // In a universal component, we check if we're on the client or server.
-    const baseUrl = isServerSide ? config.backend.apiUrl : config.browser.voicebotApiUrl;
+    const baseUrl = isServerSide ? config.backend.apiUrl : config.browser.stimmApiUrl;
     const url = `${baseUrl}${endpoint}`;
     
     const headers = {

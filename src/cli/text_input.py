@@ -18,7 +18,7 @@ class TextInterface:
         self.use_rag = use_rag
         self.verbose = verbose
         from environment_config import config
-        self.base_url = base_url or config.voicebot_api_url
+        self.base_url = base_url or config.stimm_api_url
         self.session: Optional[aiohttp.ClientSession] = None
         self.logger = logging.getLogger(__name__)
         

@@ -114,7 +114,7 @@ export function AgentAdminPage() {
           <Bot className={`w-16 h-16 mx-auto mb-4 ${THEME.text.muted}`} />
           <h3 className="text-xl font-semibold mb-2">No Agents Found</h3>
           <p className={`${THEME.text.secondary} mb-6`}>
-            Create your first agent to get started with the voicebot system.
+            Create your first agent to get started with the stimm system.
           </p>
           <Button asChild className={`${THEME.button.secondary} rounded-full px-6`}>
             <a href="/agent/create" className="flex items-center gap-2">

@@ -131,22 +131,61 @@ export function useLiveKit(): UseLiveKitReturn {
 
         switch (data.type) {
           case 'transcript_update':
-            // For final transcripts, add a new user message
             if (data.is_final) {
+              // Final transcript
               setTranscription(prev => prev + ' ' + data.text)
-              const id = generateId()
-              const newMessage: Message = {
-                id,
-                speaker: 'user',
-                text: data.text.trim(),
-                isFinal: true,
-                timestamp: Date.now()
-              }
-              setMessages(prev => [...prev, newMessage])
-              lastUserMessageId.current = id
+              setMessages(prev => {
+                const lastIndex = prev.findIndex(m => m.id === lastUserMessageId.current)
+                if (lastIndex >= 0 && !prev[lastIndex].isFinal) {
+                  // Update existing non-final user message
+                  const updated = [...prev]
+                  updated[lastIndex] = {
+                    ...updated[lastIndex],
+                    text: data.text.trim(),
+                    isFinal: true
+                  }
+                  return updated
+                } else {
+                  // Create new final user message
+                  const id = generateId()
+                  lastUserMessageId.current = id
+                  const newMessage: Message = {
+                    id,
+                    speaker: 'user',
+                    text: data.text.trim(),
+                    isFinal: true,
+                    timestamp: Date.now()
+                  }
+                  return [...prev, newMessage]
+                }
+              })
             } else {
-              // For partial transcripts, we could update the last user message if not final
-              // For now, ignore
+              // Partial transcript
+              setMessages(prev => {
+                const lastIndex = prev.findIndex(m => m.id === lastUserMessageId.current)
+                if (lastIndex >= 0 && !prev[lastIndex].isFinal) {
+                  // Update existing non-final user message
+                  const updated = [...prev]
+                  updated[lastIndex] = {
+                    ...updated[lastIndex],
+                    text: data.text.trim(),
+                    isFinal: false
+                  }
+                  return updated
+                } else {
+                  // Create new non-final user message
+                  const id = generateId()
+                  lastUserMessageId.current = id
+                  const newMessage: Message = {
+                    id,
+                    speaker: 'user',
+                    text: data.text.trim(),
+                    isFinal: false,
+                    timestamp: Date.now()
+                  }
+                  return [...prev, newMessage]
+                }
+              })
             }
             break
 

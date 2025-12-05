@@ -9,6 +9,8 @@ import { Agent } from '@/components/agent/types'
 import { useLiveKit } from '@/hooks/use-livekit'
 import { useMicrophoneDevices } from '@/hooks/use-microphone-devices'
 import { Mic, MicOff, MoreHorizontal, X, MessageSquare, Activity, Settings, Zap, Bot, User } from 'lucide-react'
+import Image from 'next/image'
+import logo from '@/assets/logo_stimm_h.png'
 
 interface VoicebotStatus {
   energy: number
@@ -24,12 +26,12 @@ interface VoicebotStatus {
 
 // Reverting to original gradient theme but adapting to the new layout
 const THEME = {
-  bg: 'bg-gradient-to-br from-blue-500 to-purple-600',
+  bg: 'bg-gradient-to-br from-[#3A2868] to-[#6481B3]',
   panel: 'bg-white/10 backdrop-blur-md',
   border: 'border-white/20',
   text: 'text-white',
   textMuted: 'text-gray-200',
-  accent: 'text-cyan-300',
+  accent: 'text-[#E7348C]',
   success: 'text-green-300',
   error: 'text-red-300'
 }
@@ -309,7 +311,7 @@ export function VoicebotInterface() {
          {/* Top Header - Agent Selector */}
          <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-start z-10">
            <div className="flex flex-col gap-1">
-             <h1 className="text-xl font-bold tracking-tight text-white drop-shadow-md">Stimm</h1>
+             <Image src={logo} alt="Stimm" width={120} height={33} className="drop-shadow-md" />
              <p className="text-xs text-white/70 uppercase tracking-widest">Your voice agent</p>
            </div>
            <div className="flex items-center gap-4">
@@ -347,14 +349,14 @@ export function VoicebotInterface() {
                      }}
                      className={`px-4 py-5 rounded-lg border-2 transition-all cursor-pointer
                        ${selectedAgentId === agent.id
-                         ? 'border-cyan-400 bg-cyan-900/50 text-white shadow-[0_0_20px_rgba(103,232,249,0.3)]'
+                         ? 'border-[#E7348C] bg-[#3A2868]/50 text-white shadow-[0_0_20px_rgba(231,52,140,0.3)]'
                          : 'border-white/10 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white'
                        }`}
                    >
                      <div className="font-bold text-white uppercase mb-2">{agent.name}</div>
                      <div className="text-[10px] text-white/60">{agent.description || 'Voice AI Agent'}</div>
                      <div className="mt-3 flex items-center gap-2">
-                       <span className="text-xs bg-cyan-400/20 px-2 py-1 rounded-full">{agent.stt_provider || 'Deepgram'}</span>
+                       <span className="text-xs bg-[#E7348C]/20 px-2 py-1 rounded-full">{agent.stt_provider || 'Deepgram'}</span>
                        <span className="text-xs bg-purple-400/20 px-2 py-1 rounded-full">{agent.llm_provider || 'Mistral'}</span>
                      </div>
                    </div>
@@ -376,7 +378,7 @@ export function VoicebotInterface() {
                  <div className={`
                    flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300
                    ${activeStreamType === 'agent'
-                     ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-[0_0_15px_rgba(103,232,249,0.3)]'
+                     ? 'bg-[#E7348C]/20 text-[#E7348C] border border-[#E7348C]/30 shadow-[0_0_15px_rgba(231,52,140,0.3)]'
                      : 'bg-white/10 text-white/70 border border-white/10'}
                  `}>
                    {activeStreamType === 'agent' ? <Bot className="w-3 h-3" /> : <User className="w-3 h-3" />}
@@ -399,8 +401,8 @@ export function VoicebotInterface() {
                        key={i}
                        className={`w-12 rounded-full transition-all duration-75 ease-out shadow-lg
                          ${isActive
-                           ? (isAgent ? 'bg-cyan-300 shadow-[0_0_20px_rgba(103,232,249,0.6)]' : 'bg-white shadow-[0_0_20px_rgba(255,255,255,0.6)]')
-                           : (isAgent ? 'bg-cyan-900/40' : 'bg-white/20')
+                           ? (isAgent ? 'bg-[#E7348C] shadow-[0_0_20px_rgba(231,52,140,0.6)]' : 'bg-white shadow-[0_0_20px_rgba(255,255,255,0.6)]')
+                           : (isAgent ? 'bg-[#3A2868]/40' : 'bg-white/20')
                          }`}
                        style={{
                          height: `${Math.min(100, height)}%`,
@@ -497,39 +499,39 @@ export function VoicebotInterface() {
             <div className="grid grid-cols-[1fr_auto] gap-y-3 text-xs">
                {/* VAD */}
                <div className="text-white/80 font-semibold">VAD</div>
-               <div className="text-cyan-300 font-mono text-right">SILERO</div>
+               <div className="text-[#E7348C] font-mono text-right">SILERO</div>
 
                {/* STT */}
                <div className="text-white/80 font-semibold pt-1">SPEECH-TO-TEXT</div>
-               <div className="text-cyan-300 font-mono text-right pt-1 uppercase">
+               <div className="text-[#E7348C] font-mono text-right pt-1 uppercase">
                  {currentAgent?.stt_provider || 'DEEPGRAM'}
                </div>
                <div className="text-white/50 pl-2">MODEL</div>
-               <div className="text-cyan-300/80 font-mono text-right uppercase">
+               <div className="text-[#E7348C]/80 font-mono text-right uppercase">
                  {currentAgent?.stt_config?.model || 'NOVA-3'}
                </div>
 
                {/* LLM */}
                <div className="text-white/80 font-semibold pt-1">LLM</div>
-               <div className="text-cyan-300 font-mono text-right uppercase">
+               <div className="text-[#E7348C] font-mono text-right uppercase">
                  {currentAgent?.llm_provider || 'OPENAI'}
                </div>
                <div className="text-white/50 pl-2">MODEL</div>
-               <div className="text-cyan-300/80 font-mono text-right uppercase">
+               <div className="text-[#E7348C]/80 font-mono text-right uppercase">
                  {currentAgent?.llm_config?.model || 'GPT-4.0-MINI'}
                </div>
 
                {/* TTS */}
                <div className="text-white/80 font-semibold pt-1">TEXT-TO-SPEECH</div>
-               <div className="text-cyan-300 font-mono text-right uppercase">
+               <div className="text-[#E7348C] font-mono text-right uppercase">
                   {currentAgent?.tts_provider || 'ELEVENLABS'}
                </div>
                <div className="text-white/50 pl-2">MODEL</div>
-               <div className="text-cyan-300/80 font-mono text-right uppercase">
+               <div className="text-[#E7348C]/80 font-mono text-right uppercase">
                   {currentAgent?.tts_config?.model || 'FLASH_V2_5'}
                </div>
                <div className="text-white/50 pl-2">VOICE</div>
-               <div className="text-cyan-300/80 font-mono text-right uppercase truncate max-w-[150px]" title={currentAgent?.tts_config?.voice}>
+               <div className="text-[#E7348C]/80 font-mono text-right uppercase truncate max-w-[150px]" title={currentAgent?.tts_config?.voice}>
                   {currentAgent?.tts_config?.voice || '-'}
                </div>
             </div>
@@ -557,7 +559,7 @@ export function VoicebotInterface() {
 
                {/* Overall Latency */}
                <div className="text-white font-bold pt-2">RESPONSE LATENCY</div>
-               <div className="text-cyan-300 font-bold font-mono text-right pt-2 text-sm">
+               <div className="text-[#E7348C] font-bold font-mono text-right pt-2 text-sm">
                   {status.firstChunkLatency ? `${Math.round(status.firstChunkLatency || 0)}ms` : '-'}
                </div>
             </div>
@@ -579,8 +581,8 @@ export function VoicebotInterface() {
 
                {response && (
                  <div className="space-y-1 animate-in fade-in slide-in-from-bottom-2">
-                    <div className="text-xs text-cyan-300/70 uppercase">Agent</div>
-                    <div className="text-cyan-200">{response}</div>
+                    <div className="text-xs text-[#E7348C]/70 uppercase">Agent</div>
+                    <div className="text-[#E7348C]">{response}</div>
                  </div>
                )}
 

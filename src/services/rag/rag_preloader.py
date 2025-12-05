@@ -30,13 +30,17 @@ class RAGPreloader:
         self._preload_start_time: Optional[float] = None
         self._preload_time: Optional[float] = None
         self._preload_error: Optional[str] = None
+        # Cache for agent-specific RAG states
+        self._agent_rag_states: dict = {}  # agent_id -> RagState
         
     async def preload_all(self, agent_id: str = None) -> bool:
         """
         Preload all RAG components at server startup.
         
         Args:
-            agent_id: Optional agent ID to use for model pre-warming (default: None/System Default)
+            agent_id: Optional agent ID to use for agent-specific RAG configuration
+                     If provided, will load embedding model from agent's RAG config.
+                     If None, will use global .env configuration.
 
         Returns:
             bool: True if preloading successful, False otherwise
@@ -46,11 +50,15 @@ class RAGPreloader:
             return True
             
         self._preload_start_time = time.time()
-        logger.info("Starting RAG preloading at server startup...")
+        if agent_id:
+            logger.info(f"Starting RAG preloading for agent {agent_id}...")
+        else:
+            logger.info("Starting RAG preloading with global config...")
         
         try:
             # Preload RAG state (models, Qdrant connection, etc.)
-            self._rag_state = await self._preload_rag_state()
+            # Pass agent_id to use agent-specific config when available
+            self._rag_state = await self._preload_rag_state(agent_id=agent_id)
             
             # Preload chatbot models
             from .chatbot_service import chatbot_service
@@ -69,8 +77,15 @@ class RAGPreloader:
             logger.error(f"❌ RAG preloading failed after {self._preload_time:.2f}s: {e}")
             return False
     
-    async def _preload_rag_state(self) -> RagState:
-        """Preload RAG state including models and connections"""
+    async def _preload_rag_state(self, agent_id: str = None) -> RagState:
+        """
+        Preload RAG state including models and connections.
+        
+        Args:
+            agent_id: Optional agent ID to load agent-specific RAG configuration.
+                     If provided and agent has RAG config, uses that embedding model.
+                     Otherwise, falls back to global retrieval_config.
+        """
         logger.info("Preloading RAG state...")
         
         try:
@@ -81,10 +96,51 @@ class RAGPreloader:
             # Initialize RAG state
             rag_state = RagState()
             
-            # Load embedding model
-            logger.info(f"Loading embedding model: {retrieval_config.embed_model_name}")
+            # Determine which embedding model to use
+            embed_model_name = retrieval_config.embed_model_name  # Default fallback
+            
+            # Try to get agent-specific config if agent_id provided
+            if agent_id:
+                try:
+                    from services.agents_admin.agent_manager import get_agent_manager
+                    from services.rag.rag_config_service import RagConfigService
+                    import uuid
+                    
+                    # Convert agent_id to UUID if it's a string
+                    if isinstance(agent_id, str):
+                        agent_uuid = uuid.UUID(agent_id)
+                    else:
+                        agent_uuid = agent_id  # Already a UUID object
+                    
+                    agent_manager = get_agent_manager()
+                    agent_config = agent_manager.get_agent_config(agent_uuid)
+                    
+                    if agent_config.rag_config_id:
+                        rag_config_service = RagConfigService()
+                        rag_config_resp = rag_config_service.get_rag_config(agent_config.rag_config_id)
+                        rag_config_dict = rag_config_resp.model_dump()
+                        
+                        # Extract embedding model from agent's RAG config
+                        provider_config = rag_config_dict.get('provider_config', {})
+                        agent_embed_model = provider_config.get('embedding_model')
+                        
+                        if agent_embed_model:
+                            embed_model_name = agent_embed_model
+                            logger.info(f"📋 Using agent-specific embedding model: {embed_model_name}")
+                        else:
+                            logger.info(f"⚠️ Agent RAG config has no embedding_model, using global: {embed_model_name}")
+                    else:
+                        logger.info(f"ℹ️ Agent has no RAG config, using global embedding model: {embed_model_name}")
+                        
+                except Exception as e:
+                    logger.warning(f"⚠️ Could not load agent RAG config, using global: {e}")
+            else:
+                logger.info(f"ℹ️ No agent specified, using global embedding model: {embed_model_name}")
+            
+            # Load embedding model (either agent-specific or global)
+            logger.info(f"Loading embedding model: {embed_model_name}")
             embed_start = time.time()
-            rag_state.embedder = SentenceTransformer(retrieval_config.embed_model_name)
+            rag_state.embedder = SentenceTransformer(embed_model_name)
             embed_time = time.time() - embed_start
             logger.info(f"Embedding model loaded in {embed_time:.2f}s")
             
@@ -99,6 +155,47 @@ class RAGPreloader:
             )
             qdrant_time = time.time() - qdrant_start
             logger.info(f"Qdrant connected in {qdrant_time:.2f}s")
+            
+            # Create retrieval engine for agent if it has a RAG config
+            # This must be done AFTER embedder and client are initialized
+            if agent_id:
+                try:
+                    from services.agents_admin.agent_manager import get_agent_manager
+                    from services.rag.rag_config_service import RagConfigService
+                    import uuid
+                    
+                    # Convert agent_id to UUID if it's a string
+                    if isinstance(agent_id, str):
+                        agent_uuid = uuid.UUID(agent_id)
+                    else:
+                        agent_uuid = agent_id
+                    
+                    agent_manager = get_agent_manager()
+                    agent_config = agent_manager.get_agent_config(agent_uuid)
+                    
+                    if agent_config.rag_config_id:
+                        # Agent has RAG config - create retrieval engine
+                        rag_config_service = RagConfigService()
+                        retrieval_engine = rag_config_service.get_retrieval_engine(
+                            agent_config.rag_config_id
+                        )
+                        rag_state.retrieval_engine = retrieval_engine
+                        rag_state.skip_retrieval = False
+                        logger.info(f"✅ Created retrieval engine for RAG config {agent_config.rag_config_id} (collection: {retrieval_engine.collection_name})")
+                    else:
+                        # Agent has NO RAG config - skip retrieval entirely
+                        rag_state.retrieval_engine = None
+                        rag_state.skip_retrieval = True
+                        logger.info(f"ℹ️ Agent has no RAG config - RAG retrieval will be skipped")
+                        
+                except Exception as e:
+                    logger.warning(f"⚠️ Could not create retrieval engine: {e}")
+                    # On error, skip retrieval to be safe
+                    rag_state.skip_retrieval = True
+            else:
+                # No agent specified - use global behavior (don't skip retrieval)
+                rag_state.skip_retrieval = False
+                logger.info("ℹ️ No agent specified - using global RAG behavior")
             
             # Initialize reranker if enabled
             if retrieval_config.enable_reranker:
@@ -128,6 +225,43 @@ class RAGPreloader:
         except Exception as e:
             logger.error(f"Failed to preload RAG state: {e}")
             raise
+    
+    async def get_rag_state_for_agent(self, agent_id: str = None) -> RagState:
+        """
+        Get or create RAG state for a specific agent.
+        
+        This is the unified entry point for all RAG initialization,
+        used by both CLI and event_loop paths.
+        
+        Args:
+            agent_id: Optional agent ID. If provided, returns agent-specific state.
+                     If None, returns global preloaded state.
+        
+        Returns:
+            RagState configured for the agent
+        """
+        # Convert agent_id to string for cache key
+        cache_key = str(agent_id) if agent_id else "global"
+        
+        # Check cache first
+        if cache_key in self._agent_rag_states:
+            logger.debug(f"Returning cached RAG state for agent {cache_key}")
+            return self._agent_rag_states[cache_key]
+        
+        # For global (no agent), return preloaded state if available
+        if agent_id is None and self._is_preloaded and self._rag_state:
+            logger.debug("Returning global preloaded RAG state")
+            self._agent_rag_states[cache_key] = self._rag_state
+            return self._rag_state
+        
+        # Create new RAG state for this agent
+        logger.info(f"Creating new RAG state for agent {cache_key}")
+        rag_state = await self._preload_rag_state(agent_id=agent_id)
+        
+        # Cache it
+        self._agent_rag_states[cache_key] = rag_state
+        
+        return rag_state
     
     @property
     def is_preloaded(self) -> bool:

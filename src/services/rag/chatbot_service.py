@@ -135,7 +135,7 @@ class ChatbotService:
                         rag_state, conversation_id, user_message
                     )
                     
-                    # Always use ultra-low latency retrieval for voicebot
+                    # Always use ultra-low latency retrieval for voicebot  
                     LOGGER.info("Using ultra-low latency retrieval mode")
                     if rag_state.retrieval_engine is not None:
                         # Use per‑agent retrieval engine (respects RAG config collection)
@@ -145,15 +145,11 @@ class ChatbotService:
                         )
                         LOGGER.info(f"Using retrieval engine with collection: {rag_state.retrieval_engine.collection_name}")
                     else:
-                        # Fallback to global retrieval (default collection)
-                        contexts = await _ultra_fast_retrieve_contexts(
-                            rag_state.embedder,
-                            rag_state.client,
-                            rag_state.lexical_index,
-                            rag_state.documents,
-                            text=message,
-                            namespace=None,
-                        )
+                        # No retrieval engine - this means agent has no RAG config
+                        # This should have been caught by skip_retrieval flag, but handle gracefully
+                        LOGGER.warning("No retrieval engine available and skip_retrieval not set - skipping retrieval")
+                        contexts = []
+                        context_text = ""
                 
                 rag_time = time.time() - rag_start
                 LOGGER.info(f"RAG retrieval completed in {rag_time:.3f}s (ultra-low latency mode)")

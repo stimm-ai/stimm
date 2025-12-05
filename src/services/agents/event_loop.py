@@ -108,60 +108,30 @@ class VoicebotEventLoop:
         asyncio.create_task(self._preload_rag())
         
     async def _preload_rag(self):
-        """Preload RAG state to avoid latency on first request."""
+        """
+        Preload RAG state using the global unified preloader.
+        
+        This delegates to rag_preloader to avoid code duplication and ensure
+        consistent behavior across CLI and web interface paths.
+        """
         try:
             if self.rag_state is None:
-                logger.info("🚀 Preloading RAG state...")
-                from services.rag.rag_state import RagState
-                from services.retrieval.config import retrieval_config
-                from sentence_transformers import SentenceTransformer
-                from qdrant_client import QdrantClient
+                logger.info("🚀 Getting RAG state from unified preloader...")
+                from services.rag.rag_preloader import rag_preloader
                 
-                self.rag_state = RagState()
-                
-                # Initialize embedder
-                embed_model_name = retrieval_config.embed_model_name
-                logger.info(f"📚 Loading embedder (background): {embed_model_name}")
-                
-                # Run heavy loading in executor to not block event loop
-                loop = asyncio.get_event_loop()
-                self.rag_state.embedder = await loop.run_in_executor(
-                    None, lambda: SentenceTransformer(embed_model_name)
+                # Get agent-specific RAG state from preloader (single source of truth)
+                self.rag_state = await rag_preloader.get_rag_state_for_agent(
+                    agent_id=self.agent_id
                 )
                 
-                # Initialize Qdrant client
-                logger.info("🗄️ Connecting to Qdrant (background)...")
-                self.rag_state.client = QdrantClient(
-                    host=retrieval_config.qdrant_host,
-                    port=retrieval_config.qdrant_port
-                )
-                
-                # If agent has a RAG config, create a retrieval engine for it
-                if self.agent_id:
-                    try:
-                        from services.agents_admin.agent_manager import get_agent_manager
-                        from services.rag.rag_config_service import RagConfigService
-                        import uuid
-                        
-                        agent_manager = get_agent_manager()
-                        agent_config = agent_manager.get_agent_config(uuid.UUID(self.agent_id))
-                        if agent_config.rag_config_id:
-                            rag_config_service = RagConfigService()
-                            retrieval_engine = rag_config_service.get_retrieval_engine(
-                                agent_config.rag_config_id
-                            )
-                            self.rag_state.retrieval_engine = retrieval_engine
-                            self.rag_state.skip_retrieval = False
-                            logger.info(f"✅ Attached retrieval engine for RAG config {agent_config.rag_config_id} (collection: {retrieval_engine.collection_name})")
-                        else:
-                            self.rag_state.skip_retrieval = True
-                            logger.info("ℹ️ Agent has no RAG config, skipping retrieval (bypassing RAG)")
-                    except Exception as e:
-                        logger.warning(f"⚠️ Could not attach retrieval engine: {e}")
-                
-                logger.info("✅ RAG state preloaded successfully")
+                logger.info("✅ RAG state obtained from preloader")
         except Exception as e:
             logger.warning(f"⚠️ RAG preloading failed: {e}")
+            # Create empty state with skip_retrieval=True as safe fallback
+            from services.rag.rag_state import RagState
+            self.rag_state = RagState()
+            self.rag_state.skip_retrieval = True
+
 
     async def stop(self):
         """Stop the event loop."""
@@ -511,55 +481,21 @@ class VoicebotEventLoop:
             # Initialize RAG state if not already done
             if self.rag_state is None:
                 try:
-                    logger.info("🔧 Initializing persistent RagState...")
-                    from services.rag.rag_state import RagState
-                    from services.retrieval.config import retrieval_config
-                    from sentence_transformers import SentenceTransformer
-                    from qdrant_client import QdrantClient
+                    logger.info("🔧 Initializing RAG state via unified preloader...")
+                    from services.rag.rag_preloader import rag_preloader
                     
-                    self.rag_state = RagState()
-                    
-                    # Initialize embedder
-                    embed_model_name = retrieval_config.embed_model_name
-                    logger.info(f"📚 Loading embedder (one-time): {embed_model_name}")
-                    self.rag_state.embedder = SentenceTransformer(embed_model_name)
-                    
-                    # Initialize Qdrant client
-                    logger.info("🗄️ Connecting to Qdrant...")
-                    self.rag_state.client = QdrantClient(
-                        host=retrieval_config.qdrant_host,
-                        port=retrieval_config.qdrant_port
+                    # Get agent-specific RAG state from preloader (single source of truth)
+                    self.rag_state = await rag_preloader.get_rag_state_for_agent(
+                        agent_id=self.agent_id
                     )
                     
-                    # If agent has a RAG config, create a retrieval engine for it
-                    if self.agent_id:
-                        try:
-                            from services.agents_admin.agent_manager import get_agent_manager
-                            from services.rag.rag_config_service import RagConfigService
-                            import uuid
-                            
-                            agent_manager = get_agent_manager()
-                            agent_config = agent_manager.get_agent_config(uuid.UUID(self.agent_id))
-                            if agent_config.rag_config_id:
-                                rag_config_service = RagConfigService()
-                                retrieval_engine = rag_config_service.get_retrieval_engine(
-                                    agent_config.rag_config_id
-                                )
-                                self.rag_state.retrieval_engine = retrieval_engine
-                                self.rag_state.skip_retrieval = False
-                                logger.info(f"✅ Attached retrieval engine for RAG config {agent_config.rag_config_id} (collection: {retrieval_engine.collection_name})")
-                            else:
-                                self.rag_state.skip_retrieval = True
-                                logger.info("ℹ️ Agent has no RAG config, skipping retrieval (bypassing RAG)")
-                        except Exception as e:
-                            logger.warning(f"⚠️ Could not attach retrieval engine: {e}")
-                    
-                    logger.info("✅ RagState initialized and cached")
+                    logger.info("✅ RAG state obtained from preloader")
                     
                 except Exception as e:
                     logger.error(f"⚠️ Failed to initialize RagState: {e}")
                     from services.rag.rag_state import RagState
-                    self.rag_state = RagState() # Fallback
+                    self.rag_state = RagState()
+                    self.rag_state.skip_retrieval = True  # Skip retrieval on failure
 
             # CRITICAL FIX: Add timeout and debugging
             async def process_with_timeout():

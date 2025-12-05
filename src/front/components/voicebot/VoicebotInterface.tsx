@@ -65,6 +65,7 @@ export function VoicebotInterface() {
     error: liveKitError,
     transcription: liveTranscripts,
     response: liveResponse,
+    messages,
     vadState,
     llmState,
     ttsState,
@@ -98,6 +99,7 @@ export function VoicebotInterface() {
   const animationRef = useRef<number>()
   const analyserRef = useRef<AnalyserNode>()
   const audioContextRef = useRef<AudioContext>()
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
 
   // Load agents on component mount
   useEffect(() => {
@@ -285,6 +287,13 @@ export function VoicebotInterface() {
       playbackStartLatency: metrics?.latency || 0
     }))
   }, [liveTranscripts, liveResponse, vadState, llmState, ttsState, metrics])
+
+  // Auto-scroll messages container when messages change
+  useEffect(() => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
+    }
+  }, [messages])
 
   const loadAgents = async () => {
     try {
@@ -644,30 +653,50 @@ export function VoicebotInterface() {
         </div>
 
         {/* Live Transcription */}
-        <div className="flex-1 flex flex-col min-h-0 border-t border-white/10 pt-4">
+        <div className="flex-none flex flex-col h-96 border-t border-white/10 pt-4">
           <h3 className="text-xs font-bold text-white/60 uppercase tracking-wider mb-4 flex items-center gap-2">
             <MessageSquare className="w-3 h-3" /> Transcription
           </h3>
 
-          <div className="flex-1 overflow-y-auto text-sm space-y-4 pr-2 font-mono leading-relaxed custom-scrollbar">
-            {transcription && (
-              <div className="space-y-1 animate-in fade-in slide-in-from-bottom-2">
-                <div className="text-xs text-white/50 uppercase">You</div>
-                <div className="text-white/90">{transcription}</div>
-              </div>
-            )}
-
-            {response && (
-              <div className="space-y-1 animate-in fade-in slide-in-from-bottom-2">
-                <div className="text-xs text-cyan-300/70 uppercase">Agent</div>
-                <div className="text-cyan-200">{response}</div>
-              </div>
-            )}
-
-            {!transcription && !response && (
+          <div
+            ref={messagesContainerRef}
+            className="flex-1 overflow-y-auto text-sm space-y-4 pr-2 font-mono leading-relaxed custom-scrollbar"
+          >
+            {messages.length === 0 ? (
               <div className="text-white/40 italic text-xs">
                 Waiting for conversation to start...
               </div>
+            ) : (
+              messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`space-y-1 animate-in fade-in slide-in-from-bottom-2 ${
+                    msg.speaker === 'user' ? 'text-left' : 'text-left'
+                  }`}
+                >
+                  <div
+                    className={`text-xs uppercase ${
+                      msg.speaker === 'user'
+                        ? 'text-white/50'
+                        : 'text-cyan-300/70'
+                    }`}
+                  >
+                    {msg.speaker === 'user' ? 'You' : 'Agent'}
+                  </div>
+                  <div
+                    className={`${
+                      msg.speaker === 'user'
+                        ? 'text-white/90'
+                        : 'text-cyan-200'
+                    }`}
+                  >
+                    {msg.text}
+                    {!msg.isFinal && (
+                      <span className="inline-block w-2 h-4 ml-1 bg-current animate-pulse" />
+                    )}
+                  </div>
+                </div>
+              ))
             )}
           </div>
         </div>

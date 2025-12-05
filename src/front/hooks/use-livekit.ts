@@ -7,6 +7,14 @@ import { useTelemetry, TurnState } from './use-telemetry'
 
 export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'reconnecting' | 'failed'
 
+export type Message = {
+  id: string
+  speaker: 'user' | 'agent'
+  text: string
+  isFinal: boolean
+  timestamp: number
+}
+
 export interface UseLiveKitReturn {
   isConnected: boolean
   connectionState: ConnectionState
@@ -16,6 +24,7 @@ export interface UseLiveKitReturn {
   error: string | null
   transcription: string
   response: string
+  messages: Message[]
   vadState: { energy: number, state: 'speaking' | 'silence' }
   llmState: boolean
   ttsState: boolean
@@ -38,6 +47,7 @@ export function useLiveKit(): UseLiveKitReturn {
   // Data states
   const [transcription, setTranscription] = useState<string>('')
   const [response, setResponse] = useState<string>('')
+  const [messages, setMessages] = useState<Message[]>([])
   const [vadState, setVadState] = useState<{ energy: number, state: 'speaking' | 'silence' }>({ energy: 0, state: 'silence' })
 
   // Indicator states
@@ -55,8 +65,15 @@ export function useLiveKit(): UseLiveKitReturn {
   // Latency tracking
   const lastSpeechEnd = useRef<number>(0)
 
+  // Refs for tracking ongoing messages
+  const lastAgentMessageId = useRef<string | null>(null)
+  const lastUserMessageId = useRef<string | null>(null)
+
   // Ref to track if we're mounted to avoid state updates on unmount
   const isMounted = useRef(true)
+
+  // Helper to generate unique IDs for messages
+  const generateId = () => Date.now().toString(36) + Math.random().toString(36).substring(2)
 
   useEffect(() => {
     isMounted.current = true
@@ -114,26 +131,70 @@ export function useLiveKit(): UseLiveKitReturn {
 
         switch (data.type) {
           case 'transcript_update':
-            // Append or replace? Usually STT sends partials then final.
-            // Simplified: just show latest text for now, or append if final.
+            // For final transcripts, add a new user message
             if (data.is_final) {
               setTranscription(prev => prev + ' ' + data.text)
+              const id = generateId()
+              const newMessage: Message = {
+                id,
+                speaker: 'user',
+                text: data.text.trim(),
+                isFinal: true,
+                timestamp: Date.now()
+              }
+              setMessages(prev => [...prev, newMessage])
+              lastUserMessageId.current = id
             } else {
-              // For partials, we might want a separate "current utterance" state
-              // But here we'll just show it.
-              // To avoid flickering, maybe just log or have a separate UI element.
-              // Let's just update transcription for now.
-              // setTranscription(data.text)
+              // For partial transcripts, we could update the last user message if not final
+              // For now, ignore
             }
             break
 
           case 'assistant_response':
             if (data.text) {
               setResponse(prev => prev + data.text)
+              setMessages(prev => {
+                const lastIndex = prev.findIndex(m => m.id === lastAgentMessageId.current)
+                if (lastIndex >= 0) {
+                  // Update existing message
+                  const updated = [...prev]
+                  updated[lastIndex] = {
+                    ...updated[lastIndex],
+                    text: updated[lastIndex].text + data.text,
+                    isFinal: false
+                  }
+                  return updated
+                } else {
+                  // Create new agent message
+                  const id = generateId()
+                  lastAgentMessageId.current = id
+                  const newMessage: Message = {
+                    id,
+                    speaker: 'agent',
+                    text: data.text,
+                    isFinal: false,
+                    timestamp: Date.now()
+                  }
+                  return [...prev, newMessage]
+                }
+              })
             }
             if (data.is_complete) {
               setResponse(prev => prev + '\n\n')
               setLlmState(false)
+              // Mark the last agent message as final
+              setMessages(prev => {
+                const lastIndex = prev.findIndex(m => m.id === lastAgentMessageId.current)
+                if (lastIndex >= 0) {
+                  const updated = [...prev]
+                  updated[lastIndex] = {
+                    ...updated[lastIndex],
+                    isFinal: true
+                  }
+                  return updated
+                }
+                return prev
+              })
             }
             break
 
@@ -157,9 +218,20 @@ export function useLiveKit(): UseLiveKitReturn {
             break
 
           case 'bot_responding_start':
-            // Maybe clear response if it's a new turn?
+            // Clear response for new turn
             setResponse('')
             setLlmState(true)
+            // Create a new agent message placeholder
+            const id = generateId()
+            lastAgentMessageId.current = id
+            const newMessage: Message = {
+              id,
+              speaker: 'agent',
+              text: '',
+              isFinal: false,
+              timestamp: Date.now()
+            }
+            setMessages(prev => [...prev, newMessage])
             break
 
           case 'bot_responding_end':
@@ -274,6 +346,7 @@ export function useLiveKit(): UseLiveKitReturn {
     error,
     transcription,
     response,
+    messages,
     vadState,
     llmState,
     ttsState,

@@ -540,21 +540,15 @@ tests/
 - Silero VAD (local model, no API key)
 
 **Integration Tests** - Require providers:
-- **STT**: Parametrized tests run against all available providers (Deepgram, Whisper)
-- **TTS**: Text-to-speech streaming with multiple providers
-- **LLM**: Generation and streaming tests
-- **RAG**: Knowledge base and retrieval
-- **WebRTC**: Real-time communication
+- **STT**
+- **TTS**
+- **LLM**
+- **RAG**
+- **WebRTC**
 
 ### Environment Variables
 
-Tests load configuration from `.env` automatically. See [`.env.example`](file:///home/etienne/repos/voicebot/.env.example) for all available variables.
-
-**Key variables for tests:**
-- `DEEPGRAM_STT_API_KEY` - Required for Deepgram STT tests
-- `DEEPGRAM_MODEL` - Model selection (default: nova-2)
-- `WHISPER_LOCAL_STT_URL` - Whisper service URL
-- Provider-specific keys for TTS and LLM (see `.env.example`)
+Tests load configuration and keys from `.env` automatically. See [`.env.example`](file:///home/etienne/repos/voicebot/.env.example) for all available variables.
 
 **Tests auto-skip when API keys are missing** - no manual configuration needed.
 

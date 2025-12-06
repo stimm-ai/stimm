@@ -20,8 +20,6 @@ services:
       - REDIS_URL=redis://redis:6379
       - FRONTEND_URL=http://stimm-front:3000
       - ENVIRONMENT=docker
-    command: >
-      sh -c "uv run uvicorn src.main:app --host 0.0.0.0 --port 8001 --reload --log-level info"
     working_dir: /app
     ports:
       - "8001:8001"

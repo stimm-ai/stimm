@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y \
     ffmpeg \
     curl \
     git \
+    netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv using pip (most reliable method)
@@ -29,6 +30,9 @@ COPY src/ src/
 # Copy pyproject.toml first for better Docker layer caching
 COPY pyproject.toml ./pyproject.toml
 
+# Copy entrypoint script
+COPY docker/stimm/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 # Install the package in development mode
 RUN uv sync
@@ -40,6 +44,5 @@ RUN uv run python src/scripts/preload_rag_models.py
 # Expose port
 EXPOSE 8001
 
-# Start the FastAPI application with uvicorn using uv run
-# Note: LOG_LEVEL environment variable can be set at runtime (default: info)
-CMD ["sh", "-c", "uv run uvicorn src.main:app --host 0.0.0.0 --port 8001 --reload --log-level ${LOG_LEVEL:-info}"]
+# Use entrypoint script to run migrations and start server
+CMD ["/entrypoint.sh"]

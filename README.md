@@ -154,6 +154,26 @@ LIVEKIT_API_KEY=devkey
 LIVEKIT_API_SECRET=secret
 ```
 
+### Database Initialization
+
+When starting from scratch, the PostgreSQL database needs to have its schema created. The project uses **Alembic** for database migrations.
+
+The **stimm Docker image now automatically runs migrations on startup** (via an entrypoint script). This means you don't need to run any manual migration steps when using Docker Compose. The script waits for the PostgreSQL container to be ready, then applies any pending migrations before starting the FastAPI server.
+
+If you are running the backend locally (without Docker), you can run migrations manually:
+
+```bash
+uv run alembic upgrade head
+```
+
+After migrations are applied, the database will contain the necessary tables (`agents`, `users`, `rag_configs`, etc.) and a default system user.
+
+**Note:** If you encounter errors about missing tables, ensure migrations have been run. You can check the current migration version with:
+
+```bash
+docker compose exec postgres psql -U stimm_user -d stimm -c "SELECT * FROM alembic_version;"
+```
+
 ## 💻 Development
 
 ### Local Development Setup

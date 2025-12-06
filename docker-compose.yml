@@ -100,3 +100,4 @@ volumes:
   qdrant_storage:
   postgres_storage:
   redis_data:
+  stimm_front_node_modules:

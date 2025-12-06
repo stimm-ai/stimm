@@ -6,6 +6,7 @@ services:
     container_name: stimm-front
     volumes:
       - ../../src/front:/app
+      - stimm_front_node_modules:/app/node_modules
     ports:
       - "3000:3000"
     environment:
@@ -15,3 +16,6 @@ services:
     # Environment variables are loaded from env_file in root docker-compose.yml
     stdin_open: true
     tty: true
+
+volumes:
+  stimm_front_node_modules:

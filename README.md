@@ -150,6 +150,14 @@ Create a `.env` file in the root directory by copying `.env.example` and filling
 Create a `.env` file in the docker/stimm directory by copying `docker/stimm/.env.example` and filling in the required values.
 Create a `.env` file in the src/front directory by copying `src/front/.env.example` and filling in the required values.
 
+For convenience, you can use the setup script:
+
+```bash
+./scripts/setup_env.sh
+```
+
+Or manually copy the files:
+
 ```bash
 cp .env.example .env
 cp docker/stimm/.env.example docker/stimm/.env
@@ -517,6 +525,9 @@ LOG_LEVEL=debug python src/main.py
 .
 ├── alembic/              # Database migrations
 ├── docker/               # Docker configurations
+├── scripts/              # Utility scripts
+│   ├── sip_integration/  # SIP-related scripts
+│   └── setup_env.sh      # Environment setup script
 ├── src/
 │   ├── cli/              # Command-line tools
 │   ├── database/         # Database models and session

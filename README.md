@@ -142,10 +142,8 @@ cd stimm
 docker-compose up --build
 ```
 
-**Access points:**
-- Frontend: http://front.localhost
-- API Documentation: http://api.localhost/docs
-- Traefik Dashboard: http://localhost:8080
+**Frontend Access point:**
+- http://localhost:3000/agent/admin
 
 ### Environment Configuration
 

@@ -12,7 +12,7 @@ copyright: Copyright &copy; 2025 Stimm Team
 theme:
   name: material
   logo: assets/logo.png
-  favicon: assets/logo.png
+  favicon: assets/favicon.ico
   palette:
     - scheme: default
       primary: blue
@@ -134,7 +134,6 @@ nav:
   - API Reference: api/rest.md
   - Developer:
     - Integration Examples (WebRTC): developer-guide/integration-examples.md
-    - SIP Integration: user-guide/sip-integration.md
     - SIP Integration: user-guide/sip-integration.md
   - Contributors:
     - Architecture Overview: developer-guide/architecture-overview.md

@@ -66,3 +66,23 @@
 .md-footer {
     background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
 }
+
+/* Hide site name */
+.md-header__topic {
+    display: none;
+}
+
+/* Increase logo size while preserving aspect ratio */
+.md-header__button.md-logo img,
+.md-header__button.md-logo svg {
+    height: 2.5rem !important;
+    width: auto !important;
+    max-width: 8rem !important; /* allow wide logo but limit */
+}
+
+/* Ensure parent button allows larger logo */
+.md-header__button.md-logo {
+    padding: 0 !important;
+    height: auto !important;
+    width: auto !important;
+}

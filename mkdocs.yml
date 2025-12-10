@@ -1,0 +1,151 @@
+site_name: Stimm Platform
+site_description: Modular real-time AI voice assistant platform
+site_author: Stimm Team
+site_url: https://stimm-ai.github.io/stimm/
+
+repo_name: stimm-ai/stimm
+repo_url: https://github.com/stimm-ai/stimm
+edit_uri: edit/main/docs/
+
+copyright: Copyright &copy; 2025 Stimm Team
+
+theme:
+  name: material
+  logo: assets/logo.png
+  favicon: assets/favicon.ico
+  palette:
+    - scheme: default
+      primary: blue
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - content.code.annotate
+  font:
+    text: Roboto
+    code: Roboto Mono
+
+plugins:
+  - search
+  - awesome-pages
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          selection:
+            docstring_style: google
+          rendering:
+            show_source: true
+            show_root_heading: true
+            show_category_heading: true
+            heading_level: 3
+  - git-revision-date-localized:
+      enabled: true
+      type: timeago
+  - mermaid2
+  - swagger-ui-tag:
+      tryItOutEnabled: true
+      docExpansion: list
+      syntaxHighlightTheme: agate
+      validatorUrl: "none"
+      dark_scheme_name: slate
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+      toc_depth: 2-4
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      hide_protocol: true
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets:
+      check_paths: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/stimm-ai/stimm
+
+
+
+extra_css:
+  - assets/extra.css
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: user-guide/installation.md
+    - Quick Start: user-guide/quick-start.md
+    - Configuration: user-guide/configuration.md
+  - Usage:
+    - Web Interface: user-guide/web-interface.md
+    - CLI: user-guide/cli.md
+    - Managing Agents: user-guide/managing-agents.md
+    - Managing RAG: user-guide/managing-rag.md
+  - API Reference: api/rest.md
+  - Developer:
+    - Integration Examples (WebRTC): developer-guide/integration-examples.md
+    - SIP Integration: user-guide/sip-integration.md
+  - Contributors:
+    - Architecture Overview: developer-guide/architecture-overview.md
+    - Components: developer-guide/components.md
+    - Data Flow: developer-guide/data-flow.md
+    - Development: developer-guide/development.md
+    - Testing: developer-guide/testing.md
+    - Python API: api/python.md
+    - Adding a Provider: developer-guide/adding-providers.md
+    - Contributing: project/contributing.md
+    - Changelog: project/changelog.md
+    - License: project/license.md
+
+watch:
+  - src

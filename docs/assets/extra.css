@@ -1,0 +1,88 @@
+/* Custom styles for Stimm documentation */
+
+/* Gradient background for header */
+.md-header {
+    background: linear-gradient(135deg, #3b82f6 0%, #a855f7 100%);
+}
+
+/* Sidebar accent */
+.md-sidebar--secondary {
+    border-left: 1px solid rgba(168, 85, 247, 0.2);
+}
+
+/* Code blocks */
+.highlight pre {
+    border-radius: 8px;
+    border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+/* Links */
+.md-typeset a {
+    color: #3b82f6;
+}
+
+.md-typeset a:hover {
+    color: #a855f7;
+    text-decoration: underline;
+}
+
+/* Buttons */
+.md-button {
+    border-radius: 8px;
+}
+
+/* Admonition styling */
+.md-typeset .admonition {
+    border-radius: 8px;
+    border-width: 0 0 0 4px;
+}
+
+/* Tabs navigation */
+.md-tabs {
+    background: linear-gradient(135deg, #3b82f6 0%, #a855f7 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.md-tabs__link {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+    border-radius: 8px 8px 0 0;
+    padding: 0.6rem 1rem;
+    transition: background-color 0.2s;
+}
+
+.md-tabs__link:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: white;
+}
+
+.md-tabs__item--active .md-tabs__link {
+    background-color: rgba(255, 255, 255, 0.25);
+    color: white;
+    border-bottom: 3px solid white;
+}
+
+/* Custom footer */
+.md-footer {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+}
+
+/* Hide site name */
+.md-header__topic {
+    display: none;
+}
+
+/* Increase logo size while preserving aspect ratio */
+.md-header__button.md-logo img,
+.md-header__button.md-logo svg {
+    height: 2.5rem !important;
+    width: auto !important;
+    max-width: 8rem !important; /* allow wide logo but limit */
+}
+
+/* Ensure parent button allows larger logo */
+.md-header__button.md-logo {
+    padding: 0 !important;
+    height: auto !important;
+    width: auto !important;
+}

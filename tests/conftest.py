@@ -108,6 +108,10 @@ def _check_provider_requirements(provider_type: str) -> str | None:
     
     provider_reqs = requirements[provider_type]
     
+    # Determine if we're in CI mode and whether provider tests are enabled
+    ci_mode = os.getenv("CI") == "true"
+    test_providers = os.getenv("TEST_PROVIDERS") == "true"
+    
     # For TTS, LLM, and RAG, we consider at least one provider available if any API key is present
     # or if a local provider is configured (always). If none are available, skip.
     if provider_type in ("tts", "llm", "rag"):
@@ -115,12 +119,14 @@ def _check_provider_requirements(provider_type: str) -> str | None:
         any_available = False
         for provider_name, env_vars in provider_reqs.items():
             if not env_vars:
-                # Local provider always considered available
-                any_available = True
-                break
-            if all(os.getenv(var) for var in env_vars):
-                any_available = True
-                break
+                # Local provider always considered available unless CI mode without TEST_PROVIDERS
+                if not (ci_mode and not test_providers):
+                    any_available = True
+                    break
+            else:
+                if all(os.getenv(var) for var in env_vars):
+                    any_available = True
+                    break
         if not any_available:
             if provider_type == "tts":
                 return (
@@ -326,8 +332,13 @@ def available_stt_providers(deepgram_config, whisper_config) -> List[tuple[str, 
     """
     providers = []
     
-    # Always include Whisper (local, no API key needed)
-    providers.append(("whisper.local", whisper_config))
+    # Determine if we're in CI mode and whether provider tests are enabled
+    ci_mode = os.getenv("CI") == "true"
+    test_providers = os.getenv("TEST_PROVIDERS") == "true"
+    
+    # Include Whisper (local, no API key needed) unless CI without TEST_PROVIDERS
+    if not (ci_mode and not test_providers):
+        providers.append(("whisper.local", whisper_config))
     
     # Include Deepgram only if API key is available
     if deepgram_config:
@@ -362,8 +373,13 @@ def available_tts_providers(
     """
     providers = []
     
-    # Always include Kokoro (local, no API key needed)
-    providers.append(("kokoro.local", kokoro_local_config))
+    # Determine if we're in CI mode and whether provider tests are enabled
+    ci_mode = os.getenv("CI") == "true"
+    test_providers = os.getenv("TEST_PROVIDERS") == "true"
+    
+    # Include Kokoro (local, no API key needed) unless CI without TEST_PROVIDERS
+    if not (ci_mode and not test_providers):
+        providers.append(("kokoro.local", kokoro_local_config))
     
     # Include async.ai only if API key is available
     if async_ai_config:
@@ -487,8 +503,13 @@ def available_llm_providers(
     """
     providers = []
     
-    # Always include llama-cpp.local (local, no API key needed)
-    providers.append(("llama-cpp.local", llama_cpp_config))
+    # Determine if we're in CI mode and whether provider tests are enabled
+    ci_mode = os.getenv("CI") == "true"
+    test_providers = os.getenv("TEST_PROVIDERS") == "true"
+    
+    # Include llama-cpp.local (local, no API key needed) unless CI without TEST_PROVIDERS
+    if not (ci_mode and not test_providers):
+        providers.append(("llama-cpp.local", llama_cpp_config))
     
     # Include groq.com only if API key is available
     if groq_config:
@@ -608,8 +629,13 @@ def available_rag_providers(
     """
     providers = []
     
-    # Always include qdrant.internal (local, no API key needed)
-    providers.append(("qdrant.internal", qdrant_internal_config))
+    # Determine if we're in CI mode and whether provider tests are enabled
+    ci_mode = os.getenv("CI") == "true"
+    test_providers = os.getenv("TEST_PROVIDERS") == "true"
+    
+    # Include qdrant.internal (local, no API key needed) unless CI without TEST_PROVIDERS
+    if not (ci_mode and not test_providers):
+        providers.append(("qdrant.internal", qdrant_internal_config))
     
     # Include pinecone.io only if API key is available
     if pinecone_io_config:

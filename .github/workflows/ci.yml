@@ -1,0 +1,143 @@
+name: CI Tests
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  CI: true
+  DATABASE_URL: postgresql://stimm_user:stimm_password@localhost:5432/stimm
+  REDIS_URL: redis://localhost:6379
+  QDRANT_URL: http://localhost:6333
+  LIVEKIT_URL: ws://localhost:7880
+  LIVEKIT_API_URL: http://localhost:7880
+  LIVEKIT_API_KEY: devkey
+  LIVEKIT_API_SECRET: secret
+  # Ensure provider API keys are not set to skip provider tests
+  DEEPGRAM_STT_API_KEY: ""
+  DEEPGRAM_TTS_API_KEY: ""
+  ELEVENLABS_TTS_API_KEY: ""
+  ASYNC_API_KEY: ""
+  GROQ_LLM_API_KEY: ""
+  MISTRAL_LLM_API_KEY: ""
+  OPENROUTER_LLM_API_KEY: ""
+  PINECONE_API_KEY: ""
+  RAG_SAAS_API_KEY: ""
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            .uv
+            ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y portaudio19-dev libasound2-dev
+
+      - name: Setup environment files
+        run: bash scripts/setup_env.sh
+
+      - name: Install dependencies
+        run: $HOME/.local/bin/uv sync --group dev
+
+      - name: Start Docker services
+        timeout-minutes: 10
+        run: |
+          # Start services without waiting for health checks
+          docker compose up -d postgres redis livekit
+          echo "Containers started. Waiting for services to be ready..."
+          
+          # Wait for PostgreSQL
+          echo "Waiting for PostgreSQL..."
+          for i in {1..60}; do
+            if docker compose exec -T postgres pg_isready -U stimm_user -d stimm 2>/dev/null; then
+              echo "PostgreSQL is ready."
+              break
+            fi
+            sleep 2
+            if [ $i -eq 60 ]; then
+              echo "PostgreSQL failed to become ready within 120 seconds."
+              exit 1
+            fi
+          done
+          
+          # Wait for Redis
+          echo "Waiting for Redis..."
+          for i in {1..60}; do
+            if docker compose exec -T redis redis-cli ping 2>/dev/null | grep -q PONG; then
+              echo "Redis is ready."
+              break
+            fi
+            sleep 2
+            if [ $i -eq 60 ]; then
+              echo "Redis failed to become ready within 120 seconds."
+              exit 1
+            fi
+          done
+          
+          # Wait for LiveKit
+          echo "Waiting for LiveKit..."
+          for i in {1..60}; do
+            if curl -s http://localhost:7880 2>/dev/null; then
+              echo "LiveKit is ready."
+              break
+            fi
+            sleep 2
+            if [ $i -eq 60 ]; then
+              echo "LiveKit failed to become ready within 120 seconds."
+              exit 1
+            fi
+          done
+          
+          echo "All services verified and ready."
+
+      - name: Run tests
+        run: $HOME/.local/bin/uv run pytest -m "unit or integration" --cov=. --cov-report=term-missing --cov-report=xml --junitxml=test-results/junit.xml
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: coverage.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results/

@@ -41,10 +41,9 @@ sequenceDiagram
 
 ### 1. Ingestion
 
-Audio is captured by the client (browser) and sent via **WebRTC** (preferred) or **WebSocket** to the backend.
+Audio is captured by the client (browser) and sent via **WebRTC**.
 
 - **WebRTC** offers lower latency and better real‑time performance.
-- **WebSocket** is used as a fallback when WebRTC is unavailable.
 
 ### 2. Media Handling
 

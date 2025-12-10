@@ -54,7 +54,7 @@ If SIP bridge is enabled, you can monitor active SIP calls and configure dispatc
 
 - **Microphone not working**: Ensure your browser has permission to access the microphone. Check the browser console for errors.
 - **No agents listed**: Create at least one agent via the Agents page.
-- **Audio latency**: Check your network connection and ensure you are using WebRTC (preferred) rather than WebSocket fallback.
+- **Audio latency**: Check your network connection and check providers (prefer small and fast models).
 
 ## Next Steps
 

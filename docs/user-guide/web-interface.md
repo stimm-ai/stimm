@@ -42,7 +42,7 @@ Each agent can be associated with a RAG configuration for knowledge‑augmented 
 
 Navigate to **RAG** to manage Retrieval‑Augmented Generation configurations.
 
-- **Create a RAG configuration** – Choose a provider (Qdrant, Pinecone, etc.) and fill in the required fields.
+- **Create a RAG configuration** – Choose a provider (Qdrant) and fill in the required fields.
 - **Upload documents** – After creating a configuration, you can upload PDF, DOCX, Markdown, or text files that will be ingested into the vector database.
 - **Set as default** – One configuration can be marked as the default, used by agents that don’t have an explicit RAG configuration.
 

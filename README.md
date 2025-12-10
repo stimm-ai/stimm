@@ -31,7 +31,7 @@ A modular, real-time AI voice assistant platform built with Python (FastAPI) and
   - **LLM**: Support for Groq, Mistral, OpenRouter, and local Llama.cpp.
   - **TTS**: Deepgram, ElevenLabs, Async.ai, and local Kokoro.
   - **STT**: Deepgram and local Whisper.
-- **Administrable RAG Configurations**: Create and manage multiple RAG configurations with different providers (Qdrant, Pinecone, SaaS) and per‑agent knowledge bases.
+- **Administrable RAG Configurations**: Create and manage multiple RAG configurations with Qdrant and per‑agent knowledge bases.
 - **Agent Management**: Admin interface to configure and manage multiple agents with different personalities and provider settings.
 - **Modern Frontend**: Responsive web interface built with Next.js 16 and Tailwind CSS.
 - **Robust Infrastructure**: Dockerized deployment with Traefik reverse proxy, PostgreSQL for data persistence, and Alembic for migrations.
@@ -55,8 +55,8 @@ docker-compose up --build
 
 Once the services are running, open your browser to:
 
-- **Frontend Admin**: http://front.localhost/agent/admin
-- **API Documentation**: http://localhost:8001/docs
+- **Frontend Admin**: http://front.localhost/agent/admin (or http://localhost:3000/agent/admin)
+- **API Documentation**: http://api.localhost/docs (or http://localhost:8001/docs)
 
 For detailed installation, configuration, and usage instructions, please refer to the [full documentation](https://stimm-ai.github.io/stimm/).
 

@@ -6,7 +6,7 @@ Retrieval‑Augmented Generation (RAG) allows Stimm agents to answer questions b
 
 A RAG configuration defines:
 
-- **Provider** – Which vector database to use (Qdrant.Internal, Pinecone, Rag.Saas).
+- **Provider** – Which vector database to use (Qdrant.Internal).
 - **Collection/Index** – The name of the vector collection where documents are stored.
 - **Embedding model** – The sentence‑transformer model used to convert text into vectors.
 - **Retrieval parameters** – Top‑k, similarity threshold, etc.

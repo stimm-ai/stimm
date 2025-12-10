@@ -33,6 +33,11 @@ Once the services are up, you can access:
 - **API Documentation**: http://api.localhost/docs
 - **Traefik Dashboard**: http://localhost:8080
 
+> [!NOTE]
+> `front.localhost` and `api.localhost` should automatically resolve to `127.0.0.1` on most modern systems. If they do not, you can access the services directly via:
+> - Frontend: http://localhost:3000
+> - API: http://localhost:8001
+
 ## Local Development Setup
 
 If you prefer to run services locally for development, follow these steps.

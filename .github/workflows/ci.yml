@@ -68,23 +68,31 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y portaudio19-dev libasound2-dev
 
+      - name: Setup environment files
+        run: bash scripts/setup_env.sh
+
       - name: Install dependencies
-        run: uv sync --group dev
+        run: $HOME/.local/bin/uv sync --group dev
 
       - name: Start Docker services
+        timeout-minutes: 10
         run: |
-          docker compose up -d postgres qdrant redis livekit
-          # Wait for PostgreSQL
-          timeout 30 bash -c 'until docker compose exec -T postgres pg_isready -U stimm_user; do sleep 2; done'
-          # Wait for Qdrant
-          timeout 30 bash -c 'until curl -s http://localhost:6333; do sleep 2; done'
-          # Wait for Redis
-          timeout 30 bash -c 'until docker compose exec -T redis redis-cli ping | grep -q PONG; do sleep 2; done'
-          # Wait for LiveKit (HTTP endpoint)
-          timeout 30 bash -c 'until curl -s http://localhost:7880; do sleep 2; done'
+          # Start services with health check waiting
+          docker compose up -d --wait --wait-timeout 300 postgres qdrant redis livekit
+          # Additional verification
+          echo "All services started. Verifying connectivity..."
+          # PostgreSQL
+          docker compose exec -T postgres pg_isready -U stimm_user -d stimm
+          # Qdrant
+          curl -f http://localhost:6333/healthz
+          # Redis
+          docker compose exec -T redis redis-cli ping | grep -q PONG
+          # LiveKit
+          curl -f http://localhost:7880
+          echo "All services verified."
 
       - name: Run tests
-        run: uv run pytest -m "unit or integration" --cov=. --cov-report=term-missing --cov-report=xml --junitxml=test-results/junit.xml
+        run: $HOME/.local/bin/uv run pytest -m "unit or integration" --cov=. --cov-report=term-missing --cov-report=xml --junitxml=test-results/junit.xml
 
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4

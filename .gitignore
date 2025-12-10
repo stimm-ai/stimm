@@ -27,6 +27,7 @@ htmlcov
 
 # MkDocs build output
 site/
+bin/
 
 # Python compiled files
 *.pyc

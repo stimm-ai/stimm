@@ -126,4 +126,4 @@ You can also use the pre‑commit hooks (see `.pre‑commit‑config.yaml`).
 
 ## Getting Help
 
-If you have questions or need guidance, feel free to open an issue or join our [Discord community](https://discord.gg/stimm).
+If you have questions or need guidance, feel free to open an issue.

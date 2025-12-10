@@ -119,4 +119,4 @@ By contributing to Stimm, you agree that your contributions will be licensed und
 
 ## Questions?
 
-If you have questions or need help, feel free to open an issue or join our [Discord community](https://discord.gg/stimm).
+If you have questions or need help, feel free to open an issue.

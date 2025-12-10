@@ -23,4 +23,4 @@ This documentation covers everything you need to know to get started, understand
 
 ## Getting Help
 
-If you encounter any issues or have questions, please check the [GitHub repository](https://github.com/stimm/stimm) or join our [Discord community](https://discord.gg/stimm).
+If you encounter any issues or have questions, please check the [GitHub repository](https://github.com/stimm/stimm)

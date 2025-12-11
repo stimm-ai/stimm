@@ -39,6 +39,45 @@ A modular, real-time AI voice assistant platform built with Python (FastAPI) and
 - **Robust Infrastructure**: Dockerized deployment with Traefik reverse proxy, PostgreSQL for data persistence, and Alembic for migrations.
 - **Voice Activity Detection**: Integrated Silero VAD for accurate speech detection.
 
+## 🔄 How it Works
+
+```mermaid
+graph LR
+    %% High Contrast Theme
+    classDef person fill:#FF007F,stroke:#fff,stroke-width:4px,color:white,font-weight:bold;
+    classDef transport fill:#00B0FF,stroke:#fff,stroke-width:2px,color:white,font-weight:bold;
+    classDef input fill:#7F00FF,stroke:#fff,stroke-width:2px,color:white,font-weight:bold;
+    classDef brain fill:#FFD700,stroke:#FF8C00,stroke-width:3px,color:black,font-weight:bold,stroke-dasharray: 5 5;
+    classDef output fill:#00E676,stroke:#fff,stroke-width:2px,color:black,font-weight:bold;
+    
+    %% Multi-platform User
+    User([👤 📱 💻 📞 User]):::person
+
+    %% LiveKit Layer
+    subgraph "📡 LiveKit Infrastructure"
+        direction TB
+        Room[🔄 Real-time Room <br/> WebRTC / SIP]:::transport
+    end
+
+    %% Stimm Core Layer
+    subgraph "⚡ Stimm Core"
+        direction TB
+        Hear[👂 Hear & Transcribe]:::input
+        Think(🧠 Think & Retrieve):::brain
+        Speak[🗣️ Speak & Respond]:::output
+    end
+
+    %% Connections
+    User <==>|Audio Stream| Room
+    Room ==>|Raw Audio| Hear
+    Hear ==>|Text| Think
+    Think ==>|Text| Speak
+    Speak ==>|Synthesized Audio| Room
+    
+    %% Link Styles
+    linkStyle default stroke-width:3px,fill:none,stroke:#666
+```
+
 ## 🏁 Quick Start
 
 Get Stimm up and running in minutes:

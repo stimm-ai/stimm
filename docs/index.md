@@ -6,11 +6,14 @@ This documentation covers everything you need to know to get started, understand
 
 ## Quick Links
 
-- [Getting Started](user-guide/installation.md) – Install and run Stimm locally.
-- [Architecture](developer-guide/architecture-overview.md) – Understand the system design and data flow.
-- [Guides](developer-guide/development.md) – Development, testing, and deployment guides.
-- [API Reference](api/python.md) – Auto-generated API documentation from Python code.
-- [Contributing](project/contributing.md) – How to contribute to the project.
+- [**Installation**](user-guide/installation.md) – Step-by-step guide to install Stimm.
+- [**Quick Start**](user-guide/quick-start.md) – Launch your first agent in minutes.
+- [**Configuration**](user-guide/configuration.md) – Configure providers (LLM, TTS, STT).
+- [**Web Interface**](user-guide/web-interface.md) – Manage agents and RAG via the UI.
+- [**SIP Integration**](user-guide/sip-integration.md) – Connect incoming phone calls.
+- [**Architecture**](developer-guide/architecture-overview.md) – Understand the system design.
+- [**API Reference**](api/rest.md) – REST API endpoints and usage.
+- [**Contributing**](project/contributing.md) – How to contribute to the project.
 
 ## Features
 

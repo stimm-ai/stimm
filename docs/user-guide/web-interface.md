@@ -21,12 +21,12 @@ The dashboard is divided into several sections accessible via the sidebar:
 
 ## Starting a Voice Conversation
 
-1. Click **Stimm** in the sidebar.
+1. Click **Speak with an agent** in the header.
 2. Select an agent from the dropdown (agents must be created first).
 3. Click **Start Conversation** and allow microphone access when prompted.
 4. Speak into your microphone – the agent will respond in real‑time.
 
-The interface shows a transcript of the conversation and provides controls to stop, mute, or change agents.
+The interface shows a transcript of the conversation and some metrics.
 
 ## Managing Agents
 

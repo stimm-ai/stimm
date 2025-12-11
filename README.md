@@ -23,6 +23,8 @@
 
 A modular, real-time AI voice assistant platform built with Python (FastAPI) and Next.js. This project provides a flexible infrastructure for creating, managing, and interacting with voice agents using various LLM, TTS, and STT providers.
 
+📚 **[Read the Full Documentation](https://stimm-ai.github.io/stimm/)**
+
 ## 🚀 Features
 
 - **Real-time Voice Interaction**: Low-latency voice conversations using WebRTC and WebSocket transports.
@@ -58,20 +60,12 @@ Once the services are running, open your browser to:
 - **Frontend Admin**: http://front.localhost/agent/admin (or http://localhost:3000/agent/admin)
 - **API Documentation**: http://api.localhost/docs (or http://localhost:8001/docs)
 
-For detailed installation, configuration, and usage instructions, please refer to the [full documentation](https://stimm-ai.github.io/stimm/).
+For detailed instructions, refer to the [Full Documentation](https://stimm-ai.github.io/stimm/) or check the guides below:
 
-## 📚 Documentation
-
-Comprehensive documentation is available at **https://stimm-ai.github.io/stimm/**.
-
-It includes:
-
-- **User Guide**: Installation, configuration, web interface, CLI, managing agents, RAG, and SIP integration.
-- **Developer Guide**: Architecture overview, data flow, components, development, testing, deployment, and adding new providers.
-- **API Reference**: Auto-generated Python API docs and REST API endpoints.
-- **Project**: Contributing, changelog, and license.
-
-The documentation is built with MkDocs and Material theme, offering a modern, searchable experience.
+- [**Configuration**](https://stimm-ai.github.io/stimm/user-guide/configuration/): Configure providers (LLM, TTS, STT).
+- [**Web Interface**](https://stimm-ai.github.io/stimm/user-guide/web-interface/): Manage agents and RAG via the UI.
+- [**SIP Integration**](https://stimm-ai.github.io/stimm/user-guide/sip-integration/): Connect phone numbers to your agents.
+- [**Development**](https://stimm-ai.github.io/stimm/developer-guide/development/): Setup local environment.
 
 ## 💻 Development
 

@@ -137,7 +137,6 @@ class ElevenLabsProvider:
             logger.info("Sent initialization message")
 
             queue: asyncio.Queue[bytes | None] = asyncio.Queue()
-            sender_done = asyncio.Event()
 
             async def sender():
                 try:
@@ -192,7 +191,6 @@ class ElevenLabsProvider:
                         logger.warning(f"Could not send final text chunk: {close_error}")
                     
                     logger.info("Sender completed successfully")
-                    sender_done.set()
                     
                 except Exception as e:
                     logger.error(f"Sender error: {e}")
@@ -286,14 +284,7 @@ class ElevenLabsProvider:
             try:
                 chunk_count = 0
                 while True:
-                    if sender_done.is_set():
-                        try:
-                            item = await asyncio.wait_for(queue.get(), timeout=5.0)
-                        except asyncio.TimeoutError:
-                            logger.info("No audio received after sender completed, ending stream")
-                            break
-                    else:
-                        item = await queue.get()
+                    item = await queue.get()
                     if item is None:
                         logger.info(f"Stream ended, yielded {chunk_count} audio chunks")
                         break

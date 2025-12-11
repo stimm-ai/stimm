@@ -49,6 +49,7 @@ git clone https://github.com/stimm-ai/stimm.git
 cd stimm
 
 # Set up environment (copies .env.example files)
+chmod +x scripts/setup_env.sh
 ./scripts/setup_env.sh
 
 # Start all services with Docker Compose

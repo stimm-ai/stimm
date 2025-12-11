@@ -34,7 +34,6 @@ dependencies = [
     "sounddevice",
     "soundfile",
     "pyaudio>=0.2.13",
-    "webrtcvad==2.0.10",
     "aiortc>=1.8.0",
     "av>=11.0.0",
     

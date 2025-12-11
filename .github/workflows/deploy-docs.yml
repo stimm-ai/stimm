@@ -35,6 +35,11 @@ jobs:
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
+      - name: Install system dependencies
+        run: |
+          apt-get update
+          apt-get install -y portaudio19-dev
+
       - name: Install dependencies
         run: uv sync --group docs
 

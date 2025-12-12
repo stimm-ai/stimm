@@ -127,17 +127,14 @@ docs: update installation instructions
 
 We use modern Python tooling to ensure code quality.
 
-- **Formatter**: `black` (line length 88)
-- **Import Sorter**: `isort`
-- **Linter**: `flake8`
+- **Formatter & Linter**: `ruff` (replaces black, isort, and flake8)
 - **Type Checking**: Type hints are encouraged.
 
 **Run checks locally**:
 
 ```bash
-uv run black src/ tests/
-uv run isort src/ tests/
-uv run flake8 src/ tests/
+uv run ruff check src/ tests/
+uv run ruff format src/ tests/
 ```
 
 ### Frontend (TypeScript/React)

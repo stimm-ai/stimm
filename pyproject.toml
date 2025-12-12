@@ -106,8 +106,6 @@ packages = ["src"]
 [tool.ruff]
 # Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default
 select = ["E", "F"]
-# Enable formatting rules (equivalent to Black)
-format = true
 
 # Match Black's line length
 line-length = 88

@@ -78,9 +78,8 @@ jobs:
       - name: Run linting and formatting checks
         run: |
           echo "Running backend linting and formatting checks..."
-          $HOME/.local/bin/uv run black --check src/
-          $HOME/.local/bin/uv run isort --check src/
-          $HOME/.local/bin/uv run flake8 src/
+          $HOME/.local/bin/uv run ruff format --check src/
+          $HOME/.local/bin/uv run ruff check src/
           
           echo "Running frontend linting and formatting checks..."
           cd src/front

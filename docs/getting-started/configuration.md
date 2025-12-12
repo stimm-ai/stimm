@@ -46,11 +46,19 @@ Then edit each file to fill in your specific values (API keys, URLs, etc.).
 To use external AI providers, you need to set the corresponding API keys:
 
 - **Deepgram** (STT/TTS): `DEEPGRAM_STT_API_KEY`, `DEEPGRAM_TTS_API_KEY`
-- **ElevenLabs** (TTS): `ELEVENLABS_API_KEY`
-- **Groq** (LLM): `GROQ_API_KEY`
-- **Mistral** (LLM): `MISTRAL_API_KEY`
-- **OpenRouter** (LLM): `OPENROUTER_API_KEY`
+- **ElevenLabs** (TTS): `ELEVENLABS_TTS_API_KEY`
+- **Async.ai** (TTS): `ASYNC_API_KEY`
+- **Hume.ai** (TTS): `HUME_TTS_API_KEY`
+- **Groq** (LLM): `GROQ_LLM_API_KEY`
+- **Mistral** (LLM): `MISTRAL_LLM_API_KEY`
+- **OpenRouter** (LLM): `OPENROUTER_LLM_API_KEY`
 - **OpenAI-compatible** (LLM): `OPENAI_API_KEY`, `OPENAI_BASE_URL`
+
+Local providers (no API key required):
+
+- **Kokoro** (TTS): `KOKORO_LOCAL_TTS_URL` (default: `ws://kokoro-tts:5000/ws/tts/stream`)
+- **Whisper** (STT): `CUSTOM_WHISPER_STT_URL` (default: `ws://whisper-stt:8003/api/stt/stream`)
+- **Llama.cpp** (LLM): `CUSTOM_LLAMA_CPP_URL` (default: `http://llama-cpp-server:8002`)
 
 If a key is missing, the corresponding provider will be disabled or fall back to a local alternative (if available).
 

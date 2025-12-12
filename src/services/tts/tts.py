@@ -10,6 +10,7 @@ from services.agents_admin.agent_manager import get_agent_manager
 from .providers.async_ai.async_ai_provider import AsyncAIProvider
 from .providers.deepgram.deepgram_provider import DeepgramProvider
 from .providers.elevenlabs.elevenlabs_provider import ElevenLabsProvider
+from .providers.hume.hume_provider import HumeProvider
 from .providers.kokoro_local.kokoro_local_provider import KokoroLocalProvider
 
 logger = logging.getLogger(__name__)
@@ -50,6 +51,8 @@ class TTSService:
                 self.provider = DeepgramProvider(provider_config)
             elif provider_name == "elevenlabs.io":
                 self.provider = ElevenLabsProvider(provider_config)
+            elif provider_name == "hume.ai":
+                self.provider = HumeProvider(provider_config)
             else:
                 raise ValueError(f"Unsupported TTS provider: {provider_name}")
 

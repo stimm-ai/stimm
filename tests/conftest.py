@@ -82,6 +82,7 @@ def _check_provider_requirements(provider_type: str) -> str | None:
             "deepgram.com": ["DEEPGRAM_TTS_API_KEY"],
             "elevenlabs.io": ["ELEVENLABS_TTS_API_KEY"],
             "kokoro.local": [],  # Local service, no API key needed
+            "hume.ai": ["HUME_TTS_API_KEY"],
         },
         "llm": {
             "groq.com": ["GROQ_LLM_API_KEY"],
@@ -292,6 +293,25 @@ def elevenlabs_config() -> Dict[str, Any] | None:
 
 
 @pytest.fixture
+def hume_config() -> Dict[str, Any] | None:
+    """
+    Get Hume.ai TTS provider configuration from environment.
+
+    Returns:
+        Configuration dict or None if API key not available
+    """
+    api_key = os.getenv("HUME_TTS_API_KEY")
+    if not api_key:
+        return None
+
+    return {
+        "api_key": api_key,
+        "voice": os.getenv("HUME_TTS_VOICE_ID", "default"),
+        "version": os.getenv("HULME_TTS_MODEL_VERSION", "2"),
+    }
+
+
+@pytest.fixture
 def kokoro_local_config() -> Dict[str, Any]:
     """
     Get Kokoro local TTS provider configuration from environment.
@@ -349,6 +369,7 @@ def available_tts_providers(
     deepgram_tts_config,
     elevenlabs_config,
     kokoro_local_config,
+    hume_config,
 ) -> List[tuple[str, Dict[str, Any]]]:
     """
     Get list of available TTS providers for parametrized testing.
@@ -377,6 +398,10 @@ def available_tts_providers(
     # Include elevenlabs.io only if API key is available
     if elevenlabs_config:
         providers.append(("elevenlabs.io", elevenlabs_config))
+
+    # Include hume.ai only if API key is available
+    if hume_config:
+        providers.append(("hume.ai", hume_config))
 
     return providers
 

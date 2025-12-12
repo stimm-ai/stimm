@@ -42,6 +42,7 @@ class ProviderRegistry:
             "elevenlabs.io": "elevenlabs.ElevenLabsProvider",
             "async.ai": "async_ai.AsyncAIProvider",
             "kokoro.local": "kokoro_local.KokoroLocalProvider",
+            "hume.ai": "hume.HumeProvider",
         },
         "stt": {"deepgram.com": "deepgram.DeepgramProvider", "whisper.local": "whisper_local.WhisperLocalProvider"},
         "rag": {

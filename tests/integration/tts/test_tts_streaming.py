@@ -59,6 +59,21 @@ class TestTTSStreaming:
         assert provider.model_id == elevenlabs_config["model"]
 
     @pytest.mark.asyncio
+    async def test_hume_service_initialization(self, hume_config):
+        """Test that TTS service initializes correctly with Hume.ai provider."""
+        if not hume_config:
+            pytest.skip("HUME_TTS_ACCESS_TOKEN environment variable is required")
+
+        from services.tts.providers.hume.hume_provider import HumeProvider
+
+        provider = HumeProvider(hume_config)
+
+        assert provider is not None
+        assert provider.api_key == hume_config["api_key"]
+        assert provider.voice_id == hume_config["voice"]
+        assert provider.version == hume_config["version"]
+
+    @pytest.mark.asyncio
     async def test_kokoro_service_initialization(self, kokoro_local_config):
         """Test that TTS service initializes correctly with Kokoro provider."""
         from services.tts.providers.kokoro_local.kokoro_local_provider import KokoroLocalProvider
@@ -301,6 +316,66 @@ class TestTTSStreaming:
                 pytest.skip(f"Kokoro connection issue: {e}")
             else:
                 pytest.fail(f"Kokoro streaming synthesis failed: {e}")
+
+    @pytest.mark.asyncio
+    async def test_hume_streaming_synthesis(
+        self,
+        hume_config,
+    ):
+        """
+        Test WebRTC-like streaming to the Hume.ai TTS service.
+        """
+        if not hume_config:
+            pytest.skip("HUME_TTS_API_KEY environment variable is required")
+
+        from services.tts.providers.hume.hume_provider import HumeProvider
+
+        provider = HumeProvider(hume_config)
+
+        try:
+            test_text = "Hello, this is a test of the text to speech streaming system."
+
+            async def text_token_generator(text, tokens_per_chunk=3):
+                words = text.split()
+                if len(words) == 0:
+                    yield ""
+                    return
+                for i in range(0, len(words), tokens_per_chunk):
+                    chunk = " ".join(words[i : i + tokens_per_chunk]) + " "
+                    yield chunk
+                    await asyncio.sleep(0.05)
+
+            async def text_generator():
+                async for chunk in text_token_generator(test_text):
+                    # Hume.ai expects JSON payload similar to ElevenLabs
+                    payload = {"text": chunk, "try_trigger_generation": True, "flush": False}
+                    yield json.dumps(payload)
+                # Final flush
+                final_payload = {"text": "", "try_trigger_generation": True, "flush": True}
+                yield json.dumps(final_payload)
+
+            audio_chunks = []
+
+            # Simple approach: collect first audio chunk to verify streaming works
+            # This is economical and prevents hanging
+            async for audio_chunk in provider.stream_synthesis(text_generator()):
+                audio_chunks.append(audio_chunk)
+                print(f"[HUME TEST] Received audio chunk: {len(audio_chunk)} bytes")
+                # Stop after receiving the first audio chunk - that's enough to validate streaming works
+                break
+
+            assert len(audio_chunks) > 0, "No audio chunks received"
+            total_bytes = sum(len(chunk) for chunk in audio_chunks)
+            assert total_bytes > 0, "No audio data generated"
+
+            print(f"✅ Received {len(audio_chunks)} audio chunks from Hume.ai, total {total_bytes:,} bytes")
+
+        except Exception as e:
+            # If the Hume.ai connection fails, this might be expected
+            if "Connection" in str(e) or "API" in str(e) or "quota" in str(e).lower() or "timed out" in str(e).lower():
+                pytest.skip(f"Hume.ai connection issue: {e}")
+            else:
+                pytest.fail(f"Hume.ai streaming synthesis failed: {e}")
 
     @pytest.mark.asyncio
     async def test_empty_text_handling(self, async_ai_config):

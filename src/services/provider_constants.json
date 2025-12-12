@@ -10,6 +10,11 @@
       "ENCODING": "pcm_s16le",
       "OUTPUT_FORMAT": "pcm_24000"
     },
+    "hume.ai": {
+      "SAMPLE_RATE": 24000,
+      "ENCODING": "pcm_s16le",
+      "OUTPUT_FORMAT": "pcm_24000"
+    },
     "async.ai": {
       "URL": "wss://api.async.ai/text_to_speech/websocket/ws",
       "SAMPLE_RATE": 44100,

@@ -83,6 +83,11 @@ class DevAgentCreator:
             ("encoding", "ELEVENLABS_TTS_ENCODING", "pcm_s16le", str),
             ("output_format", "ELEVENLABS_TTS_OUTPUT_FORMAT", "pcm_22050", str),
         ],
+        ("tts", "hume.ai"): [
+            ("api_key", "HUME_TTS_API_KEY", None, str),
+            ("voice", "HUME_TTS_VOICE_ID", "default", str),
+            ("version", "HULME_TTS_MODEL_VERSION", "2", str),
+        ],
         ("stt", "whisper.local"): [
             ("url", "CUSTOM_WHISPER_STT_URL", "ws://whisper-stt:8003/api/stt/stream", str),
         ],

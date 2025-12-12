@@ -17,16 +17,16 @@ import os
 
 def get_provider_constants():
     """Load and return provider constants from JSON file, with environment overrides."""
-    json_path = os.path.join(os.path.dirname(__file__), 'provider_constants.json')
-    with open(json_path, 'r') as f:
+    json_path = os.path.join(os.path.dirname(__file__), "provider_constants.json")
+    with open(json_path, "r") as f:
         constants = json.load(f)
 
     # Environment variable overrides for local services
     overrides = [
-        ('CUSTOM_WHISPER_STT_URL', ['stt', 'whisper.local', 'URL']),
-        ('CUSTOM_KOKORO_TTS_URL', ['tts', 'kokoro.local', 'URL']),
-        ('CUSTOM_LLAMA_CPP_URL', ['llm', 'llama-cpp.local', 'API_URL']),
-        ('CUSTOM_QDRANT_URL', ['rag', 'qdrant.internal', 'URL']),
+        ("CUSTOM_WHISPER_STT_URL", ["stt", "whisper.local", "URL"]),
+        ("CUSTOM_KOKORO_TTS_URL", ["tts", "kokoro.local", "URL"]),
+        ("CUSTOM_LLAMA_CPP_URL", ["llm", "llama-cpp.local", "API_URL"]),
+        ("CUSTOM_QDRANT_URL", ["rag", "qdrant.internal", "URL"]),
     ]
 
     for env_var, path in overrides:

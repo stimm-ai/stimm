@@ -1,28 +1,32 @@
 """
 Test for conversation management functionality of the RAG service.
 """
-import pytest
+
 from fastapi.testclient import TestClient
+
 from services.rag.rag_routes import app
 
 client = TestClient(app)
 
+
 def test_conversation_management():
     """Test conversation management endpoints."""
     # Manually initialize the RAG service
+    from qdrant_client import QdrantClient
+    from sentence_transformers import SentenceTransformer
+
     from services.rag.rag_routes import app
     from services.rag.rag_state import RagState
-    from sentence_transformers import SentenceTransformer
-    from qdrant_client import QdrantClient
 
     # Initialize the RAG service
     embedder = SentenceTransformer("BAAI/bge-base-en-v1.5")
-    
+
     # Use environment-aware Qdrant connection
     from environment_config import get_environment_config
+
     env_config = get_environment_config()
     qdrant_config = env_config.get_service_config("qdrant")
-    
+
     # Parse Qdrant URL to extract host and port
     qdrant_url = qdrant_config.get("url", "http://localhost:6333")
     if "://" in qdrant_url:
@@ -36,7 +40,7 @@ def test_conversation_management():
     else:
         host = "localhost"
         port = 6333
-    
+
     qdrant_client = QdrantClient(host=host, port=port)
     rag_state = RagState()
     rag_state.embedder = embedder
@@ -45,14 +49,7 @@ def test_conversation_management():
 
     # Create a conversation
     conv_id = "test-conv-1"
-    message = {
-        "conversation_id": conv_id,
-        "message": {
-            "role": "user",
-            "content": "Hello, what services do you offer?",
-            "metadata": {}
-        }
-    }
+    message = {"conversation_id": conv_id, "message": {"role": "user", "content": "Hello, what services do you offer?", "metadata": {}}}
     response = client.post("/conversation/message", json=message)
     assert response.status_code == 200
     assert response.json()["conversation_id"] == conv_id

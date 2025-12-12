@@ -11,6 +11,7 @@ The easiest way to explore the API is via the built‑in Swagger UI:
 - **Production**: Replace the host with your deployed domain.
 
 The Swagger UI provides:
+
 - A complete list of all endpoints with HTTP methods.
 - Schema definitions for request/response bodies.
 - An interactive “Try it out” feature to execute requests directly from the browser.
@@ -48,58 +49,58 @@ Currently, the API does not require authentication for local development. For pr
 
 ### Agents
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/agents/` | List all agents |
-| POST | `/api/agents/` | Create a new agent |
-| GET | `/api/agents/{agent_id}` | Retrieve a specific agent |
-| PUT | `/api/agents/{agent_id}` | Update an agent |
-| DELETE | `/api/agents/{agent_id}` | Delete an agent |
-| GET | `/api/agents/{agent_id}/conversation` | Start a conversation with an agent |
+| Method | Path                                  | Description                        |
+| ------ | ------------------------------------- | ---------------------------------- |
+| GET    | `/api/agents/`                        | List all agents                    |
+| POST   | `/api/agents/`                        | Create a new agent                 |
+| GET    | `/api/agents/{agent_id}`              | Retrieve a specific agent          |
+| PUT    | `/api/agents/{agent_id}`              | Update an agent                    |
+| DELETE | `/api/agents/{agent_id}`              | Delete an agent                    |
+| GET    | `/api/agents/{agent_id}/conversation` | Start a conversation with an agent |
 
 ### RAG Configurations
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/rag‑configs/` | List all RAG configurations |
-| POST | `/api/rag‑configs/` | Create a new RAG configuration |
-| GET | `/api/rag‑configs/{id}` | Retrieve a specific configuration |
-| PUT | `/api/rag‑configs/{id}` | Update a configuration |
-| DELETE | `/api/rag‑configs/{id}` | Delete a configuration |
-| GET | `/api/rag‑configs/default/current` | Get the current default RAG configuration |
-| PUT | `/api/rag‑configs/{id}/set‑default` | Set a configuration as the default |
-| GET | `/api/rag‑configs/providers/available` | List available RAG providers with field definitions |
-| GET | `/api/rag‑configs/providers/{provider}/fields` | Get field definitions for a specific provider |
+| Method | Path                                           | Description                                         |
+| ------ | ---------------------------------------------- | --------------------------------------------------- |
+| GET    | `/api/rag‑configs/`                            | List all RAG configurations                         |
+| POST   | `/api/rag‑configs/`                            | Create a new RAG configuration                      |
+| GET    | `/api/rag‑configs/{id}`                        | Retrieve a specific configuration                   |
+| PUT    | `/api/rag‑configs/{id}`                        | Update a configuration                              |
+| DELETE | `/api/rag‑configs/{id}`                        | Delete a configuration                              |
+| GET    | `/api/rag‑configs/default/current`             | Get the current default RAG configuration           |
+| PUT    | `/api/rag‑configs/{id}/set‑default`            | Set a configuration as the default                  |
+| GET    | `/api/rag‑configs/providers/available`         | List available RAG providers with field definitions |
+| GET    | `/api/rag‑configs/providers/{provider}/fields` | Get field definitions for a specific provider       |
 
 ### Documents
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/rag‑configs/{rag_config_id}/documents` | Upload and ingest a document |
-| GET | `/api/rag‑configs/{rag_config_id}/documents` | List documents for a RAG configuration |
-| DELETE | `/api/documents/{document_id}` | Delete a document |
+| Method | Path                                         | Description                            |
+| ------ | -------------------------------------------- | -------------------------------------- |
+| POST   | `/api/rag‑configs/{rag_config_id}/documents` | Upload and ingest a document           |
+| GET    | `/api/rag‑configs/{rag_config_id}/documents` | List documents for a RAG configuration |
+| DELETE | `/api/documents/{document_id}`               | Delete a document                      |
 
 ### Conversation
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/conversation/stream` | Start a streaming conversation (WebSocket) |
-| GET | `/api/conversation/status` | Get conversation status |
+| Method | Path                       | Description                                |
+| ------ | -------------------------- | ------------------------------------------ |
+| POST   | `/api/conversation/stream` | Start a streaming conversation (WebSocket) |
+| GET    | `/api/conversation/status` | Get conversation status                    |
 
 ### Health
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/health` | Overall system health |
-| GET | `/health/sip‑bridge` | SIP bridge health |
-| GET | `/health/sip‑bridge‑status` | Detailed SIP bridge status |
+| Method | Path                        | Description                |
+| ------ | --------------------------- | -------------------------- |
+| GET    | `/health`                   | Overall system health      |
+| GET    | `/health/sip‑bridge`        | SIP bridge health          |
+| GET    | `/health/sip‑bridge‑status` | Detailed SIP bridge status |
 
 ### SIP Integration
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/sip/dispatch‑rules` | Update SIP dispatch rules |
-| GET | `/api/sip/trunks` | List SIP trunks |
+| Method | Path                      | Description               |
+| ------ | ------------------------- | ------------------------- |
+| POST   | `/api/sip/dispatch‑rules` | Update SIP dispatch rules |
+| GET    | `/api/sip/trunks`         | List SIP trunks           |
 
 ## Examples
 

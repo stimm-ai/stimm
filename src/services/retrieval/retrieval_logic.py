@@ -7,8 +7,8 @@ This module contains the core retrieval logic including dense and lexical search
 import asyncio
 import hashlib
 import time
-from typing import Any, Dict, List, Optional, Tuple, AsyncIterator
 from functools import lru_cache
+from typing import Any, AsyncIterator, Dict, List, Optional, Tuple
 
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as qmodels
@@ -24,7 +24,7 @@ _retrieval_cache = {}
 
 def _get_query_hash(text: str) -> str:
     """Generate a hash for query caching"""
-    return hashlib.md5(text.encode('utf-8')).hexdigest()
+    return hashlib.md5(text.encode("utf-8")).hexdigest()
 
 
 @lru_cache(maxsize=1000)
@@ -35,6 +35,7 @@ def _cached_embedding(embedder: SentenceTransformer, text: str) -> List[float]:
         show_progress_bar=False,
         normalize_embeddings=EMBED_NORMALIZE,
     )[0].tolist()
+
 
 # Configuration constants
 QDRANT_COLLECTION = retrieval_config.qdrant_collection
@@ -215,15 +216,11 @@ async def _retrieve_parallel(
 ) -> Tuple[List[RetrievalCandidate], List[RetrievalCandidate]]:
     """Run dense and lexical search in parallel"""
     loop = asyncio.get_running_loop()
-    
+
     # Run both searches in parallel
-    dense_task = loop.run_in_executor(
-        None, _dense_candidates, embedder, client, text, top_k, namespace
-    )
-    lexical_task = loop.run_in_executor(
-        None, _lexical_candidates, lexical_index, documents, text, top_k, namespace
-    )
-    
+    dense_task = loop.run_in_executor(None, _dense_candidates, embedder, client, text, top_k, namespace)
+    lexical_task = loop.run_in_executor(None, _lexical_candidates, lexical_index, documents, text, top_k, namespace)
+
     dense_candidates, lexical_candidates = await asyncio.gather(dense_task, lexical_task)
     return dense_candidates, lexical_candidates
 
@@ -240,7 +237,7 @@ async def _retrieve_contexts(
 ) -> List[Any]:
     """Retrieve contexts using both dense and lexical search with reranking."""
     from services.rag.rag_models import QueryContext
-    
+
     # Check cache first
     query_hash = _get_query_hash(text)
     if query_hash in _retrieval_cache:
@@ -249,9 +246,7 @@ async def _retrieve_contexts(
             return cached_result
 
     # Run parallel retrieval
-    dense_candidates, lexical_candidates = await _retrieve_parallel(
-        embedder, client, lexical_index, documents, text, top_k, namespace
-    )
+    dense_candidates, lexical_candidates = await _retrieve_parallel(embedder, client, lexical_index, documents, text, top_k, namespace)
     combined_candidates = _combine_candidates(dense_candidates, lexical_candidates)
 
     reranked = await _apply_reranker(reranker, text, combined_candidates)
@@ -268,18 +263,14 @@ async def _retrieve_contexts(
         contexts.append(
             QueryContext(
                 text=candidate.text,
-                score=(
-                    candidate.final_score
-                    if candidate.final_score is not None
-                    else candidate.initial_score
-                ),
+                score=(candidate.final_score if candidate.final_score is not None else candidate.initial_score),
                 metadata=metadata,
             )
         )
-    
+
     # Cache the result
     _retrieval_cache[query_hash] = (time.time(), contexts)
-    
+
     return contexts
 
 
@@ -347,18 +338,18 @@ async def _ultra_fast_retrieve_contexts(
 ) -> List[Any]:
     """Ultra-fast context retrieval optimized for stimm latency requirements"""
     from services.rag.rag_models import QueryContext
-    
+
     # Check cache first with ultra-fast lookup
     query_hash = _get_query_hash(text)
     if query_hash in _retrieval_cache:
         cached_time, cached_result = _retrieval_cache[query_hash]
         if time.time() - cached_time < 300:  # 5 minute TTL
             return cached_result
-    
+
     # Use ultra-minimal configuration for speed
     top_k = retrieval_config.ultra_top_k
     dense_limit = retrieval_config.ultra_dense_candidates
-    
+
     # Fast embedding with minimal processing
     try:
         vector = embedder.encode(
@@ -369,7 +360,7 @@ async def _ultra_fast_retrieve_contexts(
     except Exception:
         # Fallback: return empty contexts if embedding fails
         return []
-    
+
     # Fast dense search only (skip lexical for ultra-low latency)
     search_filter: Optional[qmodels.Filter] = None
     if namespace:
@@ -392,19 +383,19 @@ async def _ultra_fast_retrieve_contexts(
     except Exception:
         # Fallback: return empty contexts if search fails
         return []
-    
+
     contexts: List[QueryContext] = []
     for point in results[:top_k]:  # Take only top_k results
         payload = point.payload or {}
         text_value = (payload.get("text") or "").strip()
         if not text_value:
             continue
-            
+
         metadata = {k: v for k, v in payload.items() if k != "text"}
         metadata.setdefault("doc_id", str(point.id))
         metadata["retrieval_sources"] = ["dense_ultra_fast"]
         metadata["initial_score"] = float(point.score or 0.0)
-        
+
         contexts.append(
             QueryContext(
                 text=text_value,
@@ -412,10 +403,10 @@ async def _ultra_fast_retrieve_contexts(
                 metadata=metadata,
             )
         )
-    
+
     # Cache the result
     _retrieval_cache[query_hash] = (time.time(), contexts)
-    
+
     return contexts
 
 
@@ -429,20 +420,18 @@ async def _streaming_first_rag(
 ) -> AsyncIterator[Any]:
     """Streaming-first RAG that starts LLM generation immediately while RAG processes in background"""
     from services.rag.rag_models import QueryContext
-    
+
     # Start LLM generation immediately with minimal context
     yield QueryContext(
         text="",  # Empty context to start LLM immediately
         score=0.0,
-        metadata={"retrieval_sources": ["streaming_first"]}
+        metadata={"retrieval_sources": ["streaming_first"]},
     )
-    
+
     # Process RAG in background
     try:
-        contexts = await _ultra_fast_retrieve_contexts(
-            embedder, client, lexical_index, documents, text, namespace
-        )
-        
+        contexts = await _ultra_fast_retrieve_contexts(embedder, client, lexical_index, documents, text, namespace)
+
         # Yield actual contexts when ready
         for context in contexts:
             yield context

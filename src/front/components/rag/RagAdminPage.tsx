@@ -1,97 +1,129 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { PageLayout } from '@/components/ui/PageLayout'
-import { PageHeaderActions } from '@/components/ui/PageHeaderActions'
-import { RagConfig } from './types'
-import { THEME, getProviderAccent } from '@/lib/theme'
-import { Database, Plus, Mic, Edit, Star, Trash2, CheckCircle, XCircle } from 'lucide-react'
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { PageLayout } from '@/components/ui/PageLayout';
+import { PageHeaderActions } from '@/components/ui/PageHeaderActions';
+import { RagConfig } from './types';
+import { THEME, getProviderAccent } from '@/lib/theme';
+import {
+  Database,
+  Plus,
+  Mic,
+  Edit,
+  Star,
+  Trash2,
+  CheckCircle,
+  XCircle,
+} from 'lucide-react';
 
 export function RagAdminPage() {
-  const [configs, setConfigs] = useState<RagConfig[]>([])
-  const [defaultConfig, setDefaultConfig] = useState<RagConfig | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [configs, setConfigs] = useState<RagConfig[]>([]);
+  const [defaultConfig, setDefaultConfig] = useState<RagConfig | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadConfigs()
-  }, [])
+    loadConfigs();
+  }, []);
 
   const loadConfigs = async () => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
-      const response = await fetch('http://localhost:8001/api/rag-configs/')
+      const response = await fetch('http://localhost:8001/api/rag-configs/');
       if (!response.ok) {
-        throw new Error(`Failed to load RAG configs: ${response.statusText}`)
+        throw new Error(`Failed to load RAG configs: ${response.statusText}`);
       }
 
-      const data = await response.json()
-      const configsList = Array.isArray(data) ? data : []
-      setConfigs(configsList)
+      const data = await response.json();
+      const configsList = Array.isArray(data) ? data : [];
+      setConfigs(configsList);
 
-      const defaultConfig = configsList.find((config: RagConfig) => config.is_default)
-      setDefaultConfig(defaultConfig || null)
+      const defaultConfig = configsList.find(
+        (config: RagConfig) => config.is_default
+      );
+      setDefaultConfig(defaultConfig || null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load RAG configs')
+      setError(
+        err instanceof Error ? err.message : 'Failed to load RAG configs'
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleSetDefault = async (configId: string) => {
     try {
-      const response = await fetch(`http://localhost:8001/api/rag-configs/${configId}/set-default/`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
+      const response = await fetch(
+        `http://localhost:8001/api/rag-configs/${configId}/set-default/`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to set default RAG config')
+        throw new Error('Failed to set default RAG config');
       }
 
-      await loadConfigs()
+      await loadConfigs();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to set default RAG config')
+      setError(
+        err instanceof Error ? err.message : 'Failed to set default RAG config'
+      );
     }
-  }
+  };
 
   const handleDelete = async (configId: string) => {
-    if (!confirm('Are you sure you want to delete this RAG configuration? This action cannot be undone.')) {
-      return
+    if (
+      !confirm(
+        'Are you sure you want to delete this RAG configuration? This action cannot be undone.'
+      )
+    ) {
+      return;
     }
 
     try {
-      const response = await fetch(`http://localhost:8001/api/rag-configs/${configId}/`, {
-        method: 'DELETE',
-      })
+      const response = await fetch(
+        `http://localhost:8001/api/rag-configs/${configId}/`,
+        {
+          method: 'DELETE',
+        }
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to delete RAG config')
+        throw new Error('Failed to delete RAG config');
       }
 
-      await loadConfigs()
+      await loadConfigs();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete RAG config')
+      setError(
+        err instanceof Error ? err.message : 'Failed to delete RAG config'
+      );
     }
-  }
+  };
 
   if (loading) {
     return (
-      <PageLayout title="RAG Configuration Management" icon={<Database className="w-8 h-8" />}>
+      <PageLayout
+        title="RAG Configuration Management"
+        icon={<Database className="w-8 h-8" />}
+      >
         <div className="flex justify-center items-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
-            <p className={THEME.text.secondary}>Loading RAG configurations...</p>
+            <p className={THEME.text.secondary}>
+              Loading RAG configurations...
+            </p>
           </div>
         </div>
       </PageLayout>
-    )
+    );
   }
 
   return (
@@ -104,11 +136,17 @@ export function RagAdminPage() {
       {configs.length === 0 ? (
         <div className={`${THEME.card.base} p-12 text-center`}>
           <Database className={`w-16 h-16 mx-auto mb-4 ${THEME.text.muted}`} />
-          <h3 className="text-xl font-semibold mb-2">No RAG Configurations Found</h3>
+          <h3 className="text-xl font-semibold mb-2">
+            No RAG Configurations Found
+          </h3>
           <p className={`${THEME.text.secondary} mb-6`}>
-            Create your first RAG configuration to enable retrieval-augmented generation.
+            Create your first RAG configuration to enable retrieval-augmented
+            generation.
           </p>
-          <Button asChild className={`${THEME.button.secondary} rounded-full px-6`}>
+          <Button
+            asChild
+            className={`${THEME.button.secondary} rounded-full px-6`}
+          >
             <a href="/rag/create" className="flex items-center gap-2">
               <Plus className="w-4 h-4" />
               Create First RAG Configuration
@@ -132,7 +170,9 @@ export function RagAdminPage() {
                   <h3 className="text-lg font-bold mb-1 flex items-center gap-2">
                     {config.name}
                     {defaultConfig?.id === config.id && (
-                      <Star className={`w-4 h-4 ${THEME.accent.cyan} fill-current`} />
+                      <Star
+                        className={`w-4 h-4 ${THEME.accent.cyan} fill-current`}
+                      />
                     )}
                   </h3>
                   <p className={`text-sm ${THEME.text.muted}`}>
@@ -143,8 +183,16 @@ export function RagAdminPage() {
 
               {/* Config Info */}
               <div className="space-y-3 mb-4">
-                <div className={`p-3 rounded-lg ${getProviderAccent('rag').bg} border ${getProviderAccent('rag').border}`}>
-                  <div className={`font-semibold text-sm ${getProviderAccent('rag').text} mb-2`}>
+                <div
+                  className={`p-3 rounded-lg ${
+                    getProviderAccent('rag').bg
+                  } border ${getProviderAccent('rag').border}`}
+                >
+                  <div
+                    className={`font-semibold text-sm ${
+                      getProviderAccent('rag').text
+                    } mb-2`}
+                  >
                     {config.provider?.toUpperCase() || 'No Provider'}
                   </div>
                   <div className={`text-xs ${THEME.text.secondary} space-y-1`}>
@@ -181,7 +229,10 @@ export function RagAdminPage() {
                   asChild
                   className={`${THEME.button.ghost} rounded-full flex-1`}
                 >
-                  <a href={`/rag/edit/${config.id}`} className="flex items-center gap-2 justify-center">
+                  <a
+                    href={`/rag/edit/${config.id}`}
+                    className="flex items-center gap-2 justify-center"
+                  >
                     <Edit className="w-3 h-3" />
                     Edit
                   </a>
@@ -213,5 +264,5 @@ export function RagAdminPage() {
         </div>
       )}
     </PageLayout>
-  )
+  );
 }

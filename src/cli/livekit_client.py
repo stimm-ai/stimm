@@ -10,10 +10,9 @@ import asyncio
 import logging
 import threading
 import time
-import collections
-import pyaudio
+
 import numpy as np
-from typing import Optional
+import pyaudio
 from livekit import rtc
 
 logger = logging.getLogger(__name__)
@@ -30,6 +29,7 @@ class RingBuffer:
     """
     Thread-safe ring buffer for audio data.
     """
+
     def __init__(self, size_bytes):
         self._buffer = bytearray(size_bytes)
         self._size = size_bytes
@@ -45,10 +45,10 @@ class RingBuffer:
             data_len = len(data)
             if data_len > self._size:
                 # Data too big for buffer, just take the end
-                data = data[-self._size:]
+                data = data[-self._size :]
                 data_len = self._size
                 self._overrun_count += 1
-                
+
             # If buffer is full, advance read pointer (overwrite oldest)
             space_left = self._size - self._fill_level
             if data_len > space_left:
@@ -59,8 +59,8 @@ class RingBuffer:
 
             # Write data (handle wrap-around)
             first_chunk = min(data_len, self._size - self._write_pos)
-            self._buffer[self._write_pos:self._write_pos + first_chunk] = data[:first_chunk]
-            
+            self._buffer[self._write_pos : self._write_pos + first_chunk] = data[:first_chunk]
+
             if first_chunk < data_len:
                 second_chunk = data_len - first_chunk
                 self._buffer[0:second_chunk] = data[first_chunk:]
@@ -69,51 +69,50 @@ class RingBuffer:
                 self._write_pos += first_chunk
                 if self._write_pos == self._size:
                     self._write_pos = 0
-            
+
             self._fill_level += data_len
-            
+
             # DEBUG: Log if buffer is getting full
             if self._fill_level > self._size * 0.9:
-               pass # logger.warning(f"⚠️ RingBuffer near overflow: {self._fill_level}/{self._size}")
+                pass  # logger.warning(f"⚠️ RingBuffer near overflow: {self._fill_level}/{self._size}")
 
     def read(self, size: int) -> bytes:
         with self._lock:
             if self._fill_level < size:
                 # Underrun: return silence for missing part
                 available = self._fill_level
-                padding = size - available
                 self._underrun_count += 1
-                
+
                 result = bytearray(size)
-                
+
                 # Read what's available
                 if available > 0:
                     first_chunk = min(available, self._size - self._read_pos)
-                    result[:first_chunk] = self._buffer[self._read_pos:self._read_pos + first_chunk]
+                    result[:first_chunk] = self._buffer[self._read_pos : self._read_pos + first_chunk]
                     if first_chunk < available:
                         second_chunk = available - first_chunk
                         result[first_chunk:available] = self._buffer[0:second_chunk]
                         self._read_pos = second_chunk
                     else:
                         self._read_pos = (self._read_pos + first_chunk) % self._size
-                    
+
                     self._fill_level = 0
-                    
+
                 # The rest is already 0 (silence)
                 return bytes(result)
 
             # Normal read
             result = bytearray(size)
             first_chunk = min(size, self._size - self._read_pos)
-            result[:first_chunk] = self._buffer[self._read_pos:self._read_pos + first_chunk]
-            
+            result[:first_chunk] = self._buffer[self._read_pos : self._read_pos + first_chunk]
+
             if first_chunk < size:
                 second_chunk = size - first_chunk
                 result[first_chunk:] = self._buffer[0:second_chunk]
                 self._read_pos = second_chunk
             else:
                 self._read_pos = (self._read_pos + first_chunk) % self._size
-                
+
             self._fill_level -= size
             return bytes(result)
 
@@ -127,36 +126,36 @@ class RingBuffer:
 class LiveKitClient:
     """
     LiveKit client for real-time audio communication.
-    
+
     This client connects to a LiveKit room, captures microphone audio via PyAudio,
     and plays back agent responses through speakers via PyAudio.
     """
-    
+
     def __init__(self, room_name: str, token: str, livekit_url: str):
         self.room_name = room_name
         self.token = token
         self.livekit_url = livekit_url
         self.is_connected = False
         self.room = rtc.Room()
-        
+
         # Audio Engine (PyAudio)
         self._pa = pyaudio.PyAudio()
         self._input_stream = None
         self._output_stream = None
         self._running = False
         self._loop = None
-        
+
         # Jitter Buffer
-        buffer_size = int(SAMPLE_RATE * 2 * (BUFFER_DURATION_MS / 1000)) # 2 bytes per sample
+        buffer_size = int(SAMPLE_RATE * 2 * (BUFFER_DURATION_MS / 1000))  # 2 bytes per sample
         self._ring_buffer = RingBuffer(buffer_size)
         self._output_thread = None
-        
+
         # LiveKit Audio Source
         self.audio_source = None
         self.audio_track = None
         self.mic_source = None
         self.mic_track = None
-        
+
     async def connect(self):
         """
         Connect to the LiveKit room and set up audio streams.
@@ -164,57 +163,54 @@ class LiveKitClient:
         try:
             logger.info(f"🔗 Connecting to LiveKit room: {self.room_name}")
             logger.info(f"📡 LiveKit URL: {self.livekit_url}")
-            
+
             # Set up event handlers
             self._setup_event_handlers()
-            
+
             # Create audio source for microphone capture
             self.mic_source = rtc.AudioSource(sample_rate=SAMPLE_RATE, num_channels=CHANNELS)
             self.mic_track = rtc.LocalAudioTrack.create_audio_track("microphone", self.mic_source)
-            
+
             # Connect to the room
             ws_url = self.livekit_url.replace("http://", "ws://").replace("https://", "wss://")
             logger.info(f"🌐 Connecting to WebSocket: {ws_url}")
-            
+
             await self.room.connect(ws_url, self.token)
             self.is_connected = True
-            
+
             # Publish track
             # Using SOURCE_MICROPHONE applies AGC which is generally good for voice
-            await self.room.local_participant.publish_track(
-                self.mic_track,
-                rtc.TrackPublishOptions(source=rtc.TrackSource.SOURCE_MICROPHONE)
-            )
-            
+            await self.room.local_participant.publish_track(self.mic_track, rtc.TrackPublishOptions(source=rtc.TrackSource.SOURCE_MICROPHONE))
+
             logger.info("✅ LiveKit connection established")
             logger.info("🎤 Microphone capture active")
             logger.info("🔊 Audio playback active")
             logger.info(f"👤 Connected as: {self.room.local_participant.identity}")
-            
+
         except Exception as e:
             logger.error(f"❌ Failed to connect to LiveKit: {e}")
             raise
-    
+
     def _setup_event_handlers(self):
         """Set up LiveKit room event handlers"""
-        
+
         @self.room.on("connected")
         def on_connected():
             logger.info("✅ Successfully connected to LiveKit room")
-            
+
         @self.room.on("disconnected")
         def on_disconnected():
             logger.info("🔌 Disconnected from LiveKit room")
             self.is_connected = False
-            
+
         @self.room.on("participant_connected")
         def on_participant_connected(participant: rtc.RemoteParticipant):
             logger.info(f"👤 Participant connected: {participant.identity}")
-            
+
         @self.room.on("participant_disconnected")
         def on_participant_disconnected(participant: rtc.RemoteParticipant):
             logger.info(f"👤 Participant disconnected: {participant.identity}")
-            
+
         @self.room.on("track_subscribed")
         def on_track_subscribed(
             track: rtc.Track,
@@ -225,13 +221,11 @@ class LiveKitClient:
                 logger.info(f"🔊 Subscribed to audio track from {participant.identity}")
                 # Start audio playback for this track
                 asyncio.create_task(self._handle_audio_track(track))
-                
+
         @self.room.on("track_published")
-        def on_track_published(
-            publication: rtc.RemoteTrackPublication, participant: rtc.RemoteParticipant
-        ):
+        def on_track_published(publication: rtc.RemoteTrackPublication, participant: rtc.RemoteParticipant):
             logger.info(f"📡 Track published by {participant.identity}: {publication.sid}")
-    
+
     async def disconnect(self):
         """
         Disconnect from the LiveKit room and stop audio.
@@ -243,24 +237,24 @@ class LiveKitClient:
                 await self.room.disconnect()
                 self.is_connected = False
                 logger.info("✅ Disconnected from LiveKit")
-                
+
         except Exception as e:
             logger.error(f"❌ Error disconnecting from LiveKit: {e}")
-    
+
     async def start_audio_session(self):
         """
         Start the audio session - capture microphone and play responses.
         """
         if not self.is_connected:
             await self.connect()
-        
+
         # Start PyAudio capture
         self._start_audio_engine()
-        
+
         logger.info("🎧 Starting audio session...")
         logger.info("🎤 Speak into your microphone to interact with the agent")
         logger.info("🔊 Agent responses will be played through your speakers")
-        
+
         try:
             # Keep the session active and monitor room state
             while self.is_connected and self._running:
@@ -274,26 +268,20 @@ class LiveKitClient:
         """Start PyAudio input/output streams"""
         self._loop = asyncio.get_event_loop()
         self._running = True
-        
+
         # Input Stream (Microphone)
         self._input_thread = threading.Thread(target=self._input_worker, daemon=True)
         self._input_thread.start()
-        
+
         # Output Stream (Speaker)
         try:
-            self._output_stream = self._pa.open(
-                format=FORMAT,
-                channels=CHANNELS,
-                rate=SAMPLE_RATE,
-                output=True,
-                frames_per_buffer=CHUNK_SIZE
-            )
+            self._output_stream = self._pa.open(format=FORMAT, channels=CHANNELS, rate=SAMPLE_RATE, output=True, frames_per_buffer=CHUNK_SIZE)
             logger.info("🔊 Output stream started")
-            
+
             # Start output thread to pull from ring buffer
             self._output_thread = threading.Thread(target=self._output_worker, daemon=True)
             self._output_thread.start()
-            
+
         except Exception as e:
             logger.error(f"Failed to open output stream: {e}")
 
@@ -301,7 +289,7 @@ class LiveKitClient:
         """Stop PyAudio streams"""
         self._running = False
         self._ring_buffer.clear()
-        
+
         if self._input_stream:
             try:
                 self._input_stream.stop_stream()
@@ -321,15 +309,9 @@ class LiveKitClient:
         """Background thread to capture audio from PyAudio"""
         logger.info("🎤 Input thread started")
         try:
-            stream = self._pa.open(
-                format=FORMAT,
-                channels=CHANNELS,
-                rate=SAMPLE_RATE,
-                input=True,
-                frames_per_buffer=CHUNK_SIZE
-            )
+            stream = self._pa.open(format=FORMAT, channels=CHANNELS, rate=SAMPLE_RATE, input=True, frames_per_buffer=CHUNK_SIZE)
             self._input_stream = stream
-            
+
             while self._running:
                 try:
                     # Blocking read
@@ -345,9 +327,9 @@ class LiveKitClient:
     def _output_worker(self):
         """Background thread to write audio to speakers from Ring Buffer"""
         logger.info("🔊 Output thread started")
-        chunk_bytes = CHUNK_SIZE * 2 # 2 bytes per sample
+        chunk_bytes = CHUNK_SIZE * 2  # 2 bytes per sample
         last_log = time.time()
-        
+
         while self._running:
             if self._output_stream:
                 try:
@@ -360,10 +342,10 @@ class LiveKitClient:
 
                     # Read from ring buffer (will get silence if empty)
                     data = self._ring_buffer.read(chunk_bytes)
-                    
+
                     # Blocking write to audio card
                     self._output_stream.write(data)
-                    
+
                 except Exception as e:
                     logger.error(f"Output write error: {e}")
                     time.sleep(0.1)
@@ -374,12 +356,12 @@ class LiveKitClient:
         """Callback from input thread to push data to LiveKit"""
         # Create a new frame
         frame = rtc.AudioFrame.create(SAMPLE_RATE, CHANNELS, len(data) // 2)
-        
+
         # Copy data efficiently using numpy
         frame_data_np = np.frombuffer(frame.data, dtype=np.int16)
         input_np = np.frombuffer(data, dtype=np.int16)
         np.copyto(frame_data_np, input_np)
-        
+
         # Capture frame (async fire-and-forget)
         asyncio.ensure_future(self.mic_source.capture_frame(frame))
 
@@ -392,10 +374,10 @@ class LiveKitClient:
                 try:
                     # Convert frame to bytes
                     data = np.frombuffer(event.frame.data, dtype=np.int16).tobytes()
-                    
+
                     # Push to Ring Buffer (thread-safe, non-blocking)
                     self._ring_buffer.write(data)
-                    
+
                 except Exception as e:
                     logger.error(f"Playback error: {e}")
 

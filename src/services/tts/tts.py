@@ -3,12 +3,14 @@ Text-to-Speech Service Module with provider-based streaming support.
 """
 
 import logging
-from typing import AsyncGenerator, Optional, Dict, Any
+from typing import AsyncGenerator, Optional
+
+from services.agents_admin.agent_manager import get_agent_manager
+
 from .providers.async_ai.async_ai_provider import AsyncAIProvider
-from .providers.kokoro_local.kokoro_local_provider import KokoroLocalProvider
 from .providers.deepgram.deepgram_provider import DeepgramProvider
 from .providers.elevenlabs.elevenlabs_provider import ElevenLabsProvider
-from services.agents_admin.agent_manager import get_agent_manager
+from .providers.kokoro_local.kokoro_local_provider import KokoroLocalProvider
 
 logger = logging.getLogger(__name__)
 
@@ -31,13 +33,13 @@ class TTSService:
             agent_config = agent_manager.get_session_agent(self.session_id)
         else:
             agent_config = agent_manager.get_agent_config()
-            
+
         provider_name = agent_config.tts_provider
         provider_config = agent_config.tts_config
-        
+
         logger.info(f"Initializing TTS provider from agent configuration: {provider_name}")
         logger.info(f"🔍 TTS provider config for {provider_name}: {provider_config}")
-        
+
         try:
             # Initialize providers - mapping is now handled within each provider
             if provider_name == "async.ai":
@@ -50,12 +52,11 @@ class TTSService:
                 self.provider = ElevenLabsProvider(provider_config)
             else:
                 raise ValueError(f"Unsupported TTS provider: {provider_name}")
-            
+
             logger.info(f"TTS provider initialized: {type(self.provider).__name__}")
         except Exception as e:
             logger.error(f"Failed to initialize TTS provider '{provider_name}': {e}")
             raise
-
 
     async def stream_synthesis(self, text_generator: AsyncGenerator[str, None]) -> AsyncGenerator[bytes, None]:
         """Stream synthesis using the configured provider."""

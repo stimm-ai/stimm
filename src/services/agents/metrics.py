@@ -1,11 +1,12 @@
-import time
+from dataclasses import asdict, dataclass
 from enum import Enum
-from typing import Dict, Any, Optional
-from dataclasses import dataclass, field, asdict
+from typing import Any, Dict, Optional
+
 
 class VADState(str, Enum):
     SPEAKING = "speaking"
     SILENCE = "silence"
+
 
 @dataclass
 class TurnState:
@@ -13,6 +14,7 @@ class TurnState:
     Holds the boolean flags and real-time data for the current conversation turn.
     These flags automatically reset at the beginning of a new turn (when VAD_SPEECH_DETECTED becomes True).
     """
+
     # Boolean Flags
     vad_speech_detected: bool = False
     vad_end_of_speech_detected: bool = False
@@ -46,11 +48,11 @@ class TurnState:
         self.tts_streaming_ended = False
         self.webrtc_streaming_agent_audio_response_started = False
         self.webrtc_streaming_agent_audio_response_ended = False
-        
+
         self.vad_end_of_speech_detected_time = None
         self.webrtc_streaming_agent_audio_response_started_time = None
         # Note: We don't reset vad_energy or vad_state as they are continuous
-        
+
         self.agent_response_delay = None
 
     def to_dict(self) -> Dict[str, Any]:
@@ -59,9 +61,5 @@ class TurnState:
 
     def calculate_metrics(self):
         """Calculate derived metrics based on timestamps."""
-        if (self.webrtc_streaming_agent_audio_response_started_time is not None and 
-            self.vad_end_of_speech_detected_time is not None):
-            self.agent_response_delay = (
-                self.webrtc_streaming_agent_audio_response_started_time - 
-                self.vad_end_of_speech_detected_time
-            )
+        if self.webrtc_streaming_agent_audio_response_started_time is not None and self.vad_end_of_speech_detected_time is not None:
+            self.agent_response_delay = self.webrtc_streaming_agent_audio_response_started_time - self.vad_end_of_speech_detected_time

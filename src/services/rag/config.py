@@ -3,6 +3,7 @@ RAG Service Configuration Module
 """
 
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -17,7 +18,7 @@ class RAGConfig:
         self.conv_cache_ttl_seconds = int(os.getenv("CONVERSATION_CACHE_TTL_SECONDS", "900"))
         self.conv_max_return_messages = int(os.getenv("CONVERSATION_MAX_RETURN_MESSAGES", "12"))
 
-        #System prompt (generic fallback)
+        # System prompt (generic fallback)
         self.system_prompt = """
                                 Vous êtes un assistant vocal intelligent.
                                 Répondez de façon claire, concise et utile.
@@ -27,11 +28,9 @@ class RAGConfig:
                                 Parlez de manière naturelle et professionnelle.
                             """
 
-
     def get_system_prompt(self, language="fr"):
         """Get the system prompt in the specified language"""
         return self.system_prompt
-
 
 
 # Initialize the configuration

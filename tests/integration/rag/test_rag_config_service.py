@@ -2,18 +2,19 @@
 """
 Integration tests for RAG configuration service.
 """
+
+import logging
 import sys
 import uuid
-import logging
-sys.path.insert(0, 'src')
 
-from services.rag.rag_config_service import RagConfigService
-from services.rag.config_models import RagConfigCreate, ProviderConfig
+sys.path.insert(0, "src")
+
 from services.agents_admin.exceptions import (
     AgentNotFoundError,
-    AgentAlreadyExistsError,
     AgentValidationError,
 )
+from services.rag.config_models import ProviderConfig, RagConfigCreate
+from services.rag.rag_config_service import RagConfigService
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -34,7 +35,7 @@ def test_rag_config_crud():
             "top_k": 5,
             "enable_reranker": False,
             "ultra_low_latency": True,
-        }
+        },
     )
     create_data = RagConfigCreate(
         name=test_name,
@@ -64,6 +65,7 @@ def test_rag_config_crud():
 
     # 4. Update
     from services.rag.config_models import RagConfigUpdate
+
     update_data = RagConfigUpdate(
         name=f"{test_name} Updated",
         description="Updated description",
@@ -124,13 +126,14 @@ def test_rag_config_crud():
             provider_config=provider_config,
             is_default=False,
         ),
-        user_id
+        user_id,
     )
     service.set_default_rag_config(dummy.id, user_id)
     # Now second is not default, can delete
     service.delete_rag_config(second.id, user_id)
     # Unset dummy as default before deletion
     from services.rag.config_models import RagConfigUpdate
+
     service.update_rag_config(dummy.id, RagConfigUpdate(is_default=False), user_id)
     service.delete_rag_config(dummy.id, user_id)
 
@@ -149,7 +152,7 @@ def test_validation():
         config={
             "embedding_model": "all-MiniLM-L6-v2",
             # missing collection_name
-        }
+        },
     )
     create_data = RagConfigCreate(
         name=f"Invalid Config {uuid.uuid4().hex[:8]}",
@@ -170,7 +173,7 @@ def test_validation():
         config={
             "collection_name": "test",
             "embedding_model": "test",
-        }
+        },
     )
     create_data2 = RagConfigCreate(
         name=f"Unknown Provider {uuid.uuid4().hex[:8]}",
@@ -202,7 +205,7 @@ def test_retrieval_engine():
             "top_k": 10,
             "enable_reranker": True,
             "ultra_low_latency": False,
-        }
+        },
     )
     create_data = RagConfigCreate(
         name=f"Engine Test {uuid.uuid4().hex[:8]}",
@@ -234,7 +237,7 @@ def test_retrieval_engine():
             "api_key": "fake",
             "top_k": 5,
             "namespace": "test-ns",
-        }
+        },
     )
     create_data2 = RagConfigCreate(
         name=f"Unsupported Provider {uuid.uuid4().hex[:8]}",
@@ -266,6 +269,7 @@ def main():
     except Exception as e:
         logger.error(f"Test failed with exception: {e}")
         import traceback
+
         traceback.print_exc()
         success = False
 

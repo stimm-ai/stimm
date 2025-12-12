@@ -19,7 +19,6 @@ An agent is a configured instance that can hold real‑time voice or text conver
 1. Navigate to **Agents** in the sidebar.
 2. Click **Create Agent**.
 3. Fill in the form:
-
    - **Name** – Required, alphanumeric and underscores only.
    - **Description** – Optional.
    - **System Prompt** – You can use the default or write your own.

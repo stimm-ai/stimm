@@ -6,7 +6,7 @@ Individual service configurations (STT, TTS, RAG) are managed by their own confi
 """
 
 import os
-from typing import Optional
+
 
 class StimmConfig:
     """Stimm wrapper specific configuration settings."""
@@ -21,16 +21,12 @@ class StimmConfig:
     WEBRTC_VAD_FRAME_DURATION_MS: int = int(os.getenv("STIMM_WEBRTC_VAD_FRAME_DURATION_MS", "30"))
     WEBRTC_VAD_SAMPLE_RATE: int = 16000  # WebRTC VAD requires 16kHz
     WEBRTC_VAD_VOICE_START_FRAMES: int = 2  # Consecutive voice frames to start voice activity
-    WEBRTC_VAD_VOICE_END_FRAMES: int = 6   # Consecutive silence frames to end voice activity
+    WEBRTC_VAD_VOICE_END_FRAMES: int = 6  # Consecutive silence frames to end voice activity
 
     # Audio processing settings (for WebSocket communication)
     SAMPLE_RATE: int = int(os.getenv("STIMM_SAMPLE_RATE", "16000"))
     CHUNK_SIZE_MS: int = int(os.getenv("STIMM_CHUNK_SIZE_MS", "20"))
     CHANNELS: int = 1  # Mono audio
-
-
-
-
 
     # TTS Buffering configuration
     PRE_TTS_BUFFERING_LEVEL: str = os.getenv("PRE_TTS_BUFFERING_LEVEL", "LOW")
@@ -59,6 +55,7 @@ class StimmConfig:
     def webrtc_vad_bytes_per_frame(self) -> int:
         """Calculate WebRTC VAD frame size in bytes."""
         return self.webrtc_vad_frame_size * 2  # 2 bytes per sample for 16-bit PCM
+
 
 # Global configuration instance
 stimm_config = StimmConfig()

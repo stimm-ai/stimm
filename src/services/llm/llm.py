@@ -2,14 +2,17 @@
 Language Model Service Module with Agent Support
 """
 
-import asyncio
 import logging
 from typing import AsyncIterator, Optional
 from uuid import UUID
 
-from .providers import create_groq_provider, create_mistral_provider, create_openrouter_provider, create_llama_cpp_provider
 from ..agents_admin.agent_manager import get_agent_manager
-from ..agents_admin.models import AgentConfig
+from .providers import (
+    create_groq_provider,
+    create_llama_cpp_provider,
+    create_mistral_provider,
+    create_openrouter_provider,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +23,7 @@ class LLMService:
     def __init__(self, agent_id: Optional[UUID] = None, session_id: Optional[str] = None):
         """
         Initialize LLM Service with agent support.
-        
+
         Args:
             agent_id: Specific agent ID to use (if None, uses default agent)
             session_id: Session ID for agent resolution
@@ -35,7 +38,7 @@ class LLMService:
         """Initialize the appropriate LLM provider based on agent configuration"""
         # Get agent configuration
         agent_config = None
-        
+
         if self.session_id:
             try:
                 # Verify if session_id is a valid UUID before querying
@@ -43,22 +46,22 @@ class LLMService:
                 agent_config = self.agent_manager.get_session_agent(self.session_id)
             except (ValueError, Exception) as e:
                 logger.warning(f"Invalid session_id '{self.session_id}', falling back to agent_id: {e}")
-        
+
         if not agent_config and self.agent_id:
             agent_config = self.agent_manager.get_agent_config(self.agent_id)
-            
+
         if not agent_config:
             agent_config = self.agent_manager.get_agent_config()
-        
+
         # Store agent configuration for later use (e.g., system prompt)
         self.agent_config = agent_config
-        
+
         provider_name = agent_config.llm_provider
         provider_config = agent_config.llm_config
-        
+
         logger.debug(f"Initializing LLM provider: {provider_name} with agent configuration")
         logger.debug(f"🔍 LLM provider config for {provider_name}: {provider_config}")
-        
+
         # Initialize provider - mapping is now handled within each provider
         if provider_name == "groq.com":
             return create_groq_provider(provider_config)
@@ -100,5 +103,5 @@ class LLMService:
 
     async def close(self):
         """Close the provider session"""
-        if hasattr(self.provider, 'close'):
+        if hasattr(self.provider, "close"):
             await self.provider.close()

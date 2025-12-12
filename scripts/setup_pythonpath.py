@@ -5,10 +5,10 @@ that adds the project's src directory to sys.path.
 This eliminates the need to set PYTHONPATH=./src manually.
 """
 
-import sys
-import os
 import site
+import sys
 from pathlib import Path
+
 
 def find_site_packages() -> Path:
     """Return the site-packages directory of the current Python environment."""
@@ -27,6 +27,7 @@ def find_site_packages() -> Path:
             if sp.exists():
                 return sp
     raise RuntimeError("Could not find site-packages directory")
+
 
 def main():
     project_root = Path(__file__).parent.parent.resolve()
@@ -55,6 +56,7 @@ def main():
     except Exception as e:
         print(f"Error: {e}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

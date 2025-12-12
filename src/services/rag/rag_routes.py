@@ -7,29 +7,27 @@ This module contains the FastAPI route definitions for the RAG service.
 import logging
 import os
 import time
-import uuid
 from contextlib import asynccontextmanager
 from typing import Any, Dict, List
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from qdrant_client import QdrantClient
-from qdrant_client.http import models as qmodels
 from sentence_transformers import CrossEncoder, SentenceTransformer
 
-from .config import rag_config
+from services.retrieval import _bootstrap_documents, _ensure_collection, _retrieve_contexts
 from services.retrieval.config import retrieval_config
+
+from .chatbot_routes import router as chatbot_router
+from .config import rag_config
 from .rag_models import (
     ConversationStateResponse,
     ConversationUpdateRequest,
     QueryRequest,
     QueryResponse,
-    StoredDocument,
 )
-from services.retrieval import _bootstrap_documents, _ensure_collection, _retrieve_contexts
-from .rag_service import _touch_conversation, _prune_conversations
+from .rag_service import _prune_conversations, _touch_conversation
 from .rag_state import RagState
-from .chatbot_routes import router as chatbot_router
 
 LOGGER = logging.getLogger("rag_service")
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
@@ -104,8 +102,6 @@ app.state.rag = RagState()
 app.include_router(chatbot_router, prefix="/rag", tags=["chatbot"])
 
 
-
-
 @app.post("/rag/query", response_model=QueryResponse)
 async def query_rag(request: QueryRequest) -> QueryResponse:
     """Query the RAG service for relevant contexts."""
@@ -120,9 +116,7 @@ async def query_rag(request: QueryRequest) -> QueryResponse:
                 "metadata": {},
                 "created_at": time.time(),
             }
-            conversation_messages = await _touch_conversation(
-                rag_state, request.conversation_id, message
-            )
+            conversation_messages = await _touch_conversation(rag_state, request.conversation_id, message)
         contexts = await _retrieve_contexts(
             rag_state.embedder,
             rag_state.client,

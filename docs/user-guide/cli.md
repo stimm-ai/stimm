@@ -37,6 +37,7 @@ uv run python -m src.cli.main --http talk --agent-name "ava"
 ```
 
 **Options:**
+
 - `--agent-name NAME` – The name of the agent to talk to.
 - `--room-name NAME` – Custom LiveKit room name.
 - `--disable-rag` – Disable Retrieval‑Augmented Generation for the session.
@@ -65,6 +66,7 @@ uv run python -m src.cli.main agents list
 ```
 
 **Subcommands:**
+
 - `list` – Display a list of all configured agents.
 
 ### `test`
@@ -80,6 +82,7 @@ uv run python -m src.cli.main --verbose test echo
 ```
 
 **Subcommands:**
+
 - `echo` – Starts an echo client and server to verify that your audio is being correctly captured and played back through LiveKit.
 
 ### `livekit`
@@ -98,6 +101,7 @@ uv run python -m src.cli.main livekit clear-rooms
 ```
 
 **Subcommands:**
+
 - `list‑rooms` – Lists all LiveKit rooms with participant counts.
 - `clear‑rooms` – Deletes all LiveKit rooms (some rooms may be protected and produce a warning).
 - `clear‑sip‑bridge` – Cleans up SIP bridge agent processes and deletes SIP rooms.

@@ -16,7 +16,6 @@ console.log(`Frontend Config Initialized (isServerSide: ${isServerSide})`);
 console.log(`- Backend Host: ${backendHostname}`);
 console.log(`- LiveKit Host: ${liveKitHostname}`);
 
-
 // Main configuration object
 export const config = {
   /**
@@ -42,22 +41,27 @@ export class FrontendApiClient {
   /**
    * Make API calls with environment-aware URL handling.
    */
-  async apiCall(endpoint: string, options: RequestInit = {}): Promise<Response> {
+  async apiCall(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<Response> {
     // In a universal component, we check if we're on the client or server.
-    const baseUrl = isServerSide ? config.backend.apiUrl : config.browser.stimmApiUrl;
+    const baseUrl = isServerSide
+      ? config.backend.apiUrl
+      : config.browser.stimmApiUrl;
     const url = `${baseUrl}${endpoint}`;
-    
+
     const headers = {
       'Content-Type': 'application/json',
       ...options.headers,
     };
-    
+
     return fetch(url, {
       ...options,
       headers,
     });
   }
-  
+
   /**
    * Get LiveKit WebSocket URL.
    */

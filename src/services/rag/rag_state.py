@@ -6,12 +6,13 @@ This module handles the application state and conversation management for the RA
 
 import asyncio
 from collections import OrderedDict
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable
 
 from qdrant_client import QdrantClient
 from sentence_transformers import CrossEncoder, SentenceTransformer
 
 from .rag_models import StoredDocument
+
 # LexicalIndex is imported locally where needed to avoid circular imports
 
 
@@ -23,6 +24,7 @@ class RagState:
         self.client: QdrantClient | None = None
         self.reranker: CrossEncoder | None = None
         from services.retrieval import LexicalIndex
+
         self.lexical_index = LexicalIndex()
         self.documents: Dict[str, StoredDocument] = {}
         self.conversations: "OrderedDict[str, Any]" = OrderedDict()

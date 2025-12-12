@@ -45,16 +45,18 @@ We are committed to providing a friendly, safe, and welcoming environment for al
 ### Installation
 
 1.  **Fork and Clone**
+
     ```bash
     git clone https://github.com/YOUR_USERNAME/stimm.git
     cd stimm
     ```
 
 2.  **Backend Setup**
+
     ```bash
     # Install dependencies using uv
     uv sync
-    
+
     # Setup environment
     cp .env.example .env
     ```
@@ -85,7 +87,7 @@ We use a simplified feature branch workflow.
     # Example: feat/add-openai-tts
     ```
 
-   Use prefixes like `feat/`, `fix/`, `docs/`, `refactor/` to keep things organized.
+Use prefixes like `feat/`, `fix/`, `docs/`, `refactor/` to keep things organized.
 
 ### Commit Messages
 
@@ -94,6 +96,7 @@ We strictly follow **[Conventional Commits](https://www.conventionalcommits.org/
 **Format**: `<type>(<scope>): <subject>`
 
 **Types**:
+
 - `feat`: A new feature
 - `fix`: A bug fix
 - `docs`: Documentation only changes
@@ -104,6 +107,7 @@ We strictly follow **[Conventional Commits](https://www.conventionalcommits.org/
 - `chore`: Changes to the build process or auxiliary tools
 
 **Example**:
+
 ```text
 feat(agents): add support for ElevenLabs streaming
 fix(vad): resolve silence detection threshold issue
@@ -129,6 +133,7 @@ We use modern Python tooling to ensure code quality.
 - **Type Checking**: Type hints are encouraged.
 
 **Run checks locally**:
+
 ```bash
 uv run black src/ tests/
 uv run isort src/ tests/
@@ -142,6 +147,7 @@ uv run flake8 src/ tests/
 - **Configuration**: `.prettierrc` for formatting rules
 
 **Run checks locally**:
+
 ```bash
 cd src/front
 npm run lint
@@ -149,6 +155,7 @@ npx prettier --check .
 ```
 
 **Auto-fix formatting**:
+
 ```bash
 cd src/front
 npx prettier --write .

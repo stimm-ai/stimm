@@ -6,11 +6,11 @@ CLI Tool for testing voice agents from command line
 import argparse
 import asyncio
 import logging
-import sys
 import os
-from pathlib import Path
+import sys
 from enum import Enum
-from typing import Optional
+from pathlib import Path
+
 import aiohttp
 
 # Auto-configure PYTHONPATH for project
@@ -19,21 +19,23 @@ if __name__ == "__main__":
     project_root = current_file.parent.parent.parent  # Go up from cli/ to root
     src_path = project_root / "src"
     src_str = str(src_path)
-    
+
     if src_str not in sys.path:
         sys.path.insert(0, src_str)
-        os.environ['PYTHONPATH'] = src_str
-    
+        os.environ["PYTHONPATH"] = src_str
+
     print(f"🔧 PYTHONPATH automatiquement configuré: {src_str}")
 
 from cli.agent_runner import AgentRunner
 from cli.text_input import TextInterface
-from utils.logging_config import configure_logging
 from environment_config import config
+from utils.logging_config import configure_logging
+
 
 class VliMode(Enum):
     LOCAL = "local"
     HTTP = "http"
+
 
 def get_base_url(args):
     """Resolve base URL from args"""
@@ -43,9 +45,11 @@ def get_base_url(args):
         return config.stimm_api_url
     return None
 
+
 async def list_agents_local():
-    from services.agents_admin.agent_service import AgentService
     from database.session import get_db
+    from services.agents_admin.agent_service import AgentService
+
     db_gen = get_db()
     db = next(db_gen)
     try:
@@ -68,6 +72,7 @@ async def list_agents_local():
         return 0
     finally:
         db_gen.close()
+
 
 async def list_agents_http(base_url):
     try:
@@ -96,6 +101,7 @@ async def list_agents_http(base_url):
         print("   docker compose up -d")
         return 1
 
+
 async def list_agents(args):
     """List all available agents"""
     try:
@@ -107,8 +113,10 @@ async def list_agents(args):
     except Exception as e:
         print(f"❌ Error listing agents: {e}")
         import traceback
+
         traceback.print_exc()
         return 1
+
 
 def preprocess_argv():
     """
@@ -120,13 +128,13 @@ def preprocess_argv():
     new_argv = []
     i = 0
     commands = ["chat", "talk", "agents", "livekit", "test"]
-    
+
     while i < len(argv):
         arg = argv[i]
         if arg == "--http":
             # Check if next argument is a value (URL) or a command/flag
             if i + 1 < len(argv):
-                next_arg = argv[i+1]
+                next_arg = argv[i + 1]
                 if not next_arg.startswith("-") and next_arg not in commands:
                     # It's a URL! rewrite to --url
                     new_argv.append("--url")
@@ -140,6 +148,7 @@ def preprocess_argv():
             new_argv.append(arg)
             i += 1
     return new_argv
+
 
 def parse_args():
     """Parse command line arguments"""
@@ -159,24 +168,20 @@ Examples:
 
   # List all agents from the local database
   python -m src.cli.main agents list
-"""
+""",
     )
 
     # Global options
     parser.add_argument(
         "--http",
         action="store_true",
-        help="Use HTTP mode. Can be used as a flag (default env URL) or with a value (custom URL)."
+        help="Use HTTP mode. Can be used as a flag (default env URL) or with a value (custom URL).",
     )
     parser.add_argument(
         "--url",
-        help=argparse.SUPPRESS # Hidden argument used by preprocessor
+        help=argparse.SUPPRESS,  # Hidden argument used by preprocessor
     )
-    parser.add_argument(
-        "--verbose", "-v",
-        action="store_true",
-        help="Enable verbose logging"
-    )
+    parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logging")
 
     subparsers = parser.add_subparsers(dest="command", required=True, help="Available commands")
 
@@ -185,7 +190,6 @@ Examples:
     agents_subparsers = parser_agents.add_subparsers(dest="agents_command", required=True)
     parser_agents_list = agents_subparsers.add_parser("list", help="List available agents")
     parser_agents_list.set_defaults(func=list_agents)
-
 
     # 'chat' command
     parser_chat = subparsers.add_parser("chat", help="Start a text-based chat session")
@@ -209,31 +213,31 @@ Examples:
     # 'livekit' command
     parser_livekit = subparsers.add_parser("livekit", help="Manage LiveKit rooms and SIP bridge")
     livekit_subparsers = parser_livekit.add_subparsers(dest="livekit_command", required=True)
-    
+
     # list-rooms subcommand
     parser_list_rooms = livekit_subparsers.add_parser("list-rooms", help="List all LiveKit rooms")
     parser_list_rooms.set_defaults(func=list_rooms)
-    
+
     # clear-rooms subcommand
     parser_clear_rooms = livekit_subparsers.add_parser("clear-rooms", help="Delete all LiveKit rooms")
     parser_clear_rooms.set_defaults(func=clear_rooms)
-    
+
     # clear-sip-bridge subcommand
     parser_clear_sip_bridge = livekit_subparsers.add_parser("clear-sip-bridge", help="Clean all SIP bridge active rooms and processes")
     parser_clear_sip_bridge.set_defaults(func=clear_sip_bridge)
 
-
     return parser.parse_args(preprocess_argv())
 
+
 async def run_chat_mode_local(args):
+    from database.session import get_db
+    from services.agents_admin.agent_service import AgentService
     from services.rag.chatbot_service import chatbot_service
     from services.rag.rag_preloader import rag_preloader
-    from services.agents_admin.agent_service import AgentService
-    from database.session import get_db
 
     agent_name = args.agent_name
     use_rag = not args.disable_rag
-    
+
     # Get agent_id from name
     agent_id = None
     if agent_name:
@@ -254,7 +258,7 @@ async def run_chat_mode_local(args):
 
     print(f"\n🤖 Local Chat Mode (Agent: {agent_name or 'Default'})")
     print("=" * 50)
-    
+
     if use_rag:
         print("⏳ Initializing RAG system (loading models)...")
         # Preload using the specific agent to ensure correct models are warmed up
@@ -266,6 +270,7 @@ async def run_chat_mode_local(args):
     else:
         # Create dummy RAG state if RAG is disabled
         from services.rag.rag_state import RagState
+
         rag_state = RagState()
         # Mock ensure_ready to pass if disable_rag is true?
         # Actually ChatbotService checks rag_state.client.
@@ -274,48 +279,44 @@ async def run_chat_mode_local(args):
         pass
 
     # Use global chatbot_service instance
-    
+
     conversation_id = None
     while True:
         try:
             user_input = input("\n👤 You: ").strip()
-            if user_input.lower() in ['quit', 'exit']:
+            if user_input.lower() in ["quit", "exit"]:
                 break
 
             print("🤖 Agent: ", end="", flush=True)
             full_response = ""
-            async for chunk in chatbot_service.process_chat_message(
-                message=user_input,
-                conversation_id=conversation_id,
-                rag_state=rag_state,
-                agent_id=agent_id
-            ):
-                if chunk['type'] == 'chunk':
-                    content = chunk.get('content', '')
+            async for chunk in chatbot_service.process_chat_message(message=user_input, conversation_id=conversation_id, rag_state=rag_state, agent_id=agent_id):
+                if chunk["type"] == "chunk":
+                    content = chunk.get("content", "")
                     print(content, end="", flush=True)
                     full_response += content
-                elif chunk['type'] == 'complete':
-                    conversation_id = chunk.get('conversation_id')
-            print() # Newline after agent response
+                elif chunk["type"] == "complete":
+                    conversation_id = chunk.get("conversation_id")
+            print()  # Newline after agent response
         except KeyboardInterrupt:
             break
         except Exception as e:
             print(f"\n❌ Error: {e}")
-    
+
     print("\n👋 Conversation ended.")
     return 0
+
 
 async def run_chat_mode_http(args):
     if not args.agent_name:
         print("❌ Agent name is required. Use --agent-name <name>")
         return 1
-    
+
     logging.info(f"Starting text-only mode for agent: {args.agent_name}")
     use_rag = not args.disable_rag
     logging.info(f"RAG enabled: {use_rag}")
-    
+
     base_url = get_base_url(args) or config.stimm_api_url
-    
+
     try:
         text_interface = TextInterface(args.agent_name, use_rag=use_rag, verbose=args.verbose, base_url=base_url)
         await text_interface.run()
@@ -324,8 +325,9 @@ async def run_chat_mode_http(args):
     except Exception as e:
         logging.error(f"Error in text mode: {e}")
         return 1
-    
+
     return 0
+
 
 async def run_chat_mode(args):
     """Run agent in text-only mode"""
@@ -334,50 +336,45 @@ async def run_chat_mode(args):
     else:
         return await run_chat_mode_local(args)
 
+
 async def run_talk_mode(args):
     """Run agent in full audio mode via LiveKit"""
     if not args.agent_name:
         print("❌ Agent name is required. Use --agent-name <name>")
         return 1
-        
+
     is_local = not (args.http or args.url)
     logging.info(f"Starting full audio mode for agent: {args.agent_name} (Local: {is_local})")
-    
+
     base_url = get_base_url(args) or config.stimm_api_url
 
     try:
-        agent_runner = AgentRunner(
-            args.agent_name,
-            args.room_name,
-            verbose=args.verbose,
-            is_local=is_local,
-            base_url=base_url
-        )
+        agent_runner = AgentRunner(args.agent_name, args.room_name, verbose=args.verbose, is_local=is_local, base_url=base_url)
         await agent_runner.run()
     except KeyboardInterrupt:
         logging.info("Full mode interrupted by user")
     except Exception as e:
         logging.error(f"Error in full mode: {e}")
         return 1
-    
+
     return 0
+
 
 async def test_echo_pipeline(args):
     """Test LiveKit audio pipeline with echo server and client"""
-    import subprocess
-    import signal
-    import time
     import os
-    
+    import subprocess
+    import time
+
     logging.info("🚀 Starting LiveKit echo pipeline test")
     logging.info("This will start both echo server and client in parallel")
     logging.info("Speak into your microphone to hear yourself echoed back!")
     logging.info("Press Ctrl+C to stop both processes")
-    
+
     server_process = None
     client_process = None
     tasks = []
-    
+
     try:
         # Start echo server
         logging.info("🔄 Starting echo server...")
@@ -386,13 +383,13 @@ async def test_echo_pipeline(args):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
-            bufsize=1, # Line buffered
-            env={**os.environ, "PYTHONUNBUFFERED": "1"} # Force unbuffered output
+            bufsize=1,  # Line buffered
+            env={**os.environ, "PYTHONUNBUFFERED": "1"},  # Force unbuffered output
         )
-        
+
         # Wait a moment for server to start
         time.sleep(2)
-        
+
         # Start echo client
         logging.info("🎧 Starting echo client...")
         client_process = subprocess.Popen(
@@ -400,10 +397,10 @@ async def test_echo_pipeline(args):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
-            bufsize=1, # Line buffered
-            env={**os.environ, "PYTHONUNBUFFERED": "1"} # Force unbuffered output
+            bufsize=1,  # Line buffered
+            env={**os.environ, "PYTHONUNBUFFERED": "1"},  # Force unbuffered output
         )
-        
+
         # Log output from both processes
         async def log_process_output(process, name):
             while True:
@@ -413,7 +410,7 @@ async def test_echo_pipeline(args):
                         if args.verbose:
                             logging.info(f"[{name}] {line.strip()}")
                     break
-                
+
                 line = await asyncio.get_event_loop().run_in_executor(None, process.stdout.readline)
                 if line:
                     if args.verbose:
@@ -422,14 +419,14 @@ async def test_echo_pipeline(args):
                     if process.poll() is not None:
                         break
                     await asyncio.sleep(0.1)
-        
+
         if args.verbose:
             tasks.append(asyncio.create_task(log_process_output(server_process, "SERVER")))
             tasks.append(asyncio.create_task(log_process_output(client_process, "CLIENT")))
-        
+
         logging.info("✅ Echo pipeline running! Speak into your microphone to test.")
         logging.info("Press Ctrl+C to stop...")
-        
+
         while True:
             if server_process.poll() is not None:
                 logging.error("❌ Echo server crashed!")
@@ -438,7 +435,7 @@ async def test_echo_pipeline(args):
                 logging.error("❌ Echo client crashed!")
                 break
             await asyncio.sleep(1)
-            
+
     except KeyboardInterrupt:
         logging.info("🛑 Stopping echo pipeline...")
     finally:
@@ -446,28 +443,30 @@ async def test_echo_pipeline(args):
             server_process.terminate()
         if client_process and client_process.poll() is None:
             client_process.terminate()
-        
+
         if server_process:
             server_process.wait(timeout=5)
         if client_process:
             client_process.wait(timeout=5)
-        
+
         for task in tasks:
             task.cancel()
-            
+
         logging.info("✅ Echo pipeline stopped")
     return 0
+
 
 async def list_rooms(args):
     """List all LiveKit rooms"""
     try:
         from livekit import api
+
         from environment_config import config
-        
+
         lkapi = api.LiveKitAPI(
             url=config.livekit_url.replace("ws://", "http://"),
             api_key=config.livekit_api_key,
-            api_secret=config.livekit_api_secret
+            api_secret=config.livekit_api_secret,
         )
         try:
             rooms = await lkapi.room.list_rooms(api.ListRoomsRequest())
@@ -486,20 +485,23 @@ async def list_rooms(args):
     except Exception as e:
         print(f"❌ Error listing rooms: {e}")
         import traceback
+
         traceback.print_exc()
         return 1
+
 
 async def clear_rooms(args):
     """Delete all LiveKit rooms"""
     try:
         from livekit import api
-        from environment_config import config
         from livekit.api import TwirpError
-        
+
+        from environment_config import config
+
         lkapi = api.LiveKitAPI(
             url=config.livekit_url.replace("ws://", "http://"),
             api_key=config.livekit_api_key,
-            api_secret=config.livekit_api_secret
+            api_secret=config.livekit_api_secret,
         )
         try:
             rooms = await lkapi.room.list_rooms(api.ListRoomsRequest())
@@ -525,17 +527,20 @@ async def clear_rooms(args):
     except Exception as e:
         print(f"❌ Error clearing rooms: {e}")
         import traceback
+
         traceback.print_exc()
         return 1
+
 
 async def clear_sip_bridge(args):
     """Clean all SIP bridge active rooms and processes"""
     try:
-        from services.sip_bridge_integration import sip_bridge_integration
         from livekit import api
-        from environment_config import config
         from livekit.api import TwirpError
-        
+
+        from environment_config import config
+        from services.sip_bridge_integration import sip_bridge_integration
+
         # First, clean up SIP bridge processes
         if sip_bridge_integration.is_enabled():
             print("Cleaning up SIP bridge agent processes...")
@@ -543,12 +548,12 @@ async def clear_sip_bridge(args):
             print("✅ All agent processes terminated")
         else:
             print("SIP bridge is disabled")
-        
+
         # Delete SIP rooms (optional, but we can also delete rooms with prefix 'sip-inbound')
         lkapi = api.LiveKitAPI(
             url=config.livekit_url.replace("ws://", "http://"),
             api_key=config.livekit_api_key,
-            api_secret=config.livekit_api_secret
+            api_secret=config.livekit_api_secret,
         )
         try:
             rooms = await lkapi.room.list_rooms(api.ListRoomsRequest())
@@ -574,18 +579,21 @@ async def clear_sip_bridge(args):
     except Exception as e:
         print(f"❌ Error clearing SIP bridge: {e}")
         import traceback
+
         traceback.print_exc()
         return 1
+
 
 async def main():
     """Async main entry point"""
     args = parse_args()
     configure_logging(args.verbose)
-    
-    if hasattr(args, 'func'):
+
+    if hasattr(args, "func"):
         return await args.func(args)
-    
+
     return 1
+
 
 if __name__ == "__main__":
     try:

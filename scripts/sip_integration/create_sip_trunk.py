@@ -10,15 +10,17 @@ Usage:
     python create_sip_trunk.py
 """
 
-import redis
 import json
-import uuid
 import sys
+import uuid
+
+import redis
+
 
 def main():
     # Connect to Redis
     try:
-        r = redis.Redis(host='localhost', port=6379, decode_responses=True)
+        r = redis.Redis(host="localhost", port=6379, decode_responses=True)
         r.ping()
     except redis.ConnectionError as e:
         print(f"Failed to connect to Redis: {e}")
@@ -32,7 +34,7 @@ def main():
         "name": "Local Trunk",
         "numbers": ["+1234567"],  # The number that SIP clients dial
         "allowed_addresses": ["0.0.0.0/0"],  # Allow from anywhere for testing
-        "metadata": {}
+        "metadata": {},
     }
 
     # Key for Inbound Trunks (based on maintenance.sh)
@@ -50,6 +52,7 @@ def main():
     trunks = r.hgetall(TRUNK_KEY)
     for tid, cfg in trunks.items():
         print(f"- {tid}: {cfg}")
+
 
 if __name__ == "__main__":
     main()

@@ -1,12 +1,12 @@
-import { AgentEditPage } from '@/components/agent/AgentEditPage'
+import { AgentEditPage } from '@/components/agent/AgentEditPage';
 
 interface PageProps {
   params: Promise<{
-    id: string
-  }>
+    id: string;
+  }>;
 }
 
 export default async function AgentEdit({ params }: PageProps) {
-  const resolvedParams = await params
-  return <AgentEditPage agentId={resolvedParams.id} />
+  const resolvedParams = await params;
+  return <AgentEditPage agentId={resolvedParams.id} />;
 }

@@ -36,10 +36,10 @@ You can create a custom web interface that connects to the same LiveKit room as 
    Install `@livekit/client` and connect to the room:
 
    ```javascript
-   import { Room, RoomEvent } from '@livekit/client';
+   import { Room, RoomEvent } from "@livekit/client";
 
    const room = new Room();
-   await room.connect('wss://your-livekit-server', token);
+   await room.connect("wss://your-livekit-server", token);
 
    // Publish local microphone track
    const localTrack = await room.localParticipant.createAudioTrack();
@@ -47,8 +47,8 @@ You can create a custom web interface that connects to the same LiveKit room as 
 
    // Subscribe to remote tracks (the agent’s audio)
    room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
-     if (track.kind === 'audio') {
-       const audioElement = document.createElement('audio');
+     if (track.kind === "audio") {
+       const audioElement = document.createElement("audio");
        audioElement.srcObject = new MediaStream([track.mediaStreamTrack]);
        audioElement.play();
      }
@@ -61,8 +61,8 @@ You can create a custom web interface that connects to the same LiveKit room as 
    ```javascript
    room.on(RoomEvent.DataReceived, (payload, participant) => {
      const data = JSON.parse(payload);
-     if (data.type === 'transcription') {
-       console.log('Agent said:', data.text);
+     if (data.type === "transcription") {
+       console.log("Agent said:", data.text);
      }
    });
    ```

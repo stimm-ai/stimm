@@ -1,26 +1,45 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useRef } from 'react'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Agent } from '@/components/agent/types'
-import { useLiveKit } from '@/hooks/use-livekit'
-import { useMicrophoneDevices } from '@/hooks/use-microphone-devices'
-import { Mic, MicOff, MoreHorizontal, X, MessageSquare, Activity, Settings, Zap, Bot, User, Edit, Database } from 'lucide-react'
-import { Logo } from '@/components/ui/Logo'
+import { useState, useEffect, useRef } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Agent } from '@/components/agent/types';
+import { useLiveKit } from '@/hooks/use-livekit';
+import { useMicrophoneDevices } from '@/hooks/use-microphone-devices';
+import {
+  Mic,
+  MicOff,
+  MoreHorizontal,
+  X,
+  MessageSquare,
+  Activity,
+  Settings,
+  Zap,
+  Bot,
+  User,
+  Edit,
+  Database,
+} from 'lucide-react';
+import { Logo } from '@/components/ui/Logo';
 
 interface StimmStatus {
-  energy: number
-  state: 'silence' | 'speaking' | 'processing' | 'responding'
-  llmStatus: boolean
-  ttsStatus: boolean
-  tokenCount: number
-  audioChunkCount: number
-  streamTime: number
-  firstChunkLatency?: number
-  playbackStartLatency?: number
+  energy: number;
+  state: 'silence' | 'speaking' | 'processing' | 'responding';
+  llmStatus: boolean;
+  ttsStatus: boolean;
+  tokenCount: number;
+  audioChunkCount: number;
+  streamTime: number;
+  firstChunkLatency?: number;
+  playbackStartLatency?: number;
 }
 
 // Reverting to original gradient theme but adapting to the new layout
@@ -32,13 +51,13 @@ const THEME = {
   textMuted: 'text-gray-200',
   accent: 'text-cyan-300',
   success: 'text-green-300',
-  error: 'text-red-300'
-}
+  error: 'text-red-300',
+};
 
 export function StimmInterface() {
-  const [agents, setAgents] = useState<Agent[]>([])
-  const [selectedAgentId, setSelectedAgentId] = useState<string>('default')
-  const [currentAgent, setCurrentAgent] = useState<Agent | null>(null)
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [selectedAgentId, setSelectedAgentId] = useState<string>('default');
+  const [currentAgent, setCurrentAgent] = useState<Agent | null>(null);
 
   const [status, setStatus] = useState<StimmStatus>({
     energy: 0,
@@ -47,13 +66,13 @@ export function StimmInterface() {
     ttsStatus: false,
     tokenCount: 0,
     audioChunkCount: 0,
-    streamTime: 0
-  })
-  const [showAgentOverlay, setShowAgentOverlay] = useState(false)
-  const [ragPreloading, setRagPreloading] = useState(false)
+    streamTime: 0,
+  });
+  const [showAgentOverlay, setShowAgentOverlay] = useState(false);
+  const [ragPreloading, setRagPreloading] = useState(false);
 
-  const [transcription, setTranscription] = useState<string>('')
-  const [response, setResponse] = useState<string>('')
+  const [transcription, setTranscription] = useState<string>('');
+  const [response, setResponse] = useState<string>('');
 
   // Use the LiveKit hook
   const {
@@ -75,8 +94,8 @@ export function StimmInterface() {
     ragLoadingMessage,
     connect,
     disconnect,
-    switchMicrophone
-  } = useLiveKit()
+    switchMicrophone,
+  } = useLiveKit();
 
   // Microphone devices
   const {
@@ -86,193 +105,214 @@ export function StimmInterface() {
     error: devicesError,
     refreshDevices,
     setSelectedDeviceId,
-  } = useMicrophoneDevices()
+  } = useMicrophoneDevices();
 
-  const selectedDevice = devices.find(d => d.deviceId === selectedDeviceId)
-  const tooltipText = selectedDevice ? selectedDevice.label : 'Select microphone'
+  const selectedDevice = devices.find((d) => d.deviceId === selectedDeviceId);
+  const tooltipText = selectedDevice
+    ? selectedDevice.label
+    : 'Select microphone';
 
-  const audioPlayerRef = useRef<HTMLAudioElement>(null)
+  const audioPlayerRef = useRef<HTMLAudioElement>(null);
 
   // Visualizer State
-  const [audioLevels, setAudioLevels] = useState<number[]>([0, 0, 0, 0, 0])
-  const [activeStreamType, setActiveStreamType] = useState<'user' | 'agent'>('user')
-  const animationRef = useRef<number>()
-  const analyserRef = useRef<AnalyserNode>()
-  const audioContextRef = useRef<AudioContext>()
-  const messagesContainerRef = useRef<HTMLDivElement>(null)
+  const [audioLevels, setAudioLevels] = useState<number[]>([0, 0, 0, 0, 0]);
+  const [activeStreamType, setActiveStreamType] = useState<'user' | 'agent'>(
+    'user'
+  );
+  const animationRef = useRef<number>();
+  const analyserRef = useRef<AnalyserNode>();
+  const audioContextRef = useRef<AudioContext>();
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   // Load agents on component mount
   useEffect(() => {
-    loadAgents()
-  }, [])
+    loadAgents();
+  }, []);
 
   // Update current agent object when selection changes or agents load
   useEffect(() => {
     if (agents.length > 0) {
-      const agent = agents.find(a => a.id === selectedAgentId)
+      const agent = agents.find((a) => a.id === selectedAgentId);
       if (agent) {
-        setCurrentAgent(agent)
+        setCurrentAgent(agent);
       } else {
         // If selectedAgentId doesn't match any agent, select the first one
-        setSelectedAgentId(agents[0].id)
-        setCurrentAgent(agents[0])
+        setSelectedAgentId(agents[0].id);
+        setCurrentAgent(agents[0]);
       }
     }
-  }, [selectedAgentId, agents])
+  }, [selectedAgentId, agents]);
 
   // Preload RAG when agent is selected (page load or change)
   useEffect(() => {
-    if (!selectedAgentId) return
+    if (!selectedAgentId) return;
 
     const preloadRAG = async () => {
-      setRagPreloading(true)
+      setRagPreloading(true);
       try {
-        const WSL2_IP = '172.23.126.232'
+        const WSL2_IP = '172.23.126.232';
         const response = await fetch(
           `http://${WSL2_IP}:8001/api/rag-configs/preload/${selectedAgentId}`,
           { method: 'POST' }
-        )
+        );
         if (response.ok) {
-          const data = await response.json()
-          console.log('RAG preloaded:', data.message)
+          const data = await response.json();
+          console.log('RAG preloaded:', data.message);
         }
       } catch (err) {
-        console.warn('RAG preload failed (non-critical):', err)
+        console.warn('RAG preload failed (non-critical):', err);
       } finally {
-        setRagPreloading(false)
+        setRagPreloading(false);
       }
-    }
+    };
 
-    preloadRAG()
-  }, [selectedAgentId])
+    preloadRAG();
+  }, [selectedAgentId]);
 
   // Track previous selected device ID to avoid unnecessary switches
-  const prevDeviceIdRef = useRef<string | null>(selectedDeviceId ?? null)
+  const prevDeviceIdRef = useRef<string | null>(selectedDeviceId ?? null);
 
   // Switch microphone when device changes while connected
   useEffect(() => {
     if (isConnected && selectedDeviceId !== prevDeviceIdRef.current) {
-      prevDeviceIdRef.current = selectedDeviceId ?? null
-      switchMicrophone(selectedDeviceId || undefined).catch(err => {
-        console.error('Failed to switch microphone:', err)
+      prevDeviceIdRef.current = selectedDeviceId ?? null;
+      switchMicrophone(selectedDeviceId || undefined).catch((err) => {
+        console.error('Failed to switch microphone:', err);
         // Optionally show error to user
-      })
+      });
     } else {
-      prevDeviceIdRef.current = selectedDeviceId ?? null
+      prevDeviceIdRef.current = selectedDeviceId ?? null;
     }
-  }, [selectedDeviceId, isConnected, switchMicrophone])
+  }, [selectedDeviceId, isConnected, switchMicrophone]);
 
   // Handle Audio Stream
   useEffect(() => {
     if (audioPlayerRef.current) {
       if (audioStream) {
-        console.log('Attaching audio stream to player')
-        audioPlayerRef.current.srcObject = audioStream
-        audioPlayerRef.current.play().catch(e => console.error('Audio playback failed:', e))
+        console.log('Attaching audio stream to player');
+        audioPlayerRef.current.srcObject = audioStream;
+        audioPlayerRef.current
+          .play()
+          .catch((e) => console.error('Audio playback failed:', e));
       } else {
-        audioPlayerRef.current.srcObject = null
+        audioPlayerRef.current.srcObject = null;
       }
     }
-  }, [audioStream])
+  }, [audioStream]);
 
   // Setup Web Audio API for Real-time Visualizer
   useEffect(() => {
     // Determine which stream to visualize
     // If agent is speaking (responding state or playing audio), use agent stream
     // Otherwise use local mic
-    const isAgentSpeaking = status.state === 'responding' || turnState.webrtc_streaming_agent_audio_response_started
+    const isAgentSpeaking =
+      status.state === 'responding' ||
+      turnState.webrtc_streaming_agent_audio_response_started;
     // Prioritize audioStream only if it exists and agent is supposedly speaking
-    const targetStream = (isAgentSpeaking && audioStream) ? audioStream : localAudioStream
-    const type = (isAgentSpeaking && audioStream) ? 'agent' : 'user'
+    const targetStream =
+      isAgentSpeaking && audioStream ? audioStream : localAudioStream;
+    const type = isAgentSpeaking && audioStream ? 'agent' : 'user';
 
-    setActiveStreamType(type)
+    setActiveStreamType(type);
 
     if (!targetStream) {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current)
-      setAudioLevels([0, 0, 0, 0, 0])
-      return
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      setAudioLevels([0, 0, 0, 0, 0]);
+      return;
     }
 
     const initAudioContext = () => {
       try {
         // Reuse context if exists and running, or create new
-        if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
-          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
+        if (
+          !audioContextRef.current ||
+          audioContextRef.current.state === 'closed'
+        ) {
+          audioContextRef.current = new (
+            window.AudioContext || (window as any).webkitAudioContext
+          )();
         }
-        const audioContext = audioContextRef.current
+        const audioContext = audioContextRef.current;
 
         // Ensure we don't have dangling analysers/animations
-        if (animationRef.current) cancelAnimationFrame(animationRef.current)
+        if (animationRef.current) cancelAnimationFrame(animationRef.current);
 
-        const analyser = audioContext.createAnalyser()
+        const analyser = audioContext.createAnalyser();
         // Note: createMediaStreamSource can throw if stream is not active or valid
-        const source = audioContext.createMediaStreamSource(targetStream)
+        const source = audioContext.createMediaStreamSource(targetStream);
 
-        analyser.fftSize = 32 // Small FFT size for fewer bars
-        source.connect(analyser)
+        analyser.fftSize = 32; // Small FFT size for fewer bars
+        source.connect(analyser);
 
-        analyserRef.current = analyser
+        analyserRef.current = analyser;
 
-        const bufferLength = analyser.frequencyBinCount
-        const dataArray = new Uint8Array(bufferLength)
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
 
         const updateVisualizer = () => {
-          if (!analyserRef.current) return
+          if (!analyserRef.current) return;
 
           // Gate for user microphone based on VAD to avoid parasitic noise
           // If we are in user mode (listening) and VAD is NOT active/speaking, show zero levels
           // We use status.state which comes from backend VAD, or a local threshold if needed
           // The user specifically requested this to filter out idle noise
-          const isUserMode = type === 'user'
-          const isVadActive = status.state === 'speaking' || turnState.vad_speech_detected
+          const isUserMode = type === 'user';
+          const isVadActive =
+            status.state === 'speaking' || turnState.vad_speech_detected;
 
           if (isUserMode && !isVadActive) {
             // Decay levels to 0 smoothly or set to 0
-            setAudioLevels(prev => prev.map(l => Math.max(0, l - 5)))
-            animationRef.current = requestAnimationFrame(updateVisualizer)
-            return
+            setAudioLevels((prev) => prev.map((l) => Math.max(0, l - 5)));
+            animationRef.current = requestAnimationFrame(updateVisualizer);
+            return;
           }
 
-          analyserRef.current.getByteFrequencyData(dataArray)
+          analyserRef.current.getByteFrequencyData(dataArray);
 
           // Map frequency bins to 5 bars
           // Indices: 0 (Bass), 1, 2 (Mids), 3, 4 (Treble)
-          const indices = [1, 2, 3, 5, 8]
-          const levels = indices.map(i => {
-            const val = dataArray[i] || 0
+          const indices = [1, 2, 3, 5, 8];
+          const levels = indices.map((i) => {
+            const val = dataArray[i] || 0;
             // Scale 0-255 to 0-100
-            return (val / 255) * 100
-          })
+            return (val / 255) * 100;
+          });
 
-          setAudioLevels(levels)
-          animationRef.current = requestAnimationFrame(updateVisualizer)
-        }
+          setAudioLevels(levels);
+          animationRef.current = requestAnimationFrame(updateVisualizer);
+        };
 
-        updateVisualizer()
+        updateVisualizer();
       } catch (e) {
-        console.error('Failed to initialize audio visualizer:', e)
+        console.error('Failed to initialize audio visualizer:', e);
       }
-    }
+    };
 
-    initAudioContext()
+    initAudioContext();
 
     return () => {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current)
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
       // We generally keep audioContext alive, but could close it if component unmounts
-    }
-  }, [localAudioStream, audioStream, status.state, turnState.webrtc_streaming_agent_audio_response_started, turnState.vad_speech_detected])
+    };
+  }, [
+    localAudioStream,
+    audioStream,
+    status.state,
+    turnState.webrtc_streaming_agent_audio_response_started,
+    turnState.vad_speech_detected,
+  ]);
 
   // Sync LiveKit Data to Local State for UI
   useEffect(() => {
     if (liveTranscripts) {
-      setTranscription(liveTranscripts)
+      setTranscription(liveTranscripts);
     }
     if (liveResponse) {
-      setResponse(liveResponse)
+      setResponse(liveResponse);
     }
 
     // Update status object with all indicators
-    setStatus(prev => ({
+    setStatus((prev) => ({
       ...prev,
       // VAD
       energy: vadState?.energy || 0,
@@ -284,65 +324,75 @@ export function StimmInterface() {
       tokenCount: metrics?.tokens || 0,
       audioChunkCount: metrics?.audioChunks || 0,
       firstChunkLatency: metrics?.latency || 0,
-      playbackStartLatency: metrics?.latency || 0
-    }))
-  }, [liveTranscripts, liveResponse, vadState, llmState, ttsState, metrics])
+      playbackStartLatency: metrics?.latency || 0,
+    }));
+  }, [liveTranscripts, liveResponse, vadState, llmState, ttsState, metrics]);
 
   // Auto-scroll messages container when messages change
   useEffect(() => {
     if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
+      messagesContainerRef.current.scrollTop =
+        messagesContainerRef.current.scrollHeight;
     }
-  }, [messages])
+  }, [messages]);
 
   const loadAgents = async () => {
     try {
-      const WSL2_IP = '172.23.126.232'
-      const response = await fetch(`http://${WSL2_IP}:8001/api/agents/`)
+      const WSL2_IP = '172.23.126.232';
+      const response = await fetch(`http://${WSL2_IP}:8001/api/agents/`);
       if (response.ok) {
-        const agentsData = await response.json()
-        setAgents(agentsData)
-        console.log('Loaded agents:', agentsData.length)
+        const agentsData = await response.json();
+        setAgents(agentsData);
+        console.log('Loaded agents:', agentsData.length);
 
         // Fetch and select the default agent
         try {
-          const defaultResponse = await fetch(`http://${WSL2_IP}:8001/api/agents/default/current`)
+          const defaultResponse = await fetch(
+            `http://${WSL2_IP}:8001/api/agents/default/current`
+          );
           if (defaultResponse.ok) {
-            const defaultAgent = await defaultResponse.json()
-            setSelectedAgentId(defaultAgent.id)
-            setCurrentAgent(defaultAgent)
-            console.log('Selected default agent:', defaultAgent.name)
+            const defaultAgent = await defaultResponse.json();
+            setSelectedAgentId(defaultAgent.id);
+            setCurrentAgent(defaultAgent);
+            console.log('Selected default agent:', defaultAgent.name);
           }
         } catch (defaultErr) {
-          console.warn('Failed to load default agent, using first agent:', defaultErr)
+          console.warn(
+            'Failed to load default agent, using first agent:',
+            defaultErr
+          );
           if (agentsData.length > 0) {
-            setSelectedAgentId(agentsData[0].id)
-            setCurrentAgent(agentsData[0])
+            setSelectedAgentId(agentsData[0].id);
+            setCurrentAgent(agentsData[0]);
           }
         }
       } else {
-        console.warn('Failed to load agents, status:', response.status)
-        setAgents([])
+        console.warn('Failed to load agents, status:', response.status);
+        setAgents([]);
       }
     } catch (err) {
-      console.warn('Failed to load agents:', err)
-      setAgents([])
+      console.warn('Failed to load agents:', err);
+      setAgents([]);
     }
-  }
+  };
 
   const handleVoiceToggle = async () => {
     if (!isConnected) {
-      if (connectionState === 'connecting') return
-      await connect(selectedAgentId, { deviceId: selectedDeviceId || undefined })
+      if (connectionState === 'connecting') return;
+      await connect(selectedAgentId, {
+        deviceId: selectedDeviceId || undefined,
+      });
     } else {
-      await disconnect()
-      setTranscription('')
-      setResponse('')
+      await disconnect();
+      setTranscription('');
+      setResponse('');
     }
-  }
+  };
 
   return (
-    <div className={`min-h-screen ${THEME.bg} text-white font-sans p-4 flex gap-4 overflow-hidden`}>
+    <div
+      className={`min-h-screen ${THEME.bg} text-white font-sans p-4 flex gap-4 overflow-hidden`}
+    >
       {/* CENTER PANEL: Visualizer & Controls */}
       <div className="flex-1 flex flex-col relative rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm overflow-hidden shadow-2xl">
         {/* Top Header - Agent Selector */}
@@ -367,7 +417,9 @@ export function StimmInterface() {
           <div className="fixed inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm z-50">
             <div className="bg-gradient-to-br from-blue-900 to-purple-900 border border-white/20 rounded-xl p-6 shadow-2xl w-full max-w-4xl mx-4">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-bold text-white">Select Voice Agent</h3>
+                <h3 className="text-xl font-bold text-white">
+                  Select Voice Agent
+                </h3>
                 <button
                   className="text-white/60 hover:text-white transition-colors"
                   onClick={() => setShowAgentOverlay(false)}
@@ -376,14 +428,15 @@ export function StimmInterface() {
                 </button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {agents.map(agent => (
+                {agents.map((agent) => (
                   <div
                     key={agent.id}
                     className={`px-4 py-5 rounded-lg border-2 transition-all relative group
-                        ${selectedAgentId === agent.id
-                        ? 'border-cyan-400 bg-cyan-900/50 text-white shadow-[0_0_20px_rgba(103,232,249,0.3)]'
-                        : 'border-white/10 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white'
-                      }`}
+                        ${
+                          selectedAgentId === agent.id
+                            ? 'border-cyan-400 bg-cyan-900/50 text-white shadow-[0_0_20px_rgba(103,232,249,0.3)]'
+                            : 'border-white/10 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white'
+                        }`}
                   >
                     {/* Edit Button */}
                     <a
@@ -403,12 +456,22 @@ export function StimmInterface() {
                       }}
                       className="cursor-pointer"
                     >
-                      <div className="font-bold text-white uppercase mb-2">{agent.name}</div>
-                      <div className="text-[10px] text-white/60">{agent.description || 'Voice AI Agent'}</div>
+                      <div className="font-bold text-white uppercase mb-2">
+                        {agent.name}
+                      </div>
+                      <div className="text-[10px] text-white/60">
+                        {agent.description || 'Voice AI Agent'}
+                      </div>
                       <div className="mt-3 flex items-center gap-2 flex-wrap">
-                        <span className="text-xs bg-cyan-400/20 px-2 py-1 rounded-full">{agent.stt_provider || 'Deepgram'}</span>
-                        <span className="text-xs bg-purple-400/20 px-2 py-1 rounded-full">{agent.llm_provider || 'Mistral'}</span>
-                        <span className="text-xs bg-orange-400/20 px-2 py-1 rounded-full">{agent.tts_provider || 'Cartesia'}</span>
+                        <span className="text-xs bg-cyan-400/20 px-2 py-1 rounded-full">
+                          {agent.stt_provider || 'Deepgram'}
+                        </span>
+                        <span className="text-xs bg-purple-400/20 px-2 py-1 rounded-full">
+                          {agent.llm_provider || 'Mistral'}
+                        </span>
+                        <span className="text-xs bg-orange-400/20 px-2 py-1 rounded-full">
+                          {agent.tts_provider || 'Cartesia'}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -442,19 +505,37 @@ export function StimmInterface() {
           {/* Container for both start button and visualizer with transition */}
           <div className="flex flex-col items-center justify-center h-52 w-full relative">
             {/* Transition container */}
-            <div className={`flex flex-col items-center justify-center h-full w-full absolute
-               ${isConnected ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'}
-               transition-opacity duration-300 ease-in-out transition-transform duration-300 ease-in-out`}>
+            <div
+              className={`flex flex-col items-center justify-center h-full w-full absolute
+               ${
+                 isConnected
+                   ? 'opacity-100 scale-100'
+                   : 'opacity-0 scale-90 pointer-events-none'
+               }
+               transition-opacity duration-300 ease-in-out transition-transform duration-300 ease-in-out`}
+            >
               {/* Visualizer Icon Indicator */}
               <div className="mb-6 flex justify-center h-8">
-                <div className={`
+                <div
+                  className={`
                    flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300
-                   ${activeStreamType === 'agent'
-                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-[0_0_15px_rgba(103,232,249,0.3)]'
-                    : 'bg-white/10 text-white/70 border border-white/10'}
-                 `}>
-                  {activeStreamType === 'agent' ? <Bot className="w-3 h-3" /> : <User className="w-3 h-3" />}
-                  <span>{activeStreamType === 'agent' ? 'Agent Speaking' : 'Listening'}</span>
+                   ${
+                     activeStreamType === 'agent'
+                       ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-[0_0_15px_rgba(103,232,249,0.3)]'
+                       : 'bg-white/10 text-white/70 border border-white/10'
+                   }
+                 `}
+                >
+                  {activeStreamType === 'agent' ? (
+                    <Bot className="w-3 h-3" />
+                  ) : (
+                    <User className="w-3 h-3" />
+                  )}
+                  <span>
+                    {activeStreamType === 'agent'
+                      ? 'Agent Speaking'
+                      : 'Listening'}
+                  </span>
                 </div>
               </div>
 
@@ -462,34 +543,45 @@ export function StimmInterface() {
               <div className="flex items-center justify-center gap-3 h-32">
                 {audioLevels.map((level, i) => {
                   // Enhance levels for better visibility
-                  const shapeMultipliers = [0.8, 1.0, 1.2, 1.0, 0.8]
-                  const height = Math.max(15, level * shapeMultipliers[i])
+                  const shapeMultipliers = [0.8, 1.0, 1.2, 1.0, 0.8];
+                  const height = Math.max(15, level * shapeMultipliers[i]);
 
-                  const isActive = level > 5
-                  const isAgent = activeStreamType === 'agent'
+                  const isActive = level > 5;
+                  const isAgent = activeStreamType === 'agent';
 
                   return (
                     <div
                       key={i}
                       className={`w-12 rounded-full transition-all duration-75 ease-out shadow-lg
-                         ${isActive
-                          ? (isAgent ? 'bg-cyan-300 shadow-[0_0_20px_rgba(103,232,249,0.6)]' : 'bg-white shadow-[0_0_20px_rgba(255,255,255,0.6)]')
-                          : (isAgent ? 'bg-cyan-900/40' : 'bg-white/20')
-                        }`}
+                         ${
+                           isActive
+                             ? isAgent
+                               ? 'bg-cyan-300 shadow-[0_0_20px_rgba(103,232,249,0.6)]'
+                               : 'bg-white shadow-[0_0_20px_rgba(255,255,255,0.6)]'
+                             : isAgent
+                               ? 'bg-cyan-900/40'
+                               : 'bg-white/20'
+                         }`}
                       style={{
                         height: `${Math.min(100, height)}%`,
-                        opacity: isActive ? 0.8 + (level / 200) : 0.3
+                        opacity: isActive ? 0.8 + level / 200 : 0.3,
                       }}
                     />
-                  )
+                  );
                 })}
               </div>
             </div>
 
             {/* Start Button Container with transition */}
-            <div className={`flex flex-col items-center justify-center h-60 absolute
-               ${isConnected ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 scale-100'}
-               transition-all duration-300 ease-in-out`}>
+            <div
+              className={`flex flex-col items-center justify-center h-60 absolute
+               ${
+                 isConnected
+                   ? 'opacity-0 scale-90 pointer-events-none'
+                   : 'opacity-100 scale-100'
+               }
+               transition-all duration-300 ease-in-out`}
+            >
               <Button
                 onClick={handleVoiceToggle}
                 className="w-24 h-24 rounded-full bg-white text-indigo-600 hover:bg-gray-100 shadow-[0_0_30px_rgba(255,255,255,0.9)] flex items-center justify-center mb-2 transition-all transform hover:scale-105"
@@ -502,9 +594,21 @@ export function StimmInterface() {
 
           {/* Connection Status Text */}
           <div className="mt-8 text-center h-8 font-medium drop-shadow-md">
-            {connectionState === 'connecting' && <span className="text-yellow-300 animate-pulse">Connecting...</span>}
-            {connectionState === 'connected' && <span className="text-green-300">Connected to {currentAgent?.name}</span>}
-            {connectionState === 'failed' && <span className="text-red-300">{liveKitError || 'Connection Failed'}</span>}
+            {connectionState === 'connecting' && (
+              <span className="text-yellow-300 animate-pulse">
+                Connecting...
+              </span>
+            )}
+            {connectionState === 'connected' && (
+              <span className="text-green-300">
+                Connected to {currentAgent?.name}
+              </span>
+            )}
+            {connectionState === 'failed' && (
+              <span className="text-red-300">
+                {liveKitError || 'Connection Failed'}
+              </span>
+            )}
           </div>
 
           {/* Microphone Settings Selector - positioned in bottom right of center panel */}
@@ -523,11 +627,17 @@ export function StimmInterface() {
               </SelectTrigger>
               <SelectContent className="bg-black/80 backdrop-blur-md border border-white/10 text-white">
                 {devicesLoading ? (
-                  <SelectItem value="loading" disabled>Loading microphones...</SelectItem>
+                  <SelectItem value="loading" disabled>
+                    Loading microphones...
+                  </SelectItem>
                 ) : devicesError ? (
-                  <SelectItem value="error" disabled>Error loading devices</SelectItem>
+                  <SelectItem value="error" disabled>
+                    Error loading devices
+                  </SelectItem>
                 ) : devices.length === 0 ? (
-                  <SelectItem value="none" disabled>No microphones found</SelectItem>
+                  <SelectItem value="none" disabled>
+                    No microphones found
+                  </SelectItem>
                 ) : (
                   devices.map((device) => (
                     <SelectItem key={device.deviceId} value={device.deviceId}>
@@ -567,8 +677,12 @@ export function StimmInterface() {
               <div className="w-16 h-16 border-4 border-white/20 border-t-cyan-300 rounded-full animate-spin"></div>
               {/* Message */}
               <div className="text-white text-center">
-                <div className="font-semibold">{ragLoadingMessage || "Initialisation du système RAG..."}</div>
-                <div className="text-xs text-white/60 mt-1">Cela peut prendre quelques secondes...</div>
+                <div className="font-semibold">
+                  {ragLoadingMessage || 'Initialisation du système RAG...'}
+                </div>
+                <div className="text-xs text-white/60 mt-1">
+                  Cela peut prendre quelques secondes...
+                </div>
               </div>
             </div>
           </div>
@@ -589,7 +703,9 @@ export function StimmInterface() {
             <div className="text-cyan-300 font-mono text-right">SILERO</div>
 
             {/* STT */}
-            <div className="text-white/80 font-semibold pt-1">SPEECH-TO-TEXT</div>
+            <div className="text-white/80 font-semibold pt-1">
+              SPEECH-TO-TEXT
+            </div>
             <div className="text-cyan-300 font-mono text-right pt-1 uppercase">
               {currentAgent?.stt_provider || 'DEEPGRAM'}
             </div>
@@ -609,7 +725,9 @@ export function StimmInterface() {
             </div>
 
             {/* TTS */}
-            <div className="text-white/80 font-semibold pt-1">TEXT-TO-SPEECH</div>
+            <div className="text-white/80 font-semibold pt-1">
+              TEXT-TO-SPEECH
+            </div>
             <div className="text-cyan-300 font-mono text-right uppercase">
               {currentAgent?.tts_provider || 'ELEVENLABS'}
             </div>
@@ -618,7 +736,10 @@ export function StimmInterface() {
               {currentAgent?.tts_config?.model || 'FLASH_V2_5'}
             </div>
             <div className="text-white/50 pl-2">VOICE</div>
-            <div className="text-cyan-300/80 font-mono text-right uppercase truncate max-w-[150px]" title={currentAgent?.tts_config?.voice}>
+            <div
+              className="text-cyan-300/80 font-mono text-right uppercase truncate max-w-[150px]"
+              title={currentAgent?.tts_config?.voice}
+            >
               {currentAgent?.tts_config?.voice || '-'}
             </div>
           </div>
@@ -633,21 +754,51 @@ export function StimmInterface() {
           <div className="grid grid-cols-[1fr_auto] gap-y-3 text-xs items-center">
             {/* Indicators */}
             <div className="text-white/80">SPEECH DETECTED</div>
-            <div className={`h-2 w-2 rounded-full ${turnState.vad_speech_detected && !turnState.vad_end_of_speech_detected ? 'bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)]' : 'bg-white/10'}`} />
+            <div
+              className={`h-2 w-2 rounded-full ${
+                turnState.vad_speech_detected &&
+                !turnState.vad_end_of_speech_detected
+                  ? 'bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)]'
+                  : 'bg-white/10'
+              }`}
+            />
 
             <div className="text-white/80">STT STREAMING</div>
-            <div className={`h-2 w-2 rounded-full ${turnState.stt_streaming_started && !turnState.stt_streaming_ended ? 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]' : 'bg-white/10'}`} />
+            <div
+              className={`h-2 w-2 rounded-full ${
+                turnState.stt_streaming_started &&
+                !turnState.stt_streaming_ended
+                  ? 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]'
+                  : 'bg-white/10'
+              }`}
+            />
 
             <div className="text-white/80">LLM STREAMING</div>
-            <div className={`h-2 w-2 rounded-full ${turnState.llm_streaming_started && !turnState.llm_streaming_ended ? 'bg-purple-400 shadow-[0_0_8px_rgba(192,132,252,0.8)]' : 'bg-white/10'}`} />
+            <div
+              className={`h-2 w-2 rounded-full ${
+                turnState.llm_streaming_started &&
+                !turnState.llm_streaming_ended
+                  ? 'bg-purple-400 shadow-[0_0_8px_rgba(192,132,252,0.8)]'
+                  : 'bg-white/10'
+              }`}
+            />
 
             <div className="text-white/80">TTS STREAMING</div>
-            <div className={`h-2 w-2 rounded-full ${turnState.tts_streaming_started && !turnState.tts_streaming_ended ? 'bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.8)]' : 'bg-white/10'}`} />
+            <div
+              className={`h-2 w-2 rounded-full ${
+                turnState.tts_streaming_started &&
+                !turnState.tts_streaming_ended
+                  ? 'bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.8)]'
+                  : 'bg-white/10'
+              }`}
+            />
 
             {/* Overall Latency */}
             <div className="text-white font-bold pt-2">RESPONSE LATENCY</div>
             <div className="text-cyan-300 font-bold font-mono text-right pt-2 text-sm">
-              {status.firstChunkLatency ? `${Math.round(status.firstChunkLatency || 0)}ms` : '-'}
+              {status.firstChunkLatency
+                ? `${Math.round(status.firstChunkLatency || 0)}ms`
+                : '-'}
             </div>
           </div>
         </div>
@@ -685,9 +836,7 @@ export function StimmInterface() {
                   </div>
                   <div
                     className={`${
-                      msg.speaker === 'user'
-                        ? 'text-white/90'
-                        : 'text-cyan-200'
+                      msg.speaker === 'user' ? 'text-white/90' : 'text-cyan-200'
                     }`}
                   >
                     {msg.text}
@@ -701,7 +850,6 @@ export function StimmInterface() {
           </div>
         </div>
       </div>
-
     </div>
-  )
+  );
 }

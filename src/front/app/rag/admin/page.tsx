@@ -1,5 +1,5 @@
-import { RagAdminPage } from '@/components/rag/RagAdminPage'
+import { RagAdminPage } from '@/components/rag/RagAdminPage';
 
 export default function RagAdminRoute() {
-  return <RagAdminPage />
+  return <RagAdminPage />;
 }

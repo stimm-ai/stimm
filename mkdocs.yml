@@ -115,37 +115,35 @@ extra:
     - icon: fontawesome/brands/github
       link: https://github.com/stimm-ai/stimm
 
-
-
 extra_css:
   - assets/extra.css
 
 nav:
   - Home: index.md
   - Getting Started:
-    - Installation: user-guide/installation.md
-    - Quick Start: user-guide/quick-start.md
-    - Configuration: user-guide/configuration.md
+      - Installation: user-guide/installation.md
+      - Quick Start: user-guide/quick-start.md
+      - Configuration: user-guide/configuration.md
   - Usage:
-    - Web Interface: user-guide/web-interface.md
-    - CLI: user-guide/cli.md
-    - Managing Agents: user-guide/managing-agents.md
-    - Managing RAG: user-guide/managing-rag.md
+      - Web Interface: user-guide/web-interface.md
+      - CLI: user-guide/cli.md
+      - Managing Agents: user-guide/managing-agents.md
+      - Managing RAG: user-guide/managing-rag.md
   - API Reference: api/rest.md
   - Developer:
-    - Integration Examples (WebRTC): developer-guide/integration-examples.md
-    - SIP Integration: user-guide/sip-integration.md
+      - Integration Examples (WebRTC): developer-guide/integration-examples.md
+      - SIP Integration: user-guide/sip-integration.md
   - Contributors:
-    - Architecture Overview: developer-guide/architecture-overview.md
-    - Components: developer-guide/components.md
-    - Data Flow: developer-guide/data-flow.md
-    - Development: developer-guide/development.md
-    - Testing: developer-guide/testing.md
-    - Python API: api/python.md
-    - Adding a Provider: developer-guide/adding-providers.md
-    - Contributing: project/contributing.md
-    - Changelog: project/changelog.md
-    - License: project/license.md
+      - Architecture Overview: developer-guide/architecture-overview.md
+      - Components: developer-guide/components.md
+      - Data Flow: developer-guide/data-flow.md
+      - Development: developer-guide/development.md
+      - Testing: developer-guide/testing.md
+      - Python API: api/python.md
+      - Adding a Provider: developer-guide/adding-providers.md
+      - Contributing: project/contributing.md
+      - Changelog: project/changelog.md
+      - License: project/license.md
 
 watch:
   - src

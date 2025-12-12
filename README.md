@@ -86,7 +86,7 @@ graph LR
     classDef input fill:#7F00FF,stroke:#fff,stroke-width:2px,color:white,font-weight:bold;
     classDef brain fill:#FFD700,stroke:#FF8C00,stroke-width:3px,color:black,font-weight:bold,stroke-dasharray: 5 5;
     classDef output fill:#00E676,stroke:#fff,stroke-width:2px,color:black,font-weight:bold;
-    
+
     %% Multi-platform User
     User([👤 📱 💻 📞 User]):::person
 
@@ -110,7 +110,7 @@ graph LR
     Hear ==>|Text| Think
     Think ==>|Text| Speak
     Speak ==>|Synthesized Audio| Room
-    
+
     %% Link Styles
     linkStyle default stroke-width:3px,fill:none,stroke:#666
 ```
@@ -187,4 +187,4 @@ Stimm is open-source software licensed under the **GNU Affero General Public Lic
 
 Stimm relies on [LiveKit](https://livekit.io/) for high-performance real-time media transport (WebRTC).
 
-*Disclaimer: Stimm is an independent project and is not affiliated with, endorsed by, or sponsored by LiveKit.*
+_Disclaimer: Stimm is an independent project and is not affiliated with, endorsed by, or sponsored by LiveKit._

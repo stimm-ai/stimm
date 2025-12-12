@@ -2,10 +2,11 @@
 Pydantic models for RAG configuration management.
 """
 
-from pydantic import BaseModel, Field, validator
-from typing import Optional, Dict, Any, List
-from uuid import UUID
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+from uuid import UUID
+
+from pydantic import BaseModel, Field, validator
 
 
 class ProviderConfig(BaseModel):
@@ -14,7 +15,7 @@ class ProviderConfig(BaseModel):
     provider: str = Field(..., description="Provider name (e.g., 'qdrant.internal', 'pinecone.io', 'rag.saas')")
     config: Dict[str, Any] = Field(default_factory=dict, description="Provider-specific configuration")
 
-    @validator('provider')
+    @validator("provider")
     def validate_provider(cls, v):
         """Validate provider name."""
         if not v or not v.strip():
@@ -30,7 +31,7 @@ class RagConfigCreate(BaseModel):
     provider_config: ProviderConfig = Field(..., description="RAG provider configuration")
     is_default: bool = Field(False, description="Whether this RAG configuration should be the default")
 
-    @validator('name')
+    @validator("name")
     def validate_name(cls, v):
         """Validate RAG config name."""
         if not v or not v.strip():
@@ -82,10 +83,10 @@ class RagConfigRuntime(BaseModel):
     provider_config: Dict[str, Any]
 
     @classmethod
-    def from_rag_config_response(cls, rag_config: RagConfigResponse) -> 'RagConfigRuntime':
+    def from_rag_config_response(cls, rag_config: RagConfigResponse) -> "RagConfigRuntime":
         """Create RagConfigRuntime from RagConfigResponse."""
         return cls(
             provider_type=rag_config.provider_type,
             provider=rag_config.provider,
-            provider_config=rag_config.provider_config
+            provider_config=rag_config.provider_config,
         )

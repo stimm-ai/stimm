@@ -1,27 +1,28 @@
-#Main entry point for the stimm application.
+# Main entry point for the stimm application.
 
 
 import asyncio
 import logging
 import os
-import uvicorn
 from pathlib import Path
+
+import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi import Request
+
+from services.agents.routes import router as stimm_router
+from services.agents_admin.routes import router as agent_router
+from services.livekit.routes import router as livekit_router
 
 # Import route modules
 from services.llm.llm_routes import router as llm_router
+from services.provider_constants import get_provider_constants
 from services.rag.chatbot_routes import router as chatbot_router
 from services.rag.rag_config_routes import router as rag_config_router
 from services.stt.routes import router as stt_router
 from services.tts.routes import router as tts_router
-from services.agents.routes import router as stimm_router
-from services.agents_admin.routes import router as agent_router
-from services.provider_constants import get_provider_constants
 from services.webrtc.signaling import router as signaling_router
-from services.livekit.routes import router as livekit_router
 from utils.logging_config import configure_logging
 
 # Configure logging early
@@ -51,11 +52,11 @@ async def startup_event():
     """Preload RAG models and initialize agent system at server startup"""
     try:
         logger.info("Starting RAG preloading and agent initialization at server startup...")
-        
+
         # Import here to avoid circular imports
         try:
             from services.rag.rag_preloader import rag_preloader
-            
+
             # Start preloading in background to not block server startup
             async def preload_rag():
                 success = await rag_preloader.preload_all()
@@ -63,26 +64,27 @@ async def startup_event():
                     logger.info("✅ RAG preloading completed successfully")
                 else:
                     logger.error(f"❌ RAG preloading failed: {rag_preloader.preload_error}")
-            
+
             # Start preloading as background task
             asyncio.create_task(preload_rag())
-            
+
         except ImportError as e:
             logger.warning(f"RAG preloader not available, using lazy loading: {e}")
         except Exception as e:
             logger.error(f"Failed to initialize RAG preloader: {e}")
-        
+
         # Initialize agent system (default agent only; no global provider config)
         try:
             # Force environment config loading first to ensure correct database URL
             from environment_config import get_environment_config
+
             env_config = get_environment_config()
             logger.info(f"Environment detected as: {os.getenv('ENVIRONMENT', 'local')}")
             logger.info(f"Database URL: {env_config.database_url}")
-            
+
             # Now initialize agent system
-            from services.agents_admin.dev_agent_creator import initialize_default_agent
             from database.session import get_db
+            from services.agents_admin.dev_agent_creator import initialize_default_agent
 
             db_gen = get_db()
             db = next(db_gen)
@@ -99,23 +101,23 @@ async def startup_event():
             logger.warning(f"Agent system not available: {e}")
         except Exception as e:
             logger.error(f"Failed to initialize agent system: {e}")
-        
+
         # Initialize SIP Bridge Integration if enabled
         try:
             from services.sip_bridge_integration import start_sip_bridge
-            
+
             # Start SIP Bridge in background (singleton ensures no duplicates)
             start_sip_bridge()
             logger.info("✅ SIP Bridge Integration initialized (robust singleton)")
-            
+
         except ImportError as e:
             logger.warning(f"SIP Bridge Integration not available: {e}")
         except Exception as e:
             logger.error(f"Failed to initialize SIP Bridge Integration: {e}")
-        
+
         # Note: Stimm services are now initialized per-session in LiveKit service
         # to avoid concurrency issues with providers like Deepgram
-        
+
     except Exception as e:
         logger.error(f"Failed to start startup procedures: {e}")
 
@@ -152,6 +154,7 @@ app.include_router(livekit_router, prefix="/api", tags=["livekit"])
 def read_root():
     return {"message": "Welcome to the Stimm API"}
 
+
 @app.get("/health")
 def health_check():
     """Basic health check"""
@@ -174,16 +177,16 @@ async def rag_preloading_health():
     """Health check for RAG preloading status"""
     try:
         from services.rag.rag_preloader import rag_preloader
-        
-        status_info = rag_preloader.get_status()
-        
+
+        rag_preloader.get_status()  # status info not used but call kept for side effects
+
         if rag_preloader.is_preloaded:
             return {
                 "status": "healthy",
                 "rag_preloading": "completed",
                 "preload_time": rag_preloader.preload_time,
                 "preload_start_time": rag_preloader.preload_start_time,
-                "rag_state_available": rag_preloader.rag_state is not None
+                "rag_state_available": rag_preloader.rag_state is not None,
             }
         elif rag_preloader.preload_error:
             return {
@@ -191,28 +194,24 @@ async def rag_preloading_health():
                 "rag_preloading": "failed",
                 "preload_error": rag_preloader.preload_error,
                 "preload_time": rag_preloader.preload_time,
-                "rag_state_available": rag_preloader.rag_state is not None
+                "rag_state_available": rag_preloader.rag_state is not None,
             }
         else:
             return {
                 "status": "loading",
                 "rag_preloading": "in_progress",
                 "preload_start_time": rag_preloader.preload_start_time,
-                "rag_state_available": rag_preloader.rag_state is not None
+                "rag_state_available": rag_preloader.rag_state is not None,
             }
-            
+
     except ImportError:
         return {
             "status": "degraded",
             "rag_preloading": "not_available",
-            "message": "RAG preloader module not available, using lazy loading"
+            "message": "RAG preloader module not available, using lazy loading",
         }
     except Exception as e:
-        return {
-            "status": "error",
-            "rag_preloading": "unknown",
-            "error": str(e)
-        }
+        return {"status": "error", "rag_preloading": "unknown", "error": str(e)}
 
 
 @app.get("/health/sip-bridge")
@@ -220,39 +219,31 @@ async def sip_bridge_health():
     """Health check for SIP Bridge status"""
     try:
         from services.sip_bridge_integration import sip_bridge_integration
-        
+
         if not sip_bridge_integration.is_enabled():
             return {
                 "status": "disabled",
                 "sip_bridge": "not_enabled",
-                "message": "SIP Bridge is disabled (ENABLE_SIP_BRIDGE=false)"
+                "message": "SIP Bridge is disabled (ENABLE_SIP_BRIDGE=false)",
             }
-        
+
         if sip_bridge_integration.is_running():
-            return {
-                "status": "healthy",
-                "sip_bridge": "running",
-                "message": "SIP Bridge is running normally"
-            }
+            return {"status": "healthy", "sip_bridge": "running", "message": "SIP Bridge is running normally"}
         else:
             return {
                 "status": "degraded",
                 "sip_bridge": "not_running",
-                "message": "SIP Bridge is enabled but not running"
+                "message": "SIP Bridge is enabled but not running",
             }
-            
+
     except ImportError:
         return {
             "status": "error",
             "sip_bridge": "not_available",
-            "message": "SIP Bridge Integration module not available"
+            "message": "SIP Bridge Integration module not available",
         }
     except Exception as e:
-        return {
-            "status": "error",
-            "sip_bridge": "error",
-            "error": str(e)
-        }
+        return {"status": "error", "sip_bridge": "error", "error": str(e)}
 
 
 @app.get("/health/sip-bridge-status")
@@ -260,15 +251,12 @@ async def sip_bridge_status():
     """Detailed status of SIP Bridge"""
     try:
         from services.sip_bridge_integration import get_sip_bridge_status
+
         return get_sip_bridge_status()
     except ImportError:
-        return {
-            "error": "SIP Bridge Integration module not available"
-        }
+        return {"error": "SIP Bridge Integration module not available"}
     except Exception as e:
-        return {
-            "error": str(e)
-        }
+        return {"error": str(e)}
 
 
 if __name__ == "__main__":

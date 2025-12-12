@@ -7,9 +7,9 @@ This module contains the core service logic for conversation management and docu
 import time
 from typing import Any, Dict, List, Optional
 
+from .config import rag_config
 from .rag_models import ConversationEntry
 from .rag_state import RagState
-from .config import rag_config
 
 # Configuration constants
 CONV_CACHE_LIMIT = rag_config.conv_cache_limit
@@ -27,9 +27,7 @@ async def _prune_conversations(state: RagState) -> None:
         state.conversations.pop(conv_id, None)
 
 
-async def _touch_conversation(
-    state: RagState, conversation_id: str, message: Optional[Dict[str, Any]]
-) -> List[Dict[str, Any]]:
+async def _touch_conversation(state: RagState, conversation_id: str, message: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Update conversation with new message and return recent messages."""
     await _prune_conversations(state)
     now = time.time()

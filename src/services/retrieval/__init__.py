@@ -7,23 +7,23 @@ This package provides retrieval services including:
 - Reranking and candidate combination
 """
 
-from .retrieval_models import (
-    StoredDocument,
-    RetrievalCandidate,
-    LexicalNamespaceIndex,
-    LexicalIndex,
-)
 from .retrieval_logic import (
-    _tokenize,
-    _dense_candidates,
-    _lexical_candidates,
-    _combine_candidates,
-    _truncate_for_reranker,
     _apply_reranker,
-    _retrieve_contexts,
-    _ultra_fast_retrieve_contexts,
-    _ensure_collection,
     _bootstrap_documents,
+    _combine_candidates,
+    _dense_candidates,
+    _ensure_collection,
+    _lexical_candidates,
+    _retrieve_contexts,
+    _tokenize,
+    _truncate_for_reranker,
+    _ultra_fast_retrieve_contexts,
+)
+from .retrieval_models import (
+    LexicalIndex,
+    LexicalNamespaceIndex,
+    RetrievalCandidate,
+    StoredDocument,
 )
 
 __all__ = [

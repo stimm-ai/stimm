@@ -8,8 +8,8 @@ import logging
 import uuid
 from typing import List, Optional
 
+from sqlalchemy import desc
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, desc
 
 from database.models import Document, RagConfig
 from services.agents_admin.exceptions import AgentNotFoundError
@@ -54,9 +54,7 @@ class DocumentService:
             AgentNotFoundError: If RAG config not found
         """
         # Verify RAG config exists
-        rag_config = self.db.query(RagConfig).filter(
-            RagConfig.id == uuid.UUID(rag_config_id)
-        ).first()
+        rag_config = self.db.query(RagConfig).filter(RagConfig.id == uuid.UUID(rag_config_id)).first()
         if not rag_config:
             raise AgentNotFoundError(f"RAG configuration {rag_config_id} not found")
 
@@ -94,9 +92,7 @@ class DocumentService:
         Returns:
             Tuple of (documents, total_count)
         """
-        query = self.db.query(Document).filter(
-            Document.rag_config_id == uuid.UUID(rag_config_id)
-        )
+        query = self.db.query(Document).filter(Document.rag_config_id == uuid.UUID(rag_config_id))
 
         total = query.count()
         documents = query.order_by(desc(Document.created_at)).offset(skip).limit(limit).all()
@@ -113,9 +109,7 @@ class DocumentService:
         Returns:
             Document or None if not found
         """
-        return self.db.query(Document).filter(
-            Document.id == uuid.UUID(document_id)
-        ).first()
+        return self.db.query(Document).filter(Document.id == uuid.UUID(document_id)).first()
 
     def delete_document(self, document_id: str) -> Document:
         """
@@ -148,9 +142,7 @@ class DocumentService:
         Returns:
             Number of documents deleted
         """
-        count = self.db.query(Document).filter(
-            Document.rag_config_id == uuid.UUID(rag_config_id)
-        ).delete()
+        count = self.db.query(Document).filter(Document.rag_config_id == uuid.UUID(rag_config_id)).delete()
         self.db.commit()
         return count
 
@@ -164,9 +156,7 @@ class DocumentService:
         Returns:
             Dictionary with statistics
         """
-        documents = self.db.query(Document).filter(
-            Document.rag_config_id == uuid.UUID(rag_config_id)
-        ).all()
+        documents = self.db.query(Document).filter(Document.rag_config_id == uuid.UUID(rag_config_id)).all()
 
         total_documents = len(documents)
         total_chunks = sum(doc.chunk_count for doc in documents)

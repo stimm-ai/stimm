@@ -3,11 +3,11 @@ Async.AI TTS Provider (passthrough for TTSService concurrent streaming)
 """
 
 import asyncio
+import base64
 import json
 import logging
-import base64
-import uuid
-from typing import AsyncGenerator, Dict, Any
+from typing import Any, AsyncGenerator, Dict
+
 import websockets
 
 from services.provider_constants import get_provider_constants
@@ -32,29 +32,19 @@ class AsyncAIProvider:
     def get_field_definitions(cls) -> Dict[str, Dict[str, Any]]:
         """
         Get the field definitions for this provider.
-        
+
         Returns:
             Dictionary mapping field names to field metadata
         """
         return {
-            "voice": {
-                "type": "text",
-                "label": "Voice ID",
-                "required": True,
-                "description": "AsyncAI voice identifier"
-            },
+            "voice": {"type": "text", "label": "Voice ID", "required": True, "description": "AsyncAI voice identifier"},
             "model": {
                 "type": "text",
                 "label": "Model ID",
                 "required": True,
-                "description": "AsyncAI model identifier (e.g., tts-1)"
+                "description": "AsyncAI model identifier (e.g., tts-1)",
             },
-            "api_key": {
-                "type": "password",
-                "label": "API Key",
-                "required": True,
-                "description": "AsyncAI API key"
-            }
+            "api_key": {"type": "password", "label": "API Key", "required": True, "description": "AsyncAI API key"},
         }
 
     def __init__(self, provider_config: dict = None):
@@ -62,15 +52,15 @@ class AsyncAIProvider:
         if provider_config:
             logger.info(f"🔍 AsyncAIProvider received config: {provider_config}")
             self.api_key = provider_config.get("api_key")
-            
+
             # Support both 'voice' and 'voice_id' keys for flexibility
             self.voice_id = provider_config.get("voice_id") or provider_config.get("voice")
-            
+
             # model_id is required for AsyncAI, use a default if not provided
             self.model_id = provider_config.get("model_id") or "tts-1"
-            
+
             logger.debug(f"🔍 AsyncAIProvider parsed - api_key: {bool(self.api_key)}, voice_id: {self.voice_id}, model_id: {self.model_id}")
-            
+
             # Validate required parameters
             if not self.api_key:
                 raise ValueError("API key is required for AsyncAIProvider")
@@ -79,14 +69,13 @@ class AsyncAIProvider:
         else:
             # No fallback - agent configuration is required
             raise ValueError("Agent configuration is required for AsyncAIProvider")
-        
+
         # Use immutable constants for provider configuration
         constants = get_provider_constants()
-        self.websocket_url = constants['tts']['async.ai']['URL']
-        self.sample_rate = constants['tts']['async.ai']['SAMPLE_RATE']
-        self.encoding = constants['tts']['async.ai']['ENCODING']
-        self.container = constants['tts']['async.ai']['CONTAINER']
-
+        self.websocket_url = constants["tts"]["async.ai"]["URL"]
+        self.sample_rate = constants["tts"]["async.ai"]["SAMPLE_RATE"]
+        self.encoding = constants["tts"]["async.ai"]["ENCODING"]
+        self.container = constants["tts"]["async.ai"]["CONTAINER"]
 
     async def stream_synthesis(self, text_generator: AsyncGenerator[str, None]) -> AsyncGenerator[bytes, None]:
         """Concurrent streaming passthrough for use by TTSService."""
@@ -104,7 +93,7 @@ class AsyncAIProvider:
                     "container": self.container,
                     "encoding": self.encoding,
                     "sample_rate": self.sample_rate,
-                }
+                },
             }
             await ws.send(json.dumps(init_payload))
             logger.debug(f"🔧 DEBUG: Sent initialization: {init_payload}")
@@ -114,19 +103,16 @@ class AsyncAIProvider:
             async def sender():
                 try:
                     text_count = 0
-                    
+
                     # Send a warm-up message first to prime the service
-                    warm_up_payload = {
-                        "transcript": ".",
-                        "voice": {"mode": "id", "id": self.voice_id}
-                    }
+                    warm_up_payload = {"transcript": ".", "voice": {"mode": "id", "id": self.voice_id}}
                     await ws.send(json.dumps(warm_up_payload))
                     logger.debug("🔧 DEBUG: Sent minimal warm-up text: '.'")
                     # No artificial delay - rely on async processing for ultra-low latency
-                    
+
                     async for chunk in text_generator:
                         text_count += 1
-                        
+
                         # Parse the standardized JSON payload
                         try:
                             payload = json.loads(chunk)
@@ -138,24 +124,18 @@ class AsyncAIProvider:
                             text_content = chunk
                             if text_content and not text_content.endswith(" "):
                                 text_content += " "
-                        
+
                         # Convert our standard format to AsyncAI format
-                        asyncai_payload = {
-                            "transcript": text_content,
-                            "voice": {"mode": "id", "id": self.voice_id}
-                        }
+                        asyncai_payload = {"transcript": text_content, "voice": {"mode": "id", "id": self.voice_id}}
                         await ws.send(json.dumps(asyncai_payload))
                         logger.debug(f"🔧 DEBUG: Sent text chunk {text_count}: '{text_content.strip()}'")
-                        
+
                         # Add detailed logging for first few chunks to debug missing text
                         if text_count <= 3:
                             logger.debug(f"🔍 DEBUG: First {text_count} chunks sent - text: '{text_content.strip()}'")
-                    
+
                     # Send close connection message with voice parameter
-                    close_payload = {
-                        "transcript": "",
-                        "voice": {"mode": "id", "id": self.voice_id}
-                    }
+                    close_payload = {"transcript": "", "voice": {"mode": "id", "id": self.voice_id}}
                     await ws.send(json.dumps(close_payload))
                     logger.debug("Sent close connection message")
                 except Exception as e:
@@ -168,7 +148,7 @@ class AsyncAIProvider:
                         message_count += 1
                         msg = json.loads(raw_msg)
                         logger.info(f"Received message {message_count}: {list(msg.keys())}")
-                        
+
                         if "audio" in msg:
                             audio_b64 = msg.get("audio")
                             if audio_b64:

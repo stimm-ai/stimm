@@ -4,6 +4,7 @@ Retrieval Service Configuration Module
 
 import os
 import re
+
 from dotenv import load_dotenv
 
 from environment_config import config
@@ -28,7 +29,7 @@ class RetrievalConfig:
             # Fallback to environment variables (deprecated, use QDRANT_URL)
             self.qdrant_host = os.getenv("QDRANT_HOST", "localhost")
             self.qdrant_port = int(os.getenv("QDRANT_PORT", "6333"))
-            
+
         # Other Qdrant configuration
         self.qdrant_collection = os.getenv("QDRANT_COLLECTION_NAME", os.getenv("QDRANT_COLLECTION", "stimm_knowledge"))
         self.qdrant_use_tls = os.getenv("QDRANT_USE_TLS", "false").lower() in {"1", "true", "yes"}

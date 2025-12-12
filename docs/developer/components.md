@@ -42,7 +42,7 @@ LLM integrations.
 Speech-to-text and text-to-speech services.
 
 - **`STTService`** / `TTSService` – Unified interfaces.
-- **Provider implementations** – Deepgram, Whisper (STT); Deepgram, ElevenLabs, Async.ai, Kokoro (TTS).
+- **Provider implementations** – Deepgram, Whisper (STT); Deepgram, ElevenLabs, Async.ai, Hume.ai, Kokoro (TTS).
 
 ### `src/services/livekit/`
 

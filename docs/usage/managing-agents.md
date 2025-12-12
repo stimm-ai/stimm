@@ -24,7 +24,7 @@ An agent is a configured instance that can hold real-time voice or text conversa
    - **System Prompt** – You can use the default or write your own.
    - **LLM Provider** – Choose from Groq, Mistral, OpenRouter, Llama.cpp, or OpenAI-compatible.
    - **LLM Model** – Model name specific to the provider (e.g., `mixtral-8x7b-32768` for Groq).
-   - **TTS Provider** – Deepgram, ElevenLabs, Async.ai, or Kokoro (local).
+   - **TTS Provider** – Deepgram, ElevenLabs, Async.ai, Hume.ai, or Kokoro (local).
    - **STT Provider** – Deepgram or Whisper (local).
    - **RAG Configuration** – Select a RAG configuration from the dropdown, or leave empty to use the default.
 

@@ -1,0 +1,15 @@
+repos:
+  # 1. PYTHON : Ruff
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.8 # Vérifier la dernière version
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  # 2. FRONTEND & DIVERS : Prettier
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+      - id: prettier
+        types_or: [javascript, jsx, ts, tsx, css, json, markdown, yaml]

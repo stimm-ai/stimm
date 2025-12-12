@@ -105,18 +105,21 @@ packages = ["src"]
 
 [tool.ruff]
 # Be more lenient with line length to avoid manual changes
-line-length = 120
+line-length = 200
 
 # Match Black's target version
 target-version = "py310"
 
 [tool.ruff.format]
+quote-style = "double"
 # Also use the same line length for formatting
 # Note: format line length is configured separately
 
 [tool.ruff.lint]
-# Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default
-select = ["E", "F"]
+# E: Pycodestyle, F: Pyflakes, I: Isort
+select = ["E", "F", "I"]
+ignore = []
+
 
 [tool.ruff.lint.isort]
 known-first-party = ["stimm"]
@@ -138,6 +141,7 @@ dev = [
     "pytest>=9.0.1",
     "pytest-asyncio>=1.3.0",
     "pytest-cov>=7.0.0",
+    "pre-commit>=4.5.0",
 ]
 docs = [
     "mkdocs>=1.5.0",

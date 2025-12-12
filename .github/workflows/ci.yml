@@ -36,6 +36,39 @@ env:
   RAG_SAAS_API_KEY: ""
 
 jobs:
+  lint-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - run: pip install uv
+      - run: uv sync
+
+      - name: Ruff Check
+        run: |
+          uv run ruff format --check .
+          uv run ruff check .
+
+  lint-front:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./src/front
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: src/front/package-lock.json
+
+      - run: npm ci
+      - name: Prettier Check
+        run: npx prettier --check .
+      - name: ESLint Check
+        run: npm run lint
   test:
     runs-on: ubuntu-latest
     steps:
@@ -74,18 +107,6 @@ jobs:
 
       - name: Install dependencies
         run: $HOME/.local/bin/uv sync --group dev
-
-      - name: Run linting and formatting checks
-        run: |
-          echo "Running backend linting and formatting checks..."
-          $HOME/.local/bin/uv run ruff format --check src/
-          $HOME/.local/bin/uv run ruff check src/
-
-          echo "Running frontend linting and formatting checks..."
-          cd src/front
-          npm install
-          npx eslint . --max-warnings 0
-          npx prettier --check .
 
       - name: Start Docker services
         timeout-minutes: 10

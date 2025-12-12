@@ -2,7 +2,7 @@
   "tts": {
     "deepgram.com": {
       "BASE_URL": "https://api.deepgram.com",
-      "SAMPLE_RATE": 16000,
+      "SAMPLE_RATE": 24000,
       "ENCODING": "linear16"
     },
     "elevenlabs.io": {

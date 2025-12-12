@@ -72,10 +72,12 @@ class DeepgramProvider:
         sample_rate = constants["tts"]["deepgram.com"]["SAMPLE_RATE"]
         encoding = constants["tts"]["deepgram.com"]["ENCODING"]
 
-        # Build WebSocket URL with query parameters
-        url = f"{base_url.replace('https://', 'wss://').replace('http://', 'ws://')}/v1/speak?model={model}&encoding={encoding}&sample_rate={sample_rate}"
+        # Build WebSocket URL with query parameters according to Deepgram API spec
+        # Replace http/https with ws/wss for WebSocket connection
+        ws_url = base_url.replace("https://", "wss://").replace("http://", "ws://")
+        url = f"{ws_url}/v1/speak?model={model}&encoding={encoding}&sample_rate={sample_rate}"
 
-        # Set headers for authentication
+        # Set headers for authentication - Deepgram uses "Authorization: Token <api_key>"
         headers = {"Authorization": f"Token {api_key}"}
 
         logger.info(f"Connecting to Deepgram TTS WebSocket: {url}...")
@@ -93,7 +95,7 @@ class DeepgramProvider:
                     text_count = 0
                     async for text_chunk in text_generator:
                         text_count += 1
-                        # Send text message in Deepgram format
+                        # Send text message in Deepgram format according to API spec
                         text_payload = {"type": "Speak", "text": text_chunk}
                         await self.websocket.send_str(json.dumps(text_payload))
                         logger.info(f"Sent text chunk {text_count}: '{text_chunk.strip()}'")
@@ -102,6 +104,11 @@ class DeepgramProvider:
                     flush_payload = {"type": "Flush"}
                     await self.websocket.send_str(json.dumps(flush_payload))
                     logger.info("Sent flush message")
+
+                    # Send close message to gracefully end the connection
+                    close_payload = {"type": "Close"}
+                    await self.websocket.send_str(json.dumps(close_payload))
+                    logger.info("Sent close message")
 
                 except Exception as e:
                     logger.error(f"Sender error: {e}")
@@ -143,6 +150,12 @@ class DeepgramProvider:
 
                             except json.JSONDecodeError:
                                 logger.warning(f"Received non-JSON message: {msg.data}")
+                        elif msg.type == aiohttp.WSMsgType.BINARY:
+                            # Deepgram can also send binary audio data directly
+                            audio_bytes = msg.data
+                            chunk_count += 1
+                            logger.info(f"Received binary audio chunk {chunk_count}: {len(audio_bytes)} bytes")
+                            await queue.put(audio_bytes)
                         elif msg.type == aiohttp.WSMsgType.ERROR:
                             logger.error(f"WebSocket error: {msg.data}")
                             await queue.put(None)

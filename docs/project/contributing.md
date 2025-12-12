@@ -83,17 +83,20 @@ Push your branch to your fork and open a pull request against the `main` branch 
 
 ### Python
 
-- Use **black** for formatting (line length 88).
-- Use **isort** for import sorting.
-- Use **flake8** for linting.
+- Use **ruff** for formatting, import sorting, and linting (replaces black, isort, and flake8).
 - Type hints are encouraged (use `mypy` for verification).
 
 You can run the formatting and linting scripts:
 
 ```bash
-uv run black src/
-uv run isort src/
-uv run flake8 src/
+# Format code (replaces black + isort)
+uv run ruff format src/
+
+# Lint code and auto-fix issues (replaces flake8)
+uv run ruff check --fix src/
+
+# Or use the convenient lint script that does both:
+uv run lint
 ```
 
 ### TypeScript/React

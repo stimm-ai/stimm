@@ -135,5 +135,5 @@ Command‑line interface for development and testing.
 
 - **uv** – Python package manager.
 - **pytest** – Testing framework.
-- **black**, **isort**, **flake8** – Code formatting and linting.
+- **ruff** – Code formatting, import sorting, and linting (replaces black, isort, and flake8).
 - **mypy** – Static type checking.

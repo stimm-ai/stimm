@@ -75,6 +75,19 @@ jobs:
       - name: Install dependencies
         run: $HOME/.local/bin/uv sync --group dev
 
+      - name: Run linting and formatting checks
+        run: |
+          echo "Running backend linting and formatting checks..."
+          $HOME/.local/bin/uv run black --check src/
+          $HOME/.local/bin/uv run isort --check src/
+          $HOME/.local/bin/uv run flake8 src/
+          
+          echo "Running frontend linting and formatting checks..."
+          cd src/front
+          npm install
+          npx eslint . --max-warnings 0
+          npx prettier --check .
+
       - name: Start Docker services
         timeout-minutes: 10
         run: |

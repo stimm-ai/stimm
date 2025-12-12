@@ -137,13 +137,21 @@ uv run flake8 src/ tests/
 
 ### Frontend (TypeScript/React)
 
-- **Linter**: `ESLint`
-- **Formatter**: `Prettier` (integrated with ESLint)
+- **Linter**: `ESLint` (with Next.js core-web-vitals configuration)
+- **Formatter**: `Prettier` (integrated with ESLint via eslint-config-prettier)
+- **Configuration**: `.prettierrc` for formatting rules
 
 **Run checks locally**:
 ```bash
 cd src/front
 npm run lint
+npx prettier --check .
+```
+
+**Auto-fix formatting**:
+```bash
+cd src/front
+npx prettier --write .
 ```
 
 ## Testing

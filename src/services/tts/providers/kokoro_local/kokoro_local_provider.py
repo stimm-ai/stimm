@@ -5,11 +5,9 @@ Kokoro Local TTS Provider with zero-latency audio resampling
 import asyncio
 import json
 import logging
-import base64
 from typing import AsyncGenerator
+
 import websockets
-import numpy as np
-from scipy import signal
 
 from services.provider_constants import get_provider_constants
 
@@ -33,7 +31,7 @@ class KokoroLocalProvider:
     def get_field_definitions(cls) -> dict:
         """
         Get field definitions for this provider.
-        
+
         Returns:
             Dictionary of field definitions with type, label, and required status
         """
@@ -42,15 +40,14 @@ class KokoroLocalProvider:
                 "type": "text",
                 "label": "Voice",
                 "required": True,
-                "description": "Voice identifier for Kokoro TTS"
+                "description": "Voice identifier for Kokoro TTS",
             },
             "language": {
                 "type": "text",
                 "label": "Language",
                 "required": True,
-                "description": "Language code for Kokoro TTS"
-            }
-            
+                "description": "Language code for Kokoro TTS",
+            },
         }
 
     def __init__(self, provider_config: dict = None):
@@ -62,18 +59,16 @@ class KokoroLocalProvider:
         else:
             # No fallback - agent configuration is required
             raise ValueError("Agent configuration is required for KokoroLocalProvider")
-        
+
         # Use immutable constants for provider configuration
         constants = get_provider_constants()
-        self.websocket_url = constants['tts']['kokoro.local']['URL']
-        self.input_sample_rate = constants['tts']['kokoro.local']['SAMPLE_RATE']
-        self.encoding = constants['tts']['kokoro.local']['ENCODING']
-        self.container = constants['tts']['kokoro.local']['CONTAINER']
-        self.speed = constants['tts']['kokoro.local']['SPEED']  # Immutable constant, not configurable
-        
-        logger.info(f"KokoroLocalProvider initialized with URL: {self.websocket_url}, voice: {self.voice_id}, language: {self.language}, speed: {self.speed} (constant)")
+        self.websocket_url = constants["tts"]["kokoro.local"]["URL"]
+        self.input_sample_rate = constants["tts"]["kokoro.local"]["SAMPLE_RATE"]
+        self.encoding = constants["tts"]["kokoro.local"]["ENCODING"]
+        self.container = constants["tts"]["kokoro.local"]["CONTAINER"]
+        self.speed = constants["tts"]["kokoro.local"]["SPEED"]  # Immutable constant, not configurable
 
-    
+        logger.info(f"KokoroLocalProvider initialized with URL: {self.websocket_url}, voice: {self.voice_id}, language: {self.language}, speed: {self.speed} (constant)")
 
     async def stream_synthesis(self, text_generator: AsyncGenerator[str, None]) -> AsyncGenerator[bytes, None]:
         """Live streaming synthesis using the new Kokoro live streaming endpoint."""
@@ -83,13 +78,9 @@ class KokoroLocalProvider:
 
         async with websockets.connect(url, ping_interval=20, ping_timeout=20, max_size=None) as ws:
             logger.debug("Live streaming WebSocket connected, sending initialization...")
-            
+
             # Send initialization for live streaming
-            init_payload = {
-                "voice": self.voice_id,
-                "language": self.language,
-                "speed": self.speed
-            }
+            init_payload = {"voice": self.voice_id, "language": self.language, "speed": self.speed}
             await ws.send(json.dumps(init_payload))
             logger.info(f"Sent live streaming initialization: {init_payload}")
 
@@ -98,7 +89,7 @@ class KokoroLocalProvider:
             ready_data = json.loads(ready_msg)
             if ready_data.get("type") != "ready":
                 raise RuntimeError(f"Expected ready signal, got: {ready_data}")
-            
+
             logger.info("Live streaming ready, starting text streaming...")
 
             queue: asyncio.Queue[bytes | None] = asyncio.Queue()
@@ -108,7 +99,7 @@ class KokoroLocalProvider:
                     text_count = 0
                     async for text_chunk in text_generator:
                         text_count += 1
-                        
+
                         # Parse the standardized JSON payload
                         try:
                             payload = json.loads(text_chunk)
@@ -120,7 +111,7 @@ class KokoroLocalProvider:
                             # Fallback: if it's plain text, use it directly
                             await ws.send(text_chunk)
                             logger.info(f"Sent live text chunk {text_count}: '{text_chunk.strip()}' (converted from plain text)")
-                    
+
                     # Send end signal
                     await ws.send("")
                     logger.info("Sent live streaming end signal")
@@ -133,7 +124,7 @@ class KokoroLocalProvider:
                     while True:
                         # First receive control message (should be JSON)
                         control_msg = await ws.recv()
-                        
+
                         # Check if this is binary data (audio) or JSON (control)
                         if isinstance(control_msg, bytes):
                             # This is binary audio data, not a control message
@@ -144,7 +135,7 @@ class KokoroLocalProvider:
                             # This is a JSON control message
                             try:
                                 control_data = json.loads(control_msg)
-                                
+
                                 if control_data.get("type") == "audio":
                                     # The next message should be binary audio data
                                     audio_data = await ws.recv()
@@ -170,7 +161,7 @@ class KokoroLocalProvider:
                                     await queue.put(control_msg)
                                 else:
                                     logger.warning(f"Received unexpected non-JSON message: {control_msg}")
-                            
+
                 except Exception as e:
                     logger.error(f"Live streaming receiver error: {e}")
                     await queue.put(None)
@@ -185,11 +176,11 @@ class KokoroLocalProvider:
                     if item is None:
                         logger.info(f"Live stream ended, yielded {chunk_count} audio chunks")
                         break
-                    
+
                     # Apply real-time resampling to each audio chunk
                     resampled_item = item
                     chunk_count += 1
-                    
+
                     logger.debug(f"Resampled audio chunk {chunk_count}: {len(item)} bytes → {len(resampled_item)} bytes")
                     yield resampled_item
             finally:

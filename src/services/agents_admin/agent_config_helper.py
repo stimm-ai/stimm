@@ -14,7 +14,8 @@ Non-responsibilities:
 """
 
 import logging
-from typing import Dict, Any
+from typing import Any, Dict
+
 from sqlalchemy.orm import Session
 
 from .models import AgentResponse
@@ -66,9 +67,7 @@ class AgentConfigHelper:
                 return agent.stt_config or {}
             return {}
         except Exception as e:
-            logger.error(
-                f"Failed to get {provider_type} config for agent {getattr(agent, 'id', 'unknown')}: {e}"
-            )
+            logger.error(f"Failed to get {provider_type} config for agent {getattr(agent, 'id', 'unknown')}: {e}")
             return {}
 
     def validate_agent_configuration(self, agent: AgentResponse) -> Dict[str, Any]:
@@ -86,28 +85,20 @@ class AgentConfigHelper:
             # LLM
             if agent.llm_provider and not agent.llm_config:
                 results["is_valid"] = False
-                results["errors"].append(
-                    f"LLM config missing for provider '{agent.llm_provider}'"
-                )
+                results["errors"].append(f"LLM config missing for provider '{agent.llm_provider}'")
 
             # TTS
             if agent.tts_provider and not agent.tts_config:
                 results["is_valid"] = False
-                results["errors"].append(
-                    f"TTS config missing for provider '{agent.tts_provider}'"
-                )
+                results["errors"].append(f"TTS config missing for provider '{agent.tts_provider}'")
 
             # STT
             if agent.stt_provider and not agent.stt_config:
                 results["is_valid"] = False
-                results["errors"].append(
-                    f"STT config missing for provider '{agent.stt_provider}'"
-                )
+                results["errors"].append(f"STT config missing for provider '{agent.stt_provider}'")
 
         except Exception as e:
-            logger.error(
-                f"Failed to validate agent configuration for agent {getattr(agent, 'id', 'unknown')}: {e}"
-            )
+            logger.error(f"Failed to validate agent configuration for agent {getattr(agent, 'id', 'unknown')}: {e}")
             results["is_valid"] = False
             results["errors"].append(f"Validation error: {str(e)}")
 

@@ -9,13 +9,15 @@ Usage:
     python sip-dispatch-config.py
 """
 
-import redis
 import json
 import sys
 
+import redis
+
+
 def main():
     try:
-        r = redis.Redis(host='localhost', port=6379, decode_responses=True)
+        r = redis.Redis(host="localhost", port=6379, decode_responses=True)
         r.ping()
     except redis.ConnectionError as e:
         print(f"Failed to connect to Redis: {e}")
@@ -23,20 +25,7 @@ def main():
         sys.exit(1)
 
     # Example dispatch rule: route calls to +1234567 to the 'sip-inbound' agent
-    dispatch_rules = [
-        {
-            "pattern": "+1234567",
-            "target_type": "agent",
-            "target": "sip-inbound",
-            "priority": 1
-        },
-        {
-            "pattern": "+*",
-            "target_type": "room",
-            "target": "sip-call-{number}",
-            "priority": 10
-        }
-    ]
+    dispatch_rules = [{"pattern": "+1234567", "target_type": "agent", "target": "sip-inbound", "priority": 1}, {"pattern": "+*", "target_type": "room", "target": "sip-call-{number}", "priority": 10}]
 
     DISPATCH_KEY = "sip_dispatch_rules"
     r.set(DISPATCH_KEY, json.dumps(dispatch_rules))
@@ -51,6 +40,7 @@ def main():
         print(stored)
     else:
         print("\nWarning: Rules not stored correctly.")
+
 
 if __name__ == "__main__":
     main()

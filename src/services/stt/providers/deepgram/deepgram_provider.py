@@ -8,11 +8,11 @@ speech-to-text transcription using raw WebSocket API.
 import asyncio
 import json
 import logging
-import os
 import urllib.parse
-from typing import AsyncGenerator, Dict, List, Optional, Any
+from typing import Any, AsyncGenerator, Dict, List, Optional
 
 import aiohttp
+
 from services.provider_constants import get_provider_constants
 
 logger = logging.getLogger(__name__)
@@ -41,20 +41,15 @@ class DeepgramProvider:
                 "type": "text",
                 "label": "Model",
                 "required": True,
-                "description": "Deepgram model name (e.g., nova-2)"
+                "description": "Deepgram model name (e.g., nova-2)",
             },
-            "api_key": {
-                "type": "password",
-                "label": "API Key",
-                "required": True,
-                "description": "Deepgram API key"
-            },
+            "api_key": {"type": "password", "label": "API Key", "required": True, "description": "Deepgram API key"},
             "language": {
                 "type": "text",
                 "label": "Language",
                 "required": False,
-                "description": "Language code (e.g., fr, en, es)"
-            }
+                "description": "Language code (e.g., fr, en, es)",
+            },
         }
 
     def __init__(self, provider_config: dict = None):
@@ -63,7 +58,7 @@ class DeepgramProvider:
             self.api_key = provider_config.get("api_key")
             self.model = provider_config.get("model", "nova-2")
             self.language = provider_config.get("language", "fr")
-            
+
             # Validate required configuration
             if not self.api_key:
                 raise ValueError("API key is required for DeepgramProvider")
@@ -72,7 +67,7 @@ class DeepgramProvider:
         else:
             # No fallback - agent configuration is required
             raise ValueError("Agent configuration is required for DeepgramProvider")
-            
+
         self.websocket = None
         self.connected = False
         self.transcripts: List[Dict[str, Any]] = []
@@ -86,8 +81,8 @@ class DeepgramProvider:
 
             # Use immutable constants for provider configuration
             constants = get_provider_constants()
-            base_url = constants['stt']['deepgram.com']['BASE_URL']
-            sample_rate = constants['stt']['deepgram.com']['SAMPLE_RATE']
+            base_url = constants["stt"]["deepgram.com"]["BASE_URL"]
+            sample_rate = constants["stt"]["deepgram.com"]["SAMPLE_RATE"]
 
             # Build WebSocket URL with query parameters
             params = {
@@ -99,23 +94,21 @@ class DeepgramProvider:
                 "channels": "1",
                 "interim_results": "true",
                 "endpointing": "500",
-                "vad_events": "true"
+                "vad_events": "true",
             }
-            
+
             query_string = urllib.parse.urlencode(params)
             ws_url = f"{base_url.replace('https://', 'wss://').replace('http://', 'ws://')}/v1/listen?{query_string}"
-            
+
             # Connect with authorization header using aiohttp
-            headers = {
-                "Authorization": f"Token {self.api_key}"
-            }
-            
+            headers = {"Authorization": f"Token {self.api_key}"}
+
             # Use aiohttp for WebSocket connection with proper headers
             self.session = aiohttp.ClientSession()
             self.websocket = await self.session.ws_connect(ws_url, headers=headers)
             self.connected = True
             logger.debug(f"Connected to Deepgram service with model: {self.model}, language: {self.language}")
-            
+
         except Exception as e:
             logger.error(f"Failed to connect to Deepgram service: {e}")
             raise
@@ -132,7 +125,7 @@ class DeepgramProvider:
                 logger.info("Disconnected from Deepgram service")
             except Exception as e:
                 logger.error(f"Error disconnecting from Deepgram service: {e}")
-        
+
         # Close the aiohttp session
         if self.session:
             await self.session.close()
@@ -143,11 +136,8 @@ class DeepgramProvider:
         try:
             while self.connected and not self.websocket.closed:
                 try:
-                    message = await asyncio.wait_for(
-                        self.websocket.receive(),
-                        timeout=1.0
-                    )
-                    
+                    message = await asyncio.wait_for(self.websocket.receive(), timeout=1.0)
+
                     if message.type == aiohttp.WSMsgType.TEXT:
                         data = json.loads(message.data)
                         transcript_data = self._parse_transcript(data)
@@ -161,11 +151,11 @@ class DeepgramProvider:
                         logger.info("WebSocket connection closed")
                         self.connected = False
                         break
-                            
+
                 except asyncio.TimeoutError:
                     # Continue waiting for new messages
                     continue
-                    
+
         except Exception as e:
             logger.error(f"Error receiving transcripts: {e}")
             self.connected = False
@@ -174,25 +164,25 @@ class DeepgramProvider:
         """Parse Deepgram transcript into standardized format."""
         try:
             message_type = data.get("type")
-            
+
             if message_type == "Results":
                 # Parse transcription results
                 channel = data.get("channel", {})
                 alternatives = channel.get("alternatives", [])
-                
+
                 if not alternatives:
                     return None
-                
+
                 alternative = alternatives[0]
                 transcript_text = alternative.get("transcript", "").strip()
-                
+
                 if not transcript_text:
                     return None
-                
+
                 # Determine if this is a final transcript
                 is_final = data.get("is_final", False)
                 speech_final = data.get("speech_final", False)
-                
+
                 # Calculate confidence from words if available
                 confidence = 0.0
                 words = alternative.get("words", [])
@@ -201,16 +191,16 @@ class DeepgramProvider:
                     confidence = sum(confidences) / len(confidences) if confidences else 0.0
                 else:
                     confidence = alternative.get("confidence", 0.0)
-                
+
                 return {
                     "transcript": transcript_text,
                     "is_final": is_final or speech_final,
                     "confidence": confidence,
                     "stability": data.get("stability", 0.0),
                     "provider": "deepgram",
-                    "model": self.model
+                    "model": self.model,
                 }
-            
+
             elif message_type == "UtteranceEnd":
                 # Handle utterance end events
                 return {
@@ -220,23 +210,20 @@ class DeepgramProvider:
                     "stability": 0.0,
                     "provider": "deepgram",
                     "model": self.model,
-                    "utterance_end": True
+                    "utterance_end": True,
                 }
-            
+
             elif message_type == "SpeechStarted":
                 # Handle speech started events
                 logger.debug("Speech started detected")
                 return None
-                
+
         except Exception as e:
             logger.error(f"Error parsing Deepgram transcript: {e}")
-        
+
         return None
 
-    async def stream_audio_chunks(
-        self,
-        audio_chunk_generator: AsyncGenerator[bytes, None]
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    async def stream_audio_chunks(self, audio_chunk_generator: AsyncGenerator[bytes, None]) -> AsyncGenerator[Dict[str, Any], None]:
         """
         Stream individual audio chunks and receive real-time transcripts.
 
@@ -261,14 +248,11 @@ class DeepgramProvider:
                 if audio_chunk and len(audio_chunk) > 0:
                     # Send audio chunk to Deepgram as binary
                     await self.websocket.send_bytes(audio_chunk)
-                    
+
                     # Yield any available transcripts from queue
                     while not self._transcript_queue.empty():
                         try:
-                            transcript = await asyncio.wait_for(
-                                self._transcript_queue.get(),
-                                timeout=0.1
-                            )
+                            transcript = await asyncio.wait_for(self._transcript_queue.get(), timeout=0.1)
                             yield transcript
                             self._transcript_queue.task_done()
                         except asyncio.TimeoutError:
@@ -277,14 +261,11 @@ class DeepgramProvider:
             # Send finalize message to flush the stream
             finalize_message = json.dumps({"type": "Finalize"})
             await self.websocket.send_str(finalize_message)
-            
+
             # Process any remaining transcripts
             while not self._transcript_queue.empty():
                 try:
-                    transcript = await asyncio.wait_for(
-                        self._transcript_queue.get(), 
-                        timeout=0.1
-                    )
+                    transcript = await asyncio.wait_for(self._transcript_queue.get(), timeout=0.1)
                     yield transcript
                     self._transcript_queue.task_done()
                 except asyncio.TimeoutError:
@@ -300,7 +281,7 @@ class DeepgramProvider:
                 await receive_task
             except asyncio.CancelledError:
                 pass
-            
+
             # Disconnect
             if self.connected:
                 await self.disconnect()

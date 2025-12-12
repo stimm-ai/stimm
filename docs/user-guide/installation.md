@@ -35,6 +35,7 @@ Once the services are up, you can access:
 
 > [!NOTE]
 > `front.localhost` and `api.localhost` should automatically resolve to `127.0.0.1` on most modern systems. If they do not, you can access the services directly via:
+>
 > - Frontend: http://localhost:3000
 > - API: http://localhost:8001
 

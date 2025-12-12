@@ -4,8 +4,6 @@ RAG Service Data Models
 This module contains all data models and Pydantic schemas for the RAG service.
 """
 
-import time
-import uuid
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set
 

@@ -24,21 +24,21 @@ Then edit each file to fill in your specific values (API keys, URLs, etc.).
 
 ### Service URLs (Defaults for Local Development)
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `STIMM_API_URL` | URL of the backend API | `http://localhost:8001` |
-| `LIVEKIT_URL` | WebSocket URL for LiveKit | `ws://localhost:7880` |
-| `LIVEKIT_API_URL` | HTTP URL for LiveKit API | `http://localhost:7880` |
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://stimm_user:stimm_password@localhost:5432/stimm` |
-| `QDRANT_URL` | Qdrant vector database URL | `http://localhost:6333` |
-| `REDIS_URL` | Redis connection URL | `redis://localhost:6379` |
-| `FRONTEND_URL` | Frontend URL (used for CORS) | `http://localhost:3000` |
+| Variable          | Description                  | Default                                                       |
+| ----------------- | ---------------------------- | ------------------------------------------------------------- |
+| `STIMM_API_URL`   | URL of the backend API       | `http://localhost:8001`                                       |
+| `LIVEKIT_URL`     | WebSocket URL for LiveKit    | `ws://localhost:7880`                                         |
+| `LIVEKIT_API_URL` | HTTP URL for LiveKit API     | `http://localhost:7880`                                       |
+| `DATABASE_URL`    | PostgreSQL connection string | `postgresql://stimm_user:stimm_password@localhost:5432/stimm` |
+| `QDRANT_URL`      | Qdrant vector database URL   | `http://localhost:6333`                                       |
+| `REDIS_URL`       | Redis connection URL         | `redis://localhost:6379`                                      |
+| `FRONTEND_URL`    | Frontend URL (used for CORS) | `http://localhost:3000`                                       |
 
 ### LiveKit Credentials
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `LIVEKIT_API_KEY` | LiveKit API key | `devkey` |
+| Variable             | Description        | Default  |
+| -------------------- | ------------------ | -------- |
+| `LIVEKIT_API_KEY`    | LiveKit API key    | `devkey` |
 | `LIVEKIT_API_SECRET` | LiveKit API secret | `secret` |
 
 ### Provider API Keys
@@ -56,12 +56,12 @@ If a key is missing, the corresponding provider will be disabled or fall back to
 
 ### Feature Flags
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `ENABLE_SIP_BRIDGE` | Enable SIP telephony integration | `false` |
-| `LOG_LEVEL` | Logging level (`INFO`, `DEBUG`, etc.) | `INFO` |
-| `CONVERSATION_CACHE_LIMIT` | Number of conversation turns to cache | `128` |
-| `CONVERSATION_CACHE_TTL_SECONDS` | Cache time‑to‑live in seconds | `900` |
+| Variable                         | Description                           | Default |
+| -------------------------------- | ------------------------------------- | ------- |
+| `ENABLE_SIP_BRIDGE`              | Enable SIP telephony integration      | `false` |
+| `LOG_LEVEL`                      | Logging level (`INFO`, `DEBUG`, etc.) | `INFO`  |
+| `CONVERSATION_CACHE_LIMIT`       | Number of conversation turns to cache | `128`   |
+| `CONVERSATION_CACHE_TTL_SECONDS` | Cache time‑to‑live in seconds         | `900`   |
 
 ## Docker‑Specific Configuration
 

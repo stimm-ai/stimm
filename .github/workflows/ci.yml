@@ -5,15 +5,15 @@ on:
     branches:
       - main
     paths-ignore:
-      - 'docs/**'
-      - '*.md'
+      - "docs/**"
+      - "*.md"
   pull_request:
     branches:
       - main
     paths-ignore:
-      - 'docs/**'
-      - '*.md'
-  workflow_dispatch:  # Allow manual trigger
+      - "docs/**"
+      - "*.md"
+  workflow_dispatch: # Allow manual trigger
 
 env:
   CI: true
@@ -47,7 +47,7 @@ jobs:
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Install uv
         run: |
@@ -80,7 +80,7 @@ jobs:
           echo "Running backend linting and formatting checks..."
           $HOME/.local/bin/uv run ruff format --check src/
           $HOME/.local/bin/uv run ruff check src/
-          
+
           echo "Running frontend linting and formatting checks..."
           cd src/front
           npm install
@@ -93,7 +93,7 @@ jobs:
           # Start services without waiting for health checks
           docker compose up -d postgres redis livekit
           echo "Containers started. Waiting for services to be ready..."
-          
+
           # Wait for PostgreSQL
           echo "Waiting for PostgreSQL..."
           for i in {1..60}; do
@@ -107,7 +107,7 @@ jobs:
               exit 1
             fi
           done
-          
+
           # Wait for Redis
           echo "Waiting for Redis..."
           for i in {1..60}; do
@@ -121,7 +121,7 @@ jobs:
               exit 1
             fi
           done
-          
+
           # Wait for LiveKit
           echo "Waiting for LiveKit..."
           for i in {1..60}; do
@@ -135,7 +135,7 @@ jobs:
               exit 1
             fi
           done
-          
+
           echo "All services verified and ready."
 
       - name: Run tests

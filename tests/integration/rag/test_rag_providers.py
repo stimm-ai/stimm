@@ -2,15 +2,16 @@
 RAG Provider Integration Tests
 """
 
-import pytest
-import sys
 import os
+import sys
+
+import pytest
 
 # Add the parent directory to Python path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../.."))
 
+from services.rag.config_models import ProviderConfig, RagConfigCreate
 from services.rag.rag_config_service import RagConfigService
-from services.rag.config_models import RagConfigCreate, ProviderConfig
 
 
 @pytest.mark.requires_provider("rag")
@@ -58,18 +59,15 @@ class TestRAGProviders:
             if config is None:
                 continue
             # Create a minimal RAG config using the provider config
-            provider_config = ProviderConfig(
-                provider=provider_name,
-                config=config
-            )
-            create_data = RagConfigCreate(
-                name=f"Test {provider_name}",
-                description=f"Test config for {provider_name}",
-                provider_config=provider_config,
-                is_default=False,
-            )
+            # provider_config = ProviderConfig(provider=provider_name, config=config)  # Not used, but kept for clarity
+            # create_data = RagConfigCreate(  # Not used, but kept for clarity
+            #     name=f"Test {provider_name}",
+            #     description=f"Test config for {provider_name}",
+            #     provider_config=provider_config,
+            #     is_default=False,
+            # )
             # Instantiate service (no database operations)
-            service = RagConfigService()
+            # service = RagConfigService()  # Not used, but kept for clarity
             # We cannot actually create because it would persist; we'll just validate
             # that the provider config is accepted by the service's validation.
             # For simplicity, we'll just assert that the provider is known.
@@ -77,9 +75,9 @@ class TestRAGProviders:
             # but we skip to avoid side effects.
             # Instead, we can test that the provider is in the provider constants.
             from services.provider_constants import get_provider_constants
+
             constants = get_provider_constants()
-            assert provider_name in constants.get("rag", {}), \
-                f"Provider {provider_name} not found in provider constants"
+            assert provider_name in constants.get("rag", {}), f"Provider {provider_name} not found in provider constants"
             print(f"✅ Provider {provider_name} config validated")
 
     @pytest.mark.asyncio
@@ -89,10 +87,7 @@ class TestRAGProviders:
             if config is None:
                 continue
             # Create a temporary RAG config
-            provider_config = ProviderConfig(
-                provider=provider_name,
-                config=config
-            )
+            provider_config = ProviderConfig(provider=provider_name, config=config)
             create_data = RagConfigCreate(
                 name=f"Engine Test {provider_name}",
                 description=f"Test retrieval engine for {provider_name}",
@@ -113,7 +108,7 @@ class TestRAGProviders:
                 # Expected for pinecone.io and rag.saas (WIP)
                 print(f"⚠️ Retrieval engine not implemented for {provider_name}: {e}")
                 # Clean up if config was created
-                if 'created' in locals():
+                if "created" in locals():
                     service.delete_rag_config(created.id, user_id)
                 continue
             except Exception as e:

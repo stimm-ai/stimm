@@ -1,19 +1,21 @@
 """
 Pydantic models for agent management API.
 """
-from pydantic import BaseModel, Field, validator
-from typing import Optional, Dict, Any, List
-from uuid import UUID
+
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+from uuid import UUID
+
+from pydantic import BaseModel, Field, validator
 
 
 class ProviderConfig(BaseModel):
     """Configuration for a single provider."""
-    
+
     provider: str = Field(..., description="Provider name (e.g., 'groq.com', 'async.ai')")
     config: Dict[str, Any] = Field(default_factory=dict, description="Provider-specific configuration")
-    
-    @validator('provider')
+
+    @validator("provider")
     def validate_provider(cls, v):
         """Validate provider name."""
         if not v or not v.strip():
@@ -32,8 +34,8 @@ class AgentCreate(BaseModel):
     stt_config: ProviderConfig = Field(..., description="STT provider configuration")
     is_default: bool = Field(False, description="Whether this agent should be the default")
     rag_config_id: Optional[UUID] = Field(None, description="Optional RAG configuration ID")
-    
-    @validator('name')
+
+    @validator("name")
     def validate_name(cls, v):
         """Validate agent name."""
         if not v or not v.strip():
@@ -41,10 +43,9 @@ class AgentCreate(BaseModel):
         return v.strip()
 
 
-
 class AgentUpdate(BaseModel):
     """Model for updating an existing agent."""
-    
+
     name: Optional[str] = Field(None, min_length=1, max_length=255, description="Agent name")
     description: Optional[str] = Field(None, description="Agent description")
     system_prompt: Optional[str] = Field(None, description="System prompt for the agent")
@@ -58,7 +59,7 @@ class AgentUpdate(BaseModel):
 
 class AgentResponse(BaseModel):
     """Response model for agent data."""
-    
+
     id: UUID
     user_id: UUID
     name: str
@@ -76,21 +77,21 @@ class AgentResponse(BaseModel):
     is_system_agent: bool
     created_at: datetime
     updated_at: datetime
-    
+
     class Config:
         from_attributes = True
 
 
 class AgentListResponse(BaseModel):
     """Response model for listing agents."""
-    
+
     agents: List[AgentResponse]
     total: int
 
 
 class AgentConfig(BaseModel):
     """Configuration model for agent runtime usage."""
-    
+
     llm_provider: str
     tts_provider: str
     stt_provider: str
@@ -99,9 +100,9 @@ class AgentConfig(BaseModel):
     llm_config: Dict[str, Any]
     tts_config: Dict[str, Any]
     stt_config: Dict[str, Any]
-    
+
     @classmethod
-    def from_agent_response(cls, agent: AgentResponse) -> 'AgentConfig':
+    def from_agent_response(cls, agent: AgentResponse) -> "AgentConfig":
         """Create AgentConfig from AgentResponse."""
         return cls(
             llm_provider=agent.llm_provider,
@@ -111,22 +112,22 @@ class AgentConfig(BaseModel):
             rag_config_id=agent.rag_config_id,
             llm_config=agent.llm_config,
             tts_config=agent.tts_config,
-            stt_config=agent.stt_config
+            stt_config=agent.stt_config,
         )
 
 
 class AgentSessionCreate(BaseModel):
     """Model for creating an agent session."""
-    
+
     agent_id: UUID
     session_type: str = Field(..., description="Session type: 'stimm', 'chat', 'tts', 'stt'")
     ip_address: Optional[str] = Field(None, description="Client IP address")
     user_agent: Optional[str] = Field(None, description="Client user agent")
-    
-    @validator('session_type')
+
+    @validator("session_type")
     def validate_session_type(cls, v):
         """Validate session type."""
-        valid_types = {'stimm', 'chat', 'tts', 'stt'}
+        valid_types = {"stimm", "chat", "tts", "stt"}
         if v not in valid_types:
             raise ValueError(f"Session type must be one of: {', '.join(valid_types)}")
         return v

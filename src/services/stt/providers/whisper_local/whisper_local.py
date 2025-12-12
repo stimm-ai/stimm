@@ -8,7 +8,7 @@ speech-to-text transcription.
 import asyncio
 import json
 import logging
-from typing import AsyncGenerator, Dict, List, Any
+from typing import Any, AsyncGenerator, Dict, List
 
 import websockets
 
@@ -36,30 +36,29 @@ class WhisperLocalProvider:
     def get_field_definitions(cls) -> Dict[str, Dict[str, Any]]:
         """
         Get the field definitions for this provider.
-        
+
         Returns:
             Dictionary mapping field names to field metadata
         """
-        return {
-        }
+        return {}
 
     def __init__(self, provider_config: dict = None):
         """
         Initialize Whisper Local STT provider using immutable constants.
 
         Configuration can be overridden via provider_config dictionary.
-        
+
         Args:
             provider_config: Configuration dictionary with optional 'url' keys.
         """
         constants = get_provider_constants()
-        default_url = constants['stt']['whisper.local']['URL']
-        
+        default_url = constants["stt"]["whisper.local"]["URL"]
+
         if provider_config and isinstance(provider_config, dict):
-            self.websocket_url = provider_config.get('url', default_url)
+            self.websocket_url = provider_config.get("url", default_url)
         else:
             self.websocket_url = default_url
-            
+
         self.full_url = f"{self.websocket_url}"
         self.websocket = None
         self.connected = False
@@ -82,7 +81,6 @@ class WhisperLocalProvider:
             self.connected = False
             logger.info("Disconnected from whisper-stt service")
 
-
     async def _receive_transcripts(self) -> None:
         """Receive and store transcripts from the WebSocket connection."""
         try:
@@ -90,30 +88,24 @@ class WhisperLocalProvider:
             # This allows the system to handle long pauses between user speech segments
             while True:
                 try:
-                    message = await asyncio.wait_for(
-                        self.websocket.recv(),
-                        timeout=0.5
-                    )
-                    
+                    message = await asyncio.wait_for(self.websocket.recv(), timeout=0.5)
+
                     if message:
                         data = json.loads(message)
                         self.transcripts.append(data)
-                        #logger.debug(f"Received transcript: {data}")
-                        
+                        # logger.debug(f"Received transcript: {data}")
+
                 except asyncio.TimeoutError:
                     # Continue waiting indefinitely for new transcripts
                     # This allows the system to handle long pauses between user speech
                     continue
-                    
+
         except websockets.ConnectionClosed:
             logger.info("WebSocket connection closed")
         except Exception as e:
             logger.error(f"Error receiving transcripts: {e}")
 
-    async def stream_audio_chunks(
-        self,
-        audio_chunk_generator: AsyncGenerator[bytes, None]
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    async def stream_audio_chunks(self, audio_chunk_generator: AsyncGenerator[bytes, None]) -> AsyncGenerator[Dict[str, Any], None]:
         """
         Stream individual audio chunks and receive real-time transcripts.
 
@@ -141,7 +133,7 @@ class WhisperLocalProvider:
                 if audio_chunk:
                     # Send chunk to provider
                     await self.websocket.send(audio_chunk)
-                    
+
                     # Yield only new transcripts (avoid duplicates)
                     while len(self.transcripts) > last_transcript_index:
                         transcript = self.transcripts[last_transcript_index]
@@ -150,7 +142,7 @@ class WhisperLocalProvider:
 
             # Send end message
             await self.websocket.send(json.dumps({"text": "end"}))
-            #logger.info("Sent end message to whisper-stt service")
+            # logger.info("Sent end message to whisper-stt service")
 
             # Yield any remaining new transcripts
             while len(self.transcripts) > last_transcript_index:
@@ -168,7 +160,6 @@ class WhisperLocalProvider:
                 await receive_task
             except asyncio.CancelledError:
                 pass
-
 
     async def __aenter__(self):
         """Async context manager entry."""

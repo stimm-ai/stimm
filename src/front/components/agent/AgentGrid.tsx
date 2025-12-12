@@ -1,7 +1,7 @@
-import { ReactNode } from 'react'
+import { ReactNode } from 'react';
 
 interface AgentGridProps {
-  children: ReactNode
+  children: ReactNode;
 }
 
 export function AgentGrid({ children }: AgentGridProps) {
@@ -9,5 +9,5 @@ export function AgentGrid({ children }: AgentGridProps) {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {children}
     </div>
-  )
+  );
 }

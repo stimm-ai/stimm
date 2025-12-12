@@ -2,23 +2,23 @@
 """
 Integration tests for RAG configuration routes.
 """
+
+import logging
 import sys
 import uuid
-import logging
-sys.path.insert(0, 'src')
 
+sys.path.insert(0, "src")
+
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
-from database.session import SessionLocal
+
 from services.rag.rag_config_routes import router
-from services.rag.config_models import RagConfigCreate, ProviderConfig
-from services.rag.rag_config_service import RagConfigService
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Create a test client using the router directly (need to mount it in an app)
-from fastapi import FastAPI
+
 app = FastAPI()
 app.include_router(router)
 client = TestClient(app)
@@ -45,7 +45,7 @@ def test_create_and_delete_rag_config():
             "top_k": 5,
             "enable_reranker": False,
             "ultra_low_latency": True,
-        }
+        },
     }
     payload = {
         "name": test_name,
@@ -90,7 +90,7 @@ def test_update_rag_config():
             "top_k": 5,
             "enable_reranker": False,
             "ultra_low_latency": True,
-        }
+        },
     }
     payload = {
         "name": test_name,
@@ -141,7 +141,7 @@ def test_default_rag_config():
             "top_k": 5,
             "enable_reranker": False,
             "ultra_low_latency": True,
-        }
+        },
     }
     # First config (non-default)
     payload1 = {
@@ -233,7 +233,7 @@ def test_validation_errors():
         "config": {
             "embedding_model": "all-MiniLM-L6-v2",
             # missing collection_name
-        }
+        },
     }
     payload = {
         "name": f"Invalid {uuid.uuid4().hex[:8]}",
@@ -258,7 +258,7 @@ def test_validation_errors():
             "top_k": 5,
             "enable_reranker": False,
             "ultra_low_latency": True,
-        }
+        },
     }
     payload1 = {
         "name": name,
@@ -301,6 +301,7 @@ def main():
     except Exception as e:
         logger.error(f"Route test failed with exception: {e}")
         import traceback
+
         traceback.print_exc()
         success = False
 

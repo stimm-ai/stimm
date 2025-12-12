@@ -2,7 +2,7 @@
 Pinecone.io Provider for RAG
 """
 
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 
 class PineconeProvider:
@@ -22,12 +22,7 @@ class PineconeProvider:
         Returns:
             List of property names that this provider expects
         """
-        return [
-            "index_name",
-            "api_key",
-            "top_k",
-            "namespace"
-        ]
+        return ["index_name", "api_key", "top_k", "namespace"]
 
     @classmethod
     def get_field_definitions(cls) -> Dict[str, Dict[str, Any]]:
@@ -43,13 +38,13 @@ class PineconeProvider:
                 "label": "Index Name",
                 "required": True,
                 "description": "Name of the Pinecone index to query",
-                "default": "stimm"
+                "default": "stimm",
             },
             "api_key": {
                 "type": "password",
                 "label": "API Key",
                 "required": True,
-                "description": "Pinecone API key for authentication"
+                "description": "Pinecone API key for authentication",
             },
             "top_k": {
                 "type": "number",
@@ -58,13 +53,13 @@ class PineconeProvider:
                 "description": "Number of retrieved documents to return (higher values increase recall but may impact latency)",
                 "min": 1,
                 "max": 10,
-                "default": 2
+                "default": 2,
             },
             "namespace": {
                 "type": "text",
                 "label": "Namespace",
                 "required": False,
-                "description": "Optional namespace within the index"
+                "description": "Optional namespace within the index",
             },
             "embedding_model": {
                 "type": "select",
@@ -75,24 +70,24 @@ class PineconeProvider:
                     {"value": "BAAI/bge-base-en-v1.5", "label": "BGE Base En v1.5"},
                     {"value": "sentence-transformers/all-MiniLM-L6-v2", "label": "MiniLM L6 v2"},
                     {"value": "sentence-transformers/all-mpnet-base-v2", "label": "MPNet Base v2"},
-                    {"value": "intfloat/e5-base-v2", "label": "E5 Base v2"}
+                    {"value": "intfloat/e5-base-v2", "label": "E5 Base v2"},
                 ],
-                "default": "BAAI/bge-base-en-v1.5"
+                "default": "BAAI/bge-base-en-v1.5",
             },
             "enable_reranker": {
                 "type": "boolean",
                 "label": "Enable Reranker",
                 "required": False,
                 "description": "Whether to use cross-encoder reranking (requires reranker model)",
-                "default": False
+                "default": False,
             },
             "ultra_low_latency": {
                 "type": "boolean",
                 "label": "Ultra Low Latency Mode",
                 "required": False,
                 "description": "Optimize for stimm latency (reduces retrieval quality)",
-                "default": True
-            }
+                "default": True,
+            },
         }
 
     @classmethod

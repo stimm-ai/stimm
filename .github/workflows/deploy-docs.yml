@@ -5,11 +5,11 @@ on:
     branches:
       - main
     paths:
-      - 'docs/**'
-      - 'mkdocs.yml'
-      - 'pyproject.toml'
-      - '.github/workflows/deploy-docs.yml'
-  workflow_dispatch:  # Allow manual trigger
+      - "docs/**"
+      - "mkdocs.yml"
+      - "pyproject.toml"
+      - ".github/workflows/deploy-docs.yml"
+  workflow_dispatch: # Allow manual trigger
 
 permissions:
   contents: write
@@ -28,7 +28,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Install uv
         run: |
@@ -52,7 +52,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './site'
+          path: "./site"
 
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4

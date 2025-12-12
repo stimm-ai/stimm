@@ -9,15 +9,15 @@ to support per‑agent RAG settings.
 import asyncio
 import hashlib
 import time
-from typing import Any, Dict, List, Optional, Tuple, AsyncIterator
 from functools import lru_cache
+from typing import Any, Dict, List, Optional, Tuple
 
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as qmodels
 from sentence_transformers import CrossEncoder, SentenceTransformer
 
-from services.retrieval.retrieval_models import RetrievalCandidate, StoredDocument
 from services.retrieval.config import retrieval_config as global_retrieval_config
+from services.retrieval.retrieval_models import RetrievalCandidate, StoredDocument
 
 
 class RetrievalEngine:
@@ -111,12 +111,13 @@ class RetrievalEngine:
         """Lazy create a lexical index."""
         if self._lexical_index is None:
             from services.retrieval import LexicalIndex
+
             self._lexical_index = LexicalIndex()
         return self._lexical_index
 
     def _get_query_hash(self, text: str) -> str:
         """Generate a hash for query caching."""
-        return hashlib.md5(text.encode('utf-8')).hexdigest()
+        return hashlib.md5(text.encode("utf-8")).hexdigest()
 
     @lru_cache(maxsize=1000)
     def _cached_embedding(self, text: str) -> List[float]:
@@ -126,6 +127,7 @@ class RetrievalEngine:
             show_progress_bar=False,
             normalize_embeddings=self.embed_normalize,
         )[0].tolist()
+
     def _dense_candidates(
         self,
         text: str,
@@ -223,7 +225,7 @@ class RetrievalEngine:
         """Truncate text for reranker input."""
         if len(text) <= self.rerank_max_chars:
             return text
-        truncated = text[:self.rerank_max_chars]
+        truncated = text[: self.rerank_max_chars]
         last_space = truncated.rfind(" ")
         if last_space > 0:
             truncated = truncated[:last_space]
@@ -273,12 +275,8 @@ class RetrievalEngine:
     ) -> Tuple[List[RetrievalCandidate], List[RetrievalCandidate]]:
         """Run dense and lexical search in parallel."""
         loop = asyncio.get_running_loop()
-        dense_task = loop.run_in_executor(
-            None, self._dense_candidates, text, top_k, namespace
-        )
-        lexical_task = loop.run_in_executor(
-            None, self._lexical_candidates, text, top_k, namespace
-        )
+        dense_task = loop.run_in_executor(None, self._dense_candidates, text, top_k, namespace)
+        lexical_task = loop.run_in_executor(None, self._lexical_candidates, text, top_k, namespace)
         dense_candidates, lexical_candidates = await asyncio.gather(dense_task, lexical_task)
         return dense_candidates, lexical_candidates
 
@@ -309,9 +307,7 @@ class RetrievalEngine:
                     return cached_result
 
         # Run parallel retrieval
-        dense_candidates, lexical_candidates = await self._retrieve_parallel(
-            text, effective_top_k, namespace
-        )
+        dense_candidates, lexical_candidates = await self._retrieve_parallel(text, effective_top_k, namespace)
         combined_candidates = self._combine_candidates(dense_candidates, lexical_candidates)
 
         reranked = await self._apply_reranker(text, combined_candidates)
@@ -328,11 +324,7 @@ class RetrievalEngine:
             contexts.append(
                 QueryContext(
                     text=candidate.text,
-                    score=(
-                        candidate.final_score
-                        if candidate.final_score is not None
-                        else candidate.initial_score
-                    ),
+                    score=(candidate.final_score if candidate.final_score is not None else candidate.initial_score),
                     metadata=metadata,
                 )
             )
@@ -398,7 +390,7 @@ class RetrievalEngine:
             return []
 
         contexts: List[QueryContext] = []
-        for point in results[:self.ultra_top_k]:
+        for point in results[: self.ultra_top_k]:
             payload = point.payload or {}
             text_value = (payload.get("text") or "").strip()
             if not text_value:

@@ -6,10 +6,12 @@ Usage:
     python update_trunk.py --trunk-id <id> --number <new_number> --allowed <new_allowed>
 """
 
-import redis
-import json
 import argparse
+import json
 import sys
+
+import redis
+
 
 def main():
     parser = argparse.ArgumentParser(description="Update SIP trunk configuration")
@@ -19,7 +21,7 @@ def main():
     args = parser.parse_args()
 
     try:
-        r = redis.Redis(host='localhost', port=6379, decode_responses=True)
+        r = redis.Redis(host="localhost", port=6379, decode_responses=True)
         r.ping()
     except redis.ConnectionError as e:
         print(f"Failed to connect to Redis: {e}")
@@ -56,6 +58,7 @@ def main():
     # Save back
     r.hset(TRUNK_KEY, args.trunk_id, json.dumps(trunk))
     print(f"Updated trunk {args.trunk_id}: {json.dumps(trunk, indent=2)}")
+
 
 if __name__ == "__main__":
     main()

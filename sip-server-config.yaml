@@ -8,14 +8,14 @@ redis:
   address: localhost:6379
 sip_port: 5060
 rtp_port_range: 10000-20000
-use_external_ip: false  # Use local WSL2 IP for internal testing
+use_external_ip: false # Use local WSL2 IP for internal testing
 logging:
   level: debug
 
 # WSL2 network configuration
 # Zoiper on Windows will connect to this local IP
-bind_address: "0.0.0.0"  # Listen on all interfaces
-public_ip: "172.23.126.232"   # Your WSL2 Ubuntu machine local IP
+bind_address: "0.0.0.0" # Listen on all interfaces
+public_ip: "172.23.126.232" # Your WSL2 Ubuntu machine local IP
 
 # SIP authentication for local testing
 # Allow anonymous calls for testing purposes
@@ -25,18 +25,18 @@ allow_anonymous: true
 flood_protection:
   enabled: true
   # Increase thresholds for testing to prevent false positives
-  invite_threshold: 50          # Allow 50 INVITEs per window (increased from default)
-  invite_window_seconds: 60     # 60 second window
+  invite_threshold: 50 # Allow 50 INVITEs per window (increased from default)
+  invite_window_seconds: 60 # 60 second window
   # Whitelist local networks to prevent blocking legitimate test calls
   whitelist_local_networks: true
-  whitelist_private_ips: true   # Whitelist private IP ranges
+  whitelist_private_ips: true # Whitelist private IP ranges
   # Specific IP whitelist based on SIP logs
   trusted_ips:
-    - "172.18.0.1"     # Docker network
+    - "172.18.0.1" # Docker network
     - "172.23.126.232" # WSL2 host
-    - "127.0.0.1"      # Localhost
-    - "10.0.0.0/8"     # Private network range
-    - "172.16.0.0/12"  # Private network range
+    - "127.0.0.1" # Localhost
+    - "10.0.0.0/8" # Private network range
+    - "172.16.0.0/12" # Private network range
     - "192.168.0.0/16" # Private network range
 
 # Rate limiting - disabled for testing
@@ -59,7 +59,7 @@ log_level: "debug"
 log_format: "json"
 
 # SIP server settings
-max_call_duration: 3600  # 1 hour max call duration
+max_call_duration: 3600 # 1 hour max call duration
 enable_recording: false
 
 # Inbound call handling
@@ -75,7 +75,7 @@ inbound:
 
 # Outbound call settings
 outbound:
-  enabled: false  # Disable outbound for now
+  enabled: false # Disable outbound for now
 
 # Dispatch rule matching
 dispatch_rules:
@@ -88,5 +88,5 @@ dispatch_rules:
     # Enable agent dispatch for SIP rooms
     agents: []
     # Room timeout settings
-    empty_timeout: 300  # 5 minutes
+    empty_timeout: 300 # 5 minutes
     max_participants: 10

@@ -85,6 +85,7 @@ Push your branch to your fork and open a pull request against the `main` branch 
 
 - Use **ruff** for formatting, import sorting, and linting (replaces black, isort, and flake8).
 - Type hints are encouraged (use `mypy` for verification).
+- Line length has been increased to 200 characters to accommodate longer lines while maintaining readability.
 
 You can run the formatting and linting scripts:
 
@@ -98,6 +99,14 @@ uv run ruff check --fix src/
 # Or use the convenient lint script that does both:
 uv run lint
 ```
+
+The project has 0 linting errors, so all pull requests must pass these checks.
+
+**Deprecated Commands:** The following commands are no longer used in this project:
+
+- `uv run black src/ tests/` - Use `uv run ruff format src/` instead
+- `uv run isort src/ tests/` - Use `uv run ruff format src/` instead
+- `uv run flake8 src/ tests/` - Use `uv run ruff check --fix src/` instead
 
 ### TypeScript/React
 

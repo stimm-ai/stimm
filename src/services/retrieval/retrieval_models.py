@@ -105,6 +105,7 @@ class LexicalIndex:
     def upsert(self, document: StoredDocument) -> None:
         """Upsert a document into the appropriate namespace index."""
         from .retrieval_logic import _tokenize
+
         tokens = _tokenize(document.text)
         if not tokens:
             return
@@ -120,6 +121,7 @@ class LexicalIndex:
     def search(self, text: str, namespace: Optional[str], limit: int) -> List[Tuple[str, float]]:
         """Search across namespaces for matching documents."""
         from .retrieval_logic import _tokenize
+
         tokens = _tokenize(text)
         if not tokens:
             return []

@@ -1,93 +1,107 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { PageLayout } from '@/components/ui/PageLayout'
-import { PageHeaderActions } from '@/components/ui/PageHeaderActions'
-import { AgentGrid } from './AgentGrid'
-import { AgentCard } from './AgentCard'
-import { Agent } from './types'
-import { Bot, Plus, Mic } from 'lucide-react'
-import { THEME } from '@/lib/theme'
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { PageLayout } from '@/components/ui/PageLayout';
+import { PageHeaderActions } from '@/components/ui/PageHeaderActions';
+import { AgentGrid } from './AgentGrid';
+import { AgentCard } from './AgentCard';
+import { Agent } from './types';
+import { Bot, Plus, Mic } from 'lucide-react';
+import { THEME } from '@/lib/theme';
 
 export function AgentAdminPage() {
-  const [agents, setAgents] = useState<Agent[]>([])
-  const [defaultAgent, setDefaultAgent] = useState<Agent | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [defaultAgent, setDefaultAgent] = useState<Agent | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadAgents()
-  }, [])
+    loadAgents();
+  }, []);
 
   const loadAgents = async () => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
       // Fetch agents from FastAPI backend
-      const response = await fetch('http://localhost:8001/api/agents/')
+      const response = await fetch('http://localhost:8001/api/agents/');
       if (!response.ok) {
-        throw new Error(`Failed to load agents: ${response.statusText}`)
+        throw new Error(`Failed to load agents: ${response.statusText}`);
       }
 
-      const agents = await response.json()
-      setAgents(agents || [])
+      const agents = await response.json();
+      setAgents(agents || []);
 
       // Fetch default agent separately
-      const defaultResponse = await fetch('http://localhost:8001/api/agents/default/current/')
+      const defaultResponse = await fetch(
+        'http://localhost:8001/api/agents/default/current/'
+      );
       if (defaultResponse.ok) {
-        const defaultAgent = await defaultResponse.json()
-        setDefaultAgent(defaultAgent)
+        const defaultAgent = await defaultResponse.json();
+        setDefaultAgent(defaultAgent);
       } else {
-        setDefaultAgent(null)
+        setDefaultAgent(null);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load agents')
+      setError(err instanceof Error ? err.message : 'Failed to load agents');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleSetDefault = async (agentId: string) => {
     try {
-      const response = await fetch(`http://localhost:8001/api/agents/${agentId}/set-default/`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
+      const response = await fetch(
+        `http://localhost:8001/api/agents/${agentId}/set-default/`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to set default agent')
+        throw new Error('Failed to set default agent');
       }
 
-      await loadAgents() // Reload to get updated default agent
+      await loadAgents(); // Reload to get updated default agent
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to set default agent')
+      setError(
+        err instanceof Error ? err.message : 'Failed to set default agent'
+      );
     }
-  }
+  };
 
   const handleDelete = async (agentId: string) => {
-    if (!confirm('Are you sure you want to delete this agent? This action cannot be undone.')) {
-      return
+    if (
+      !confirm(
+        'Are you sure you want to delete this agent? This action cannot be undone.'
+      )
+    ) {
+      return;
     }
 
     try {
-      const response = await fetch(`http://localhost:8001/api/agents/${agentId}/`, {
-        method: 'DELETE',
-      })
+      const response = await fetch(
+        `http://localhost:8001/api/agents/${agentId}/`,
+        {
+          method: 'DELETE',
+        }
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to delete agent')
+        throw new Error('Failed to delete agent');
       }
 
-      await loadAgents() // Reload to reflect deletion
+      await loadAgents(); // Reload to reflect deletion
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete agent')
+      setError(err instanceof Error ? err.message : 'Failed to delete agent');
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -99,7 +113,7 @@ export function AgentAdminPage() {
           </div>
         </div>
       </PageLayout>
-    )
+    );
   }
 
   return (
@@ -116,7 +130,10 @@ export function AgentAdminPage() {
           <p className={`${THEME.text.secondary} mb-6`}>
             Create your first agent to get started with the stimm system.
           </p>
-          <Button asChild className={`${THEME.button.secondary} rounded-full px-6`}>
+          <Button
+            asChild
+            className={`${THEME.button.secondary} rounded-full px-6`}
+          >
             <a href="/agent/create" className="flex items-center gap-2">
               <Plus className="w-4 h-4" />
               Create First Agent
@@ -137,5 +154,5 @@ export function AgentAdminPage() {
         </AgentGrid>
       )}
     </PageLayout>
-  )
+  );
 }

@@ -1,17 +1,22 @@
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Agent } from './types'
-import { THEME, getProviderAccent } from '@/lib/theme'
-import { Edit, Star, Trash2 } from 'lucide-react'
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Agent } from './types';
+import { THEME, getProviderAccent } from '@/lib/theme';
+import { Edit, Star, Trash2 } from 'lucide-react';
 
 interface AgentCardProps {
-  agent: Agent
-  isDefault: boolean
-  onSetDefault: (agentId: string) => void
-  onDelete: (agentId: string) => void
+  agent: Agent;
+  isDefault: boolean;
+  onSetDefault: (agentId: string) => void;
+  onDelete: (agentId: string) => void;
 }
 
-export function AgentCard({ agent, isDefault, onSetDefault, onDelete }: AgentCardProps) {
+export function AgentCard({
+  agent,
+  isDefault,
+  onSetDefault,
+  onDelete,
+}: AgentCardProps) {
   return (
     <div
       className={`
@@ -62,7 +67,10 @@ export function AgentCard({ agent, isDefault, onSetDefault, onDelete }: AgentCar
           asChild
           className={`${THEME.button.ghost} rounded-full flex-1`}
         >
-          <a href={`/agent/edit/${agent.id}`} className="flex items-center gap-2 justify-center">
+          <a
+            href={`/agent/edit/${agent.id}`}
+            className="flex items-center gap-2 justify-center"
+          >
             <Edit className="w-3 h-3" />
             Edit
           </a>
@@ -90,5 +98,5 @@ export function AgentCard({ agent, isDefault, onSetDefault, onDelete }: AgentCar
         </Button>
       </div>
     </div>
-  )
+  );
 }

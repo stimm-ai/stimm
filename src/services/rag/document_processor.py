@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 class DocumentType(str, Enum):
     """Supported document types."""
+
     PDF = "pdf"
     DOCX = "docx"
     MARKDOWN = "markdown"
@@ -38,6 +39,7 @@ TOKEN_PATTERN = re.compile(r"[A-Za-z0-9']+")
 @dataclass(frozen=True)
 class DocumentChunk:
     """Represents a single chunk of a document."""
+
     text: str
     section: str
     chunk_index: int
@@ -71,9 +73,7 @@ def _tokenize(text: str) -> List[str]:
     return TOKEN_PATTERN.findall(text.lower())
 
 
-def _sliding_chunks(
-    items: Sequence[str], target_words: int, max_words: int
-) -> Iterator[List[str]]:
+def _sliding_chunks(items: Sequence[str], target_words: int, max_words: int) -> Iterator[List[str]]:
     """Create sliding chunks from paragraphs based on word count."""
     chunk: List[str] = []
     word_count = 0
@@ -155,7 +155,7 @@ def extract_text_from_pdf(file_path: Path) -> str:
                         text_parts.append(page_text)
                 except Exception as e:
                     logger.warning(f"Failed to extract text from page {page_num}: {e}")
-        
+
         return "\n\n".join(text_parts)
     except Exception as e:
         logger.error(f"Failed to extract text from PDF {file_path}: {e}")
@@ -173,9 +173,7 @@ def extract_text_from_docx(file_path: Path) -> str:
         raise ValueError(f"Failed to extract text from DOCX: {e}")
 
 
-def extract_text_from_file(
-    file_path: Path, file_type: DocumentType
-) -> str:
+def extract_text_from_file(file_path: Path, file_type: DocumentType) -> str:
     """Extract text from a file based on its type."""
     if file_type == DocumentType.PDF:
         return extract_text_from_pdf(file_path)
@@ -243,12 +241,12 @@ def chunk_document(
             body = "\n\n".join(chunk_items).strip()
             enriched_text = f"{section_title}\n\n{body}" if section_title else body
             checksum = hashlib.sha256(enriched_text.encode("utf-8")).hexdigest()
-            
+
             # Skip duplicates
             if checksum in seen_checksums:
                 continue
             seen_checksums.add(checksum)
-            
+
             point_id = str(uuid5(NAMESPACE_URL, checksum))
             chunks.append(
                 DocumentChunk(

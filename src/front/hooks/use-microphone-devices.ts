@@ -1,78 +1,81 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react';
 
 export interface MicrophoneDevice {
-  deviceId: string
-  label: string
-  groupId: string
+  deviceId: string;
+  label: string;
+  groupId: string;
 }
 
 export interface UseMicrophoneDevicesReturn {
-  devices: MicrophoneDevice[]
-  selectedDeviceId: string | null
-  isLoading: boolean
-  error: string | null
-  refreshDevices: () => Promise<void>
-  setSelectedDeviceId: (deviceId: string) => void
+  devices: MicrophoneDevice[];
+  selectedDeviceId: string | null;
+  isLoading: boolean;
+  error: string | null;
+  refreshDevices: () => Promise<void>;
+  setSelectedDeviceId: (deviceId: string) => void;
 }
 
 export function useMicrophoneDevices(): UseMicrophoneDevicesReturn {
-  const [devices, setDevices] = useState<MicrophoneDevice[]>([])
-  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [devices, setDevices] = useState<MicrophoneDevice[]>([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const refreshDevices = useCallback(async () => {
     try {
-      setIsLoading(true)
-      setError(null)
+      setIsLoading(true);
+      setError(null);
       // Request permission to access media devices (optional but may trigger permission prompt)
-      await navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-        // Immediately stop the stream to release the microphone
-        stream.getTracks().forEach(track => track.stop())
-      })
-      const deviceInfos = await navigator.mediaDevices.enumerateDevices()
+      await navigator.mediaDevices
+        .getUserMedia({ audio: true })
+        .then((stream) => {
+          // Immediately stop the stream to release the microphone
+          stream.getTracks().forEach((track) => track.stop());
+        });
+      const deviceInfos = await navigator.mediaDevices.enumerateDevices();
       const audioInputs = deviceInfos
-        .filter(device => device.kind === 'audioinput')
-        .map(device => ({
+        .filter((device) => device.kind === 'audioinput')
+        .map((device) => ({
           deviceId: device.deviceId,
           label: device.label || `Microphone ${device.deviceId.slice(0, 5)}`,
           groupId: device.groupId,
-        }))
-      setDevices(audioInputs)
+        }));
+      setDevices(audioInputs);
       // If no device selected yet, select the first one (or default)
       if (audioInputs.length > 0 && !selectedDeviceId) {
-        const defaultDevice = audioInputs.find(d => d.deviceId === 'default') || audioInputs[0]
-        setSelectedDeviceId(defaultDevice.deviceId)
+        const defaultDevice =
+          audioInputs.find((d) => d.deviceId === 'default') || audioInputs[0];
+        setSelectedDeviceId(defaultDevice.deviceId);
       }
     } catch (err) {
-      console.error('Failed to enumerate microphone devices:', err)
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      console.error('Failed to enumerate microphone devices:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [selectedDeviceId])
+  }, [selectedDeviceId]);
 
   // Load devices on mount
   useEffect(() => {
-    refreshDevices()
-  }, [refreshDevices])
+    refreshDevices();
+  }, [refreshDevices]);
 
   // Load saved device from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('stimm_selected_microphone')
-    if (saved && devices.some(d => d.deviceId === saved)) {
-      setSelectedDeviceId(saved)
+    const saved = localStorage.getItem('stimm_selected_microphone');
+    if (saved && devices.some((d) => d.deviceId === saved)) {
+      setSelectedDeviceId(saved);
     }
-  }, [devices])
+  }, [devices]);
 
   // Persist selected device to localStorage when it changes
   useEffect(() => {
     if (selectedDeviceId) {
-      localStorage.setItem('stimm_selected_microphone', selectedDeviceId)
+      localStorage.setItem('stimm_selected_microphone', selectedDeviceId);
     }
-  }, [selectedDeviceId])
+  }, [selectedDeviceId]);
 
   return {
     devices,
@@ -81,5 +84,5 @@ export function useMicrophoneDevices(): UseMicrophoneDevicesReturn {
     error,
     refreshDevices,
     setSelectedDeviceId,
-  }
+  };
 }

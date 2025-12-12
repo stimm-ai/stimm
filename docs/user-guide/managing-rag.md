@@ -23,7 +23,6 @@ Each configuration can be associated with one or more agents, enabling per‑age
 3. Select a provider from the dropdown. The form will dynamically show the required fields for that provider.
 
    **Common fields:**
-
    - **Name** – A descriptive name (e.g., “Product‑Docs”, “Internal‑Wiki”).
    - **Description** – Optional.
    - **Collection Name** – The vector collection (will be created if it doesn’t exist).

@@ -6,13 +6,12 @@ A robust, low-latency implementation using PyAudio (PortAudio).
 
 import asyncio
 import logging
-import os
 import threading
 import time
-import pyaudio
-import numpy as np
-from dotenv import load_dotenv
 
+import numpy as np
+import pyaudio
+from dotenv import load_dotenv
 from livekit import rtc
 from livekit.api import AccessToken, VideoGrants
 
@@ -25,7 +24,8 @@ logger = logging.getLogger("simple-echo-client")
 SAMPLE_RATE = 48000
 CHANNELS = 1
 FORMAT = pyaudio.paInt16
-CHUNK_SIZE = 960 # 20ms at 48kHz (matches LiveKit typical frame size)
+CHUNK_SIZE = 960  # 20ms at 48kHz (matches LiveKit typical frame size)
+
 
 class AudioEngine:
     def __init__(self):
@@ -40,20 +40,14 @@ class AudioEngine:
         self._input_callback = input_callback
         self._loop = asyncio.get_event_loop()
         self._running = True
-        
+
         # Input Stream (Microphone)
         self._input_thread = threading.Thread(target=self._input_worker, daemon=True)
         self._input_thread.start()
-        
+
         # Output Stream (Speaker)
         try:
-            self._output_stream = self._pa.open(
-                format=FORMAT,
-                channels=CHANNELS,
-                rate=SAMPLE_RATE,
-                output=True,
-                frames_per_buffer=CHUNK_SIZE
-            )
+            self._output_stream = self._pa.open(format=FORMAT, channels=CHANNELS, rate=SAMPLE_RATE, output=True, frames_per_buffer=CHUNK_SIZE)
             logger.info("🔊 Output stream started")
         except Exception as e:
             logger.error(f"Failed to open output stream: {e}")
@@ -72,15 +66,9 @@ class AudioEngine:
     def _input_worker(self):
         logger.info("🎤 Input thread started")
         try:
-            stream = self._pa.open(
-                format=FORMAT,
-                channels=CHANNELS,
-                rate=SAMPLE_RATE,
-                input=True,
-                frames_per_buffer=CHUNK_SIZE
-            )
+            stream = self._pa.open(format=FORMAT, channels=CHANNELS, rate=SAMPLE_RATE, input=True, frames_per_buffer=CHUNK_SIZE)
             self._input_stream = stream
-            
+
             while self._running:
                 try:
                     data = stream.read(CHUNK_SIZE, exception_on_overflow=False)
@@ -100,32 +88,31 @@ class AudioEngine:
             except Exception as e:
                 logger.error(f"Output write error: {e}")
 
+
 async def main():
     logger.info("🚀 Starting PyAudio echo client")
-    
+
     # Audio Engine
     audio = AudioEngine()
-    
+
     # Create LiveKit room
     room = rtc.Room()
-    
+
     # Connect to LiveKit
     from environment_config import config
+
     url = config.livekit_url
     api_key = config.livekit_api_key
     api_secret = config.livekit_api_secret
-    
+
     grants = VideoGrants(
         room_join=True,
         room="echo-test",
         can_publish=True,
         can_subscribe=True,
     )
-    token = AccessToken(
-        api_key=api_key,
-        api_secret=api_secret
-    ).with_identity("test-client").with_name("Test Client").with_grants(grants).to_jwt()
-    
+    token = AccessToken(api_key=api_key, api_secret=api_secret).with_identity("test-client").with_name("Test Client").with_grants(grants).to_jwt()
+
     # Mic Source
     mic_source = rtc.AudioSource(sample_rate=SAMPLE_RATE, num_channels=CHANNELS)
     mic_track = rtc.LocalAudioTrack.create_audio_track("mic", mic_source)
@@ -152,7 +139,7 @@ async def main():
     def on_participant_connected(participant):
         logger.info(f"Participant connected: {participant.identity}")
         if participant.identity == "echo-bot":
-             # Subscribe to all audio tracks from echo agent
+            # Subscribe to all audio tracks from echo agent
             for publication in participant.track_publications.values():
                 if publication.kind == rtc.TrackKind.KIND_AUDIO:
                     publication.set_subscribed(True)
@@ -161,25 +148,26 @@ async def main():
     try:
         await room.connect(url, token)
         logger.info(f"✅ Connected to room {url}")
-        
+
         await room.local_participant.publish_track(
             mic_track,
             rtc.TrackPublishOptions(source=rtc.TrackSource.SOURCE_MICROPHONE),
         )
-        
+
         # Start audio engine
         audio.start(on_mic_data)
-        
+
         logger.info(" Echo client running! Speak and you should hear yourself!")
-        
+
         # Keep alive
         await asyncio.Event().wait()
-        
+
     except asyncio.CancelledError:
         pass
     finally:
         audio.stop()
         await room.disconnect()
+
 
 async def handle_audio_track(track, audio_engine):
     stream = rtc.AudioStream(track)
@@ -189,6 +177,7 @@ async def handle_audio_track(track, audio_engine):
             data = np.frombuffer(event.frame.data, dtype=np.int16).tobytes()
             # Push to audio engine (blocking write in executor)
             await asyncio.get_event_loop().run_in_executor(None, audio_engine.play_audio, data)
+
 
 if __name__ == "__main__":
     try:

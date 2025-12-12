@@ -5,14 +5,12 @@ Integration tests for DevAgentCreator.
 Tests that the development agent creation from environment variables
 produces valid configurations without validation warnings.
 """
-import os
-import sys
-import pytest
-from unittest.mock import patch
 
+import pytest
+
+from database.session import SessionLocal
 from services.agents_admin.dev_agent_creator import DevAgentCreator
 from services.agents_admin.provider_registry import get_provider_registry
-from database.session import SessionLocal
 
 
 @pytest.fixture
@@ -29,6 +27,7 @@ def db_session():
 def agent_service(db_session):
     """Create an AgentService instance for testing."""
     from services.agents_admin.agent_service import AgentService
+
     return AgentService(db_session)
 
 
@@ -44,8 +43,7 @@ class TestDevAgentCreator:
         for provider_type in ["llm", "tts", "stt"]:
             providers = registry.PROVIDER_CLASSES.get(provider_type, {})
             for provider_name in providers.keys():
-                assert (provider_type, provider_name) in mapping, \
-                    f"Missing mapping for {provider_type}.{provider_name}"
+                assert (provider_type, provider_name) in mapping, f"Missing mapping for {provider_type}.{provider_name}"
 
     def test_mapping_keys_match_expected_properties(self):
         """Ensure mapping keys are subset of expected properties (or will be filtered)."""
@@ -124,7 +122,7 @@ class TestDevAgentCreator:
         creator = DevAgentCreator(db_session=None)  # session not needed for config building
         mapping = DevAgentCreator._PROVIDER_ENV_MAPPING
 
-        for (provider_type, provider_name) in mapping.keys():
+        for provider_type, provider_name in mapping.keys():
             config = creator._build_config_from_mapping(provider_type, provider_name)
             # Ensure config is not empty (unless provider has no required config)
             # We'll just assert no exception and log
@@ -139,6 +137,7 @@ class TestDevAgentCreator:
                 # Temporarily set is_default=False to allow deletion
                 if agent.is_default:
                     from services.agents_admin.models import AgentUpdate
+
                     update_data = AgentUpdate(is_default=False)
                     agent_service.update_agent(agent.id, update_data)
                 agent_service.delete_agent(agent.id)

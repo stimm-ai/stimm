@@ -73,9 +73,7 @@ def run_evaluation(
             data = response.json()
             contexts = data.get("contexts", [])
 
-            term_hits = {
-                term: _term_found(contexts, term) for term in sample.must_include
-            }
+            term_hits = {term: _term_found(contexts, term) for term in sample.must_include}
             success = all(term_hits.values())
 
             total_required_terms += len(term_hits)
@@ -84,15 +82,9 @@ def run_evaluation(
                 passed += 1
             else:
                 missing = [term for term, hit in term_hits.items() if not hit]
-                print(
-                    f"[WARN] Missing terms for '{sample.question}': "
-                    f"{', '.join(missing)}"
-                )
+                print(f"[WARN] Missing terms for '{sample.question}': {', '.join(missing)}")
 
-    print(
-        f"\nEvaluation complete against {len(samples)} samples "
-        f"({passed}/{len(samples)} successful prompts)."
-    )
+    print(f"\nEvaluation complete against {len(samples)} samples ({passed}/{len(samples)} successful prompts).")
     if total_required_terms:
         coverage = total_hit_terms / total_required_terms
         print(f"Required term coverage: {coverage:.2%}")

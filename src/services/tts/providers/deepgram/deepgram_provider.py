@@ -6,10 +6,11 @@ text-to-speech synthesis using aiohttp WebSocket.
 """
 
 import asyncio
+import base64
 import json
 import logging
-import base64
-from typing import AsyncGenerator, Dict, Any
+from typing import Any, AsyncGenerator, Dict
+
 import aiohttp
 
 from services.provider_constants import get_provider_constants
@@ -34,23 +35,13 @@ class DeepgramProvider:
     def get_field_definitions(cls) -> Dict[str, Dict[str, Any]]:
         """
         Get the field definitions for this provider.
-        
+
         Returns:
             Dictionary mapping field names to field metadata
         """
         return {
-            "model": {
-                "type": "text",
-                "label": "Model",
-                "required": True,
-                "description": "Deepgram TTS model name"
-            },
-            "api_key": {
-                "type": "password",
-                "label": "API Key",
-                "required": True,
-                "description": "Deepgram API key"
-            }
+            "model": {"type": "text", "label": "Model", "required": True, "description": "Deepgram TTS model name"},
+            "api_key": {"type": "password", "label": "API Key", "required": True, "description": "Deepgram API key"},
         }
 
     def __init__(self, provider_config: dict = None):
@@ -61,7 +52,7 @@ class DeepgramProvider:
 
     async def stream_synthesis(self, text_generator: AsyncGenerator[str, None]) -> AsyncGenerator[bytes, None]:
         """Stream synthesis using Deepgram TTS WebSocket API with aiohttp.
-        
+
         Uses hard-coded global defaults from DeepgramTTSDefaults plus agent/env config.
         """
         # Use agent configuration for non-constant values (API keys, model)
@@ -71,26 +62,24 @@ class DeepgramProvider:
         else:
             # No fallback - agent configuration is required
             raise ValueError("Agent configuration is required for DeepgramProvider")
-        
+
         if not api_key:
             raise ValueError("Deepgram API key is required")
 
         # Use immutable constants for base URL and audio parameters
         constants = get_provider_constants()
-        base_url = constants['tts']['deepgram.com']['BASE_URL']
-        sample_rate = constants['tts']['deepgram.com']['SAMPLE_RATE']
-        encoding = constants['tts']['deepgram.com']['ENCODING']
-        
+        base_url = constants["tts"]["deepgram.com"]["BASE_URL"]
+        sample_rate = constants["tts"]["deepgram.com"]["SAMPLE_RATE"]
+        encoding = constants["tts"]["deepgram.com"]["ENCODING"]
+
         # Build WebSocket URL with query parameters
         url = f"{base_url.replace('https://', 'wss://').replace('http://', 'ws://')}/v1/speak?model={model}&encoding={encoding}&sample_rate={sample_rate}"
-        
+
         # Set headers for authentication
-        headers = {
-            "Authorization": f"Token {api_key}"
-        }
-        
+        headers = {"Authorization": f"Token {api_key}"}
+
         logger.info(f"Connecting to Deepgram TTS WebSocket: {url}...")
-        
+
         # Connect using aiohttp WebSocket
         self.session = aiohttp.ClientSession()
         try:
@@ -105,20 +94,15 @@ class DeepgramProvider:
                     async for text_chunk in text_generator:
                         text_count += 1
                         # Send text message in Deepgram format
-                        text_payload = {
-                            "type": "Speak",
-                            "text": text_chunk
-                        }
+                        text_payload = {"type": "Speak", "text": text_chunk}
                         await self.websocket.send_str(json.dumps(text_payload))
                         logger.info(f"Sent text chunk {text_count}: '{text_chunk.strip()}'")
-                    
+
                     # Send flush message to get final audio
-                    flush_payload = {
-                        "type": "Flush"
-                    }
+                    flush_payload = {"type": "Flush"}
                     await self.websocket.send_str(json.dumps(flush_payload))
                     logger.info("Sent flush message")
-                    
+
                 except Exception as e:
                     logger.error(f"Sender error: {e}")
 
@@ -130,10 +114,10 @@ class DeepgramProvider:
                             try:
                                 data = json.loads(msg.data)
                                 msg_type = data.get("type")
-                                
+
                                 # Log all received messages for debugging
                                 logger.debug(f"Received Deepgram message type: {msg_type}, data keys: {list(data.keys())}")
-                                
+
                                 if msg_type == "Metadata":
                                     logger.info(f"Received metadata: {data}")
                                 elif msg_type == "Audio":
@@ -156,7 +140,7 @@ class DeepgramProvider:
                                     logger.info("Received cleared signal")
                                 else:
                                     logger.warning(f"Unexpected message type: {msg_type}, full data: {data}")
-                                    
+
                             except json.JSONDecodeError:
                                 logger.warning(f"Received non-JSON message: {msg.data}")
                         elif msg.type == aiohttp.WSMsgType.ERROR:
@@ -167,7 +151,7 @@ class DeepgramProvider:
                             logger.info("WebSocket connection closed")
                             await queue.put(None)
                             break
-                            
+
                 except Exception as e:
                     logger.error(f"Receiver error: {e}")
                     await queue.put(None)
@@ -188,7 +172,7 @@ class DeepgramProvider:
                 send_task.cancel()
                 recv_task.cancel()
                 await asyncio.gather(send_task, recv_task, return_exceptions=True)
-                
+
         finally:
             # Clean up WebSocket connection
             if self.websocket:

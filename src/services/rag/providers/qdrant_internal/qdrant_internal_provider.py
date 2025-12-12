@@ -2,13 +2,13 @@
 Qdrant Internal Provider for RAG
 """
 
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 
 class QdrantInternalProvider:
     """
     Provider for internal Qdrant vector database.
-    
+
     This provider connects to a Qdrant instance managed within stimm.
     Non-configurable parameters (host, port, TLS, API key) are retrieved from
     provider constants.
@@ -43,7 +43,7 @@ class QdrantInternalProvider:
                 "label": "Collection Name",
                 "required": True,
                 "description": "Name of the Qdrant collection to query",
-                "default": "stimm_knowledge"
+                "default": "stimm_knowledge",
             },
             "embedding_model": {
                 "type": "select",
@@ -54,9 +54,9 @@ class QdrantInternalProvider:
                     {"value": "BAAI/bge-base-en-v1.5", "label": "BGE Base En v1.5"},
                     {"value": "sentence-transformers/all-MiniLM-L6-v2", "label": "MiniLM L6 v2"},
                     {"value": "sentence-transformers/all-mpnet-base-v2", "label": "MPNet Base v2"},
-                    {"value": "intfloat/e5-base-v2", "label": "E5 Base v2"}
+                    {"value": "intfloat/e5-base-v2", "label": "E5 Base v2"},
                 ],
-                "default": "BAAI/bge-base-en-v1.5"
+                "default": "BAAI/bge-base-en-v1.5",
             },
             "top_k": {
                 "type": "number",
@@ -65,28 +65,28 @@ class QdrantInternalProvider:
                 "description": "Number of retrieved documents to return (higher values increase recall but may impact latency)",
                 "min": 1,
                 "max": 10,
-                "default": 2
+                "default": 2,
             },
             "enable_reranker": {
                 "type": "boolean",
                 "label": "Enable Reranker",
                 "required": False,
                 "description": "Whether to use cross-encoder reranking",
-                "default": False
+                "default": False,
             },
             "ultra_low_latency": {
                 "type": "boolean",
                 "label": "Ultra Low Latency Mode",
                 "required": False,
                 "description": "Optimize for stimm latency (reduces retrieval quality)",
-                "default": True
+                "default": True,
             },
             "qdrant_use_tls": {
                 "type": "boolean",
                 "label": "Use TLS",
                 "required": False,
                 "description": "Whether to use HTTPS for Qdrant connection",
-                "default": False
+                "default": False,
             },
             "dense_candidate_count": {
                 "type": "number",
@@ -95,7 +95,7 @@ class QdrantInternalProvider:
                 "description": "Number of dense candidates to retrieve before reranking",
                 "min": 1,
                 "max": 100,
-                "default": 24
+                "default": 24,
             },
             "lexical_candidate_count": {
                 "type": "number",
@@ -104,7 +104,7 @@ class QdrantInternalProvider:
                 "description": "Number of lexical candidates to retrieve before reranking",
                 "min": 1,
                 "max": 100,
-                "default": 24
+                "default": 24,
             },
             "max_top_k": {
                 "type": "number",
@@ -113,8 +113,8 @@ class QdrantInternalProvider:
                 "description": "Maximum allowed top_k value (safety limit)",
                 "min": 1,
                 "max": 20,
-                "default": 8
-            }
+                "default": 8,
+            },
         }
 
     @classmethod

@@ -1,6 +1,6 @@
 # Architecture Overview
 
-Stimm follows a modular monolith architecture, containerized with Docker Compose. This page provides a high‑level overview of the system components and their interactions.
+Stimm follows a modular monolith architecture, containerized with Docker Compose. This page provides a high-level overview of the system components and their interactions.
 
 ## System Diagram
 
@@ -27,16 +27,16 @@ graph TD
 The backend is a Python FastAPI application that provides:
 
 - **REST API** for managing agents, RAG configurations, and system settings.
-- **WebSocket endpoints** for real‑time audio streaming and conversation state.
+- **WebSocket endpoints** for real-time audio streaming and conversation state.
 - **Integration with LiveKit** for WebRTC media transport.
 - **Orchestration** of AI providers (LLM, TTS, STT) and RAG retrieval.
 
 ### 2. Frontend (Next.js)
 
-A modern React‑based web application that offers:
+A modern React-based web application that offers:
 
 - **Dashboard** for managing agents and RAG configurations.
-- **Real‑time voice interface** for conversing with agents.
+- **Real-time voice interface** for conversing with agents.
 - **Admin panels** for system configuration.
 
 ### 3. Database Layer
@@ -49,13 +49,13 @@ A modern React‑based web application that offers:
 
 Stimm supports multiple providers for each AI task, allowing you to mix and match based on cost, latency, and quality requirements.
 
-- **LLM**: Groq, Mistral, OpenRouter, local Llama.cpp, OpenAI‑compatible.
+- **LLM**: Groq, Mistral, OpenRouter, local Llama.cpp, OpenAI-compatible.
 - **TTS**: Deepgram, ElevenLabs, Async.ai, local Kokoro.
 - **STT**: Deepgram, local Whisper.
 
-### 5. Real‑time Media (LiveKit)
+### 5. Real-time Media (LiveKit)
 
-LiveKit handles WebRTC signaling, media transport, and room management. It enables low‑latency, bidirectional audio streaming between clients and the backend.
+LiveKit handles WebRTC signaling, media transport, and room management. It enables low-latency, bidirectional audio streaming between clients and the backend.
 
 ### 6. SIP Bridge
 
@@ -63,7 +63,7 @@ A telephony integration that connects incoming SIP calls to LiveKit rooms, allow
 
 ## Data Flow
 
-For a detailed step‑by‑step description of the audio‑to‑audio pipeline, see [Data Flow](data-flow.md).
+For a detailed step-by-step description of the audio-to-audio pipeline, see [Data Flow](data-flow.md).
 
 ## Deployment
 

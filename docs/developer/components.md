@@ -35,11 +35,11 @@ Knowledge base and retrieval logic.
 LLM integrations.
 
 - **`LLMService`** – Unified interface for multiple LLM providers.
-- **Provider implementations** – Groq, Mistral, OpenRouter, Llama.cpp, OpenAI‑compatible.
+- **Provider implementations** – Groq, Mistral, OpenRouter, Llama.cpp, OpenAI-compatible.
 
 ### `src/services/stt/` and `src/services/tts/`
 
-Speech‑to‑text and text‑to‑speech services.
+Speech-to-text and text-to-speech services.
 
 - **`STTService`** / `TTSService` – Unified interfaces.
 - **Provider implementations** – Deepgram, Whisper (STT); Deepgram, ElevenLabs, Async.ai, Kokoro (TTS).
@@ -75,14 +75,14 @@ Reusable React components.
 
 - **`agent/`** – Agent cards, grids, edit forms.
 - **`rag/`** – Document upload, configuration forms.
-- **`stimm/`** – Real‑time voice interface.
+- **`stimm/`** – Real-time voice interface.
 - **`ui/`** – Design system (buttons, cards, modals, etc.).
 
 ### `src/front/lib/`
 
-Utilities and client‑side services.
+Utilities and client-side services.
 
-- **`livekit‑client.ts`** – LiveKit client integration.
+- **`livekit-client.ts`** – LiveKit client integration.
 - **`theme.ts`** – Theme definitions.
 - **`utils.ts`** – Helper functions.
 
@@ -101,7 +101,7 @@ SQLAlchemy ORM models.
 
 ### `src/cli/`
 
-Command‑line interface for development and testing.
+Command-line interface for development and testing.
 
 - **`main.py`** – CLI entry point with subcommands (`talk`, `chat`, `agents`, `test`, `livekit`).
 - **`agent_runner.py`** – Runs an agent in local mode.
@@ -111,25 +111,25 @@ Command‑line interface for development and testing.
 
 ### Docker Compose
 
-- **`docker‑compose.yml`** – Main composition (backend, frontend, PostgreSQL, Qdrant, Redis, LiveKit, Traefik).
+- **`docker-compose.yml`** – Main composition (backend, frontend, PostgreSQL, Qdrant, Redis, LiveKit, Traefik).
 - **`docker/stimm/Dockerfile`** – Backend container.
-- **`docker/stimm‑front/Dockerfile.dev`** – Frontend development container.
+- **`docker/stimm-front/Dockerfile.dev`** – Frontend development container.
 
 ### Configuration Files
 
 - **`pyproject.toml`** – Python dependencies and tool configuration.
 - **`alembic.ini`** – Database migration configuration.
 - **`livekit.yaml`** – LiveKit server configuration.
-- **`sip‑server‑config.yaml`** – SIP bridge settings.
+- **`sip-server-config.yaml`** – SIP bridge settings.
 
 ## External Dependencies
 
-- **LiveKit** – Real‑time media transport (WebRTC).
+- **LiveKit** – Real-time media transport (WebRTC).
 - **Qdrant** – Vector database for semantic search.
 - **PostgreSQL** – Relational database for metadata.
 - **Redis** – Caching and SIP bridge state.
 - **Silero VAD** – Voice activity detection.
-- **Sentence‑Transformers** – Embedding models.
+- **Sentence-Transformers** – Embedding models.
 
 ## Development Tools
 

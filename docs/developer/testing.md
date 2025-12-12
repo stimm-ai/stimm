@@ -1,12 +1,12 @@
 # Testing Guide
 
-Stimm has a comprehensive test suite organized by **feature** (STT, TTS, RAG, etc.) rather than provider, enabling cross‑provider testing and better maintainability.
+Stimm has a comprehensive test suite organized by **feature** (STT, TTS, RAG, etc.) rather than provider, enabling cross-provider testing and better maintainability.
 
 ## Test Structure
 
 ```
 tests/
-├── conftest.py              # Auto‑loads .env, provides fixtures
+├── conftest.py              # Auto-loads .env, provides fixtures
 ├── fixtures/                # Shared utilities and verification functions
 ├── unit/                    # Unit tests (no external dependencies)
 │   ├── test_audio_utils.py
@@ -24,7 +24,7 @@ tests/
 
 ### Prerequisites
 
-1. Copy `.env.example` to `.env` and fill in your API keys (if you want to run integration tests). Tests auto‑skip when API keys are missing.
+1. Copy `.env.example` to `.env` and fill in your API keys (if you want to run integration tests). Tests auto-skip when API keys are missing.
 
 2. Install test dependencies (already included in the `dev` optional dependency group):
 
@@ -105,8 +105,8 @@ Common fixtures are defined in `tests/fixtures/`. Use them to share setup code a
 
 ## Test Markers
 
-- `@pytest.mark.requires_provider("stt"|"tts"|"llm")` – Provider‑dependent tests.
-- `@pytest.mark.slow` – Long‑running tests (e.g., training, large file processing).
+- `@pytest.mark.requires_provider("stt"|"tts"|"llm")` – Provider-dependent tests.
+- `@pytest.mark.slow` – Long-running tests (e.g., training, large file processing).
 
 You can run tests excluding slow markers:
 
@@ -128,4 +128,4 @@ If a test fails, you can increase verbosity with `-v` or `-s` (to see print stat
 uv run pytest tests/integration/stt/test_stt_streaming.py -v
 ```
 
-For provider‑specific failures, check that your API keys are correct and that the provider’s service is reachable.
+For provider-specific failures, check that your API keys are correct and that the provider’s service is reachable.

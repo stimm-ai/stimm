@@ -49,6 +49,6 @@ Replace `"your-agent-name"` with the name of the agent you created.
 
 ## Next Steps
 
-- Explore the [Architecture](../developer-guide/architecture-overview.md) to understand how Stimm works.
+- Explore the [Architecture](../developer/architecture-overview.md) to understand how Stimm works.
 - Learn about [Configuration](configuration.md) to customize your setup.
-- Check out the [API Reference](../api/python.md) for programmatic usage.
+- Check out the [API Reference](../api-reference/python.md) for programmatic usage.

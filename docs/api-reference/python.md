@@ -1,6 +1,6 @@
 # Python API Reference
 
-This page contains auto‑generated API documentation for the Stimm Python modules, produced by [mkdocstrings](https://mkdocstrings.github.io/).
+This page contains auto-generated API documentation for the Stimm Python modules, produced by [mkdocstrings](https://mkdocstrings.github.io/).
 
 ::: src.main
 options:

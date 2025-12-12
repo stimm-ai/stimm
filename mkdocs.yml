@@ -121,29 +121,29 @@ extra_css:
 nav:
   - Home: index.md
   - Getting Started:
-      - Installation: user-guide/installation.md
-      - Quick Start: user-guide/quick-start.md
-      - Configuration: user-guide/configuration.md
+      - Installation: getting-started/installation.md
+      - Quick Start: getting-started/quick-start.md
+      - Configuration: getting-started/configuration.md
   - Usage:
-      - Web Interface: user-guide/web-interface.md
-      - CLI: user-guide/cli.md
-      - Managing Agents: user-guide/managing-agents.md
-      - Managing RAG: user-guide/managing-rag.md
-  - API Reference: api/rest.md
+      - Web Interface: usage/web-interface.md
+      - CLI: usage/cli.md
+      - Managing Agents: usage/managing-agents.md
+      - Managing RAG: usage/managing-rag.md
+  - API Reference: api-reference/rest.md
   - Developer:
-      - Integration Examples (WebRTC): developer-guide/integration-examples.md
-      - SIP Integration: user-guide/sip-integration.md
+      - Integration Examples (WebRTC): developer/integration-examples.md
+      - SIP Integration: developer/sip-integration.md
   - Contributors:
-      - Architecture Overview: developer-guide/architecture-overview.md
-      - Components: developer-guide/components.md
-      - Data Flow: developer-guide/data-flow.md
-      - Development: developer-guide/development.md
-      - Testing: developer-guide/testing.md
-      - Python API: api/python.md
-      - Adding a Provider: developer-guide/adding-providers.md
-      - Contributing: project/contributing.md
-      - Changelog: project/changelog.md
-      - License: project/license.md
+      - Architecture Overview: developer/architecture-overview.md
+      - Components: developer/components.md
+      - Data Flow: developer/data-flow.md
+      - Development: developer/development.md
+      - Testing: developer/testing.md
+      - Python API: api-reference/python.md
+      - Adding a Provider: developer/adding-providers.md
+      - Contributing: contributors/contributing.md
+      - Changelog: contributors/changelog.md
+      - License: contributors/license.md
 
 watch:
   - src

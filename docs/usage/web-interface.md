@@ -1,10 +1,10 @@
 # Using the Web Interface
 
-The Stimm web interface is a modern, responsive dashboard built with Next.js that allows you to manage agents, RAG configurations, and have real‑time voice conversations.
+The Stimm web interface is a modern, responsive dashboard built with Next.js that allows you to manage agents, RAG configurations, and have real-time voice conversations.
 
 ## Accessing the Interface
 
-After starting the platform (see [Installation](installation.md)), open your browser and navigate to:
+After starting the platform (see [Installation](../getting-started/installation.md)), open your browser and navigate to:
 
 - **Local development**: http://front.localhost (Docker Compose) or http://localhost:3000 (local frontend)
 - **Production**: Your configured domain (e.g., https://stimm.yourcompany.com)
@@ -24,7 +24,7 @@ The dashboard is divided into several sections accessible via the sidebar:
 1. Click **Speak with an agent** in the header.
 2. Select an agent from the dropdown (agents must be created first).
 3. Click **Start Conversation** and allow microphone access when prompted.
-4. Speak into your microphone – the agent will respond in real‑time.
+4. Speak into your microphone – the agent will respond in real-time.
 
 The interface shows a transcript of the conversation and some metrics.
 
@@ -36,11 +36,11 @@ Navigate to **Agents** to see a list of all configured agents. From there you ca
 - **Edit an existing agent** – Click the edit icon next to an agent.
 - **Delete an agent** – Click the delete icon (requires confirmation).
 
-Each agent can be associated with a RAG configuration for knowledge‑augmented responses.
+Each agent can be associated with a RAG configuration for knowledge-augmented responses.
 
 ## Managing RAG Configurations
 
-Navigate to **RAG** to manage Retrieval‑Augmented Generation configurations.
+Navigate to **RAG** to manage Retrieval-Augmented Generation configurations.
 
 - **Create a RAG configuration** – Choose a provider (Qdrant) and fill in the required fields.
 - **Upload documents** – After creating a configuration, you can upload PDF, DOCX, Markdown, or text files that will be ingested into the vector database.
@@ -58,6 +58,6 @@ If SIP bridge is enabled, you can monitor active SIP calls and configure dispatc
 
 ## Next Steps
 
-- Learn about the [Command‑Line Interface](cli.md) for advanced operations.
+- Learn about the [Command-Line Interface](cli.md) for advanced operations.
 - Explore [Managing Agents](managing-agents.md) in detail.
-- See [SIP Integration](sip-integration.md) for telephony setup.
+- See [SIP Integration](../developer/sip-integration.md) for telephony setup.

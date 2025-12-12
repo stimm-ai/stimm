@@ -4,7 +4,7 @@ Stimm exposes a RESTful API for managing agents, RAG configurations, documents, 
 
 ## Interactive Documentation (Swagger UI)
 
-The easiest way to explore the API is via the built‑in Swagger UI:
+The easiest way to explore the API is via the built-in Swagger UI:
 
 - **Local Docker Compose**: [http://api.localhost/docs](http://api.localhost/docs)
 - **Local backend**: [http://localhost:8001/docs](http://localhost:8001/docs)
@@ -62,22 +62,22 @@ Currently, the API does not require authentication for local development. For pr
 
 | Method | Path                                           | Description                                         |
 | ------ | ---------------------------------------------- | --------------------------------------------------- |
-| GET    | `/api/rag‑configs/`                            | List all RAG configurations                         |
-| POST   | `/api/rag‑configs/`                            | Create a new RAG configuration                      |
-| GET    | `/api/rag‑configs/{id}`                        | Retrieve a specific configuration                   |
-| PUT    | `/api/rag‑configs/{id}`                        | Update a configuration                              |
-| DELETE | `/api/rag‑configs/{id}`                        | Delete a configuration                              |
-| GET    | `/api/rag‑configs/default/current`             | Get the current default RAG configuration           |
-| PUT    | `/api/rag‑configs/{id}/set‑default`            | Set a configuration as the default                  |
-| GET    | `/api/rag‑configs/providers/available`         | List available RAG providers with field definitions |
-| GET    | `/api/rag‑configs/providers/{provider}/fields` | Get field definitions for a specific provider       |
+| GET    | `/api/rag-configs/`                            | List all RAG configurations                         |
+| POST   | `/api/rag-configs/`                            | Create a new RAG configuration                      |
+| GET    | `/api/rag-configs/{id}`                        | Retrieve a specific configuration                   |
+| PUT    | `/api/rag-configs/{id}`                        | Update a configuration                              |
+| DELETE | `/api/rag-configs/{id}`                        | Delete a configuration                              |
+| GET    | `/api/rag-configs/default/current`             | Get the current default RAG configuration           |
+| PUT    | `/api/rag-configs/{id}/set-default`            | Set a configuration as the default                  |
+| GET    | `/api/rag-configs/providers/available`         | List available RAG providers with field definitions |
+| GET    | `/api/rag-configs/providers/{provider}/fields` | Get field definitions for a specific provider       |
 
 ### Documents
 
 | Method | Path                                         | Description                            |
 | ------ | -------------------------------------------- | -------------------------------------- |
-| POST   | `/api/rag‑configs/{rag_config_id}/documents` | Upload and ingest a document           |
-| GET    | `/api/rag‑configs/{rag_config_id}/documents` | List documents for a RAG configuration |
+| POST   | `/api/rag-configs/{rag_config_id}/documents` | Upload and ingest a document           |
+| GET    | `/api/rag-configs/{rag_config_id}/documents` | List documents for a RAG configuration |
 | DELETE | `/api/documents/{document_id}`               | Delete a document                      |
 
 ### Conversation
@@ -92,14 +92,14 @@ Currently, the API does not require authentication for local development. For pr
 | Method | Path                        | Description                |
 | ------ | --------------------------- | -------------------------- |
 | GET    | `/health`                   | Overall system health      |
-| GET    | `/health/sip‑bridge`        | SIP bridge health          |
-| GET    | `/health/sip‑bridge‑status` | Detailed SIP bridge status |
+| GET    | `/health/sip-bridge`        | SIP bridge health          |
+| GET    | `/health/sip-bridge-status` | Detailed SIP bridge status |
 
 ### SIP Integration
 
 | Method | Path                      | Description               |
 | ------ | ------------------------- | ------------------------- |
-| POST   | `/api/sip/dispatch‑rules` | Update SIP dispatch rules |
+| POST   | `/api/sip/dispatch-rules` | Update SIP dispatch rules |
 | GET    | `/api/sip/trunks`         | List SIP trunks           |
 
 ## Examples
@@ -151,10 +151,10 @@ Rate limiting is not currently enforced but can be added via Traefik or a middle
 
 ## WebSocket Endpoints
 
-For real‑time audio streaming, use the WebSocket endpoint:
+For real-time audio streaming, use the WebSocket endpoint:
 
 ```
 ws://api.localhost/api/conversation/stream
 ```
 
-See the [Data Flow](../developer-guide/data-flow.md) section for details on the audio pipeline.
+See the [Data Flow](../developer/data-flow.md) section for details on the audio pipeline.

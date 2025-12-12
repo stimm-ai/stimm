@@ -10,24 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial documentation site with mkdocs.
-- Auto‑generated Python API reference via mkdocstrings.
+- Auto-generated Python API reference via mkdocstrings.
 - Integration of Mermaid diagrams from README.
 
 ### Changed
 
 - Moved detailed technical content from README to documentation.
-- Updated README to be more marketing‑focused.
+- Updated README to be more marketing-focused.
 
 ### Fixed
 
 - None yet.
 
-## [0.1.0] – 2025‑12‑09
+## [0.1.0] – 2025-12-09
 
 ### Added
 
 - First public release of Stimm.
-- Real‑time voice conversation with WebRTC.
+- Real-time voice conversation with WebRTC.
 - SIP telephony integration.
 - Modular AI providers (LLM, TTS, STT).
 - Administrable RAG configurations.

@@ -50,7 +50,7 @@ To use external AI providers, you need to set the corresponding API keys:
 - **Groq** (LLM): `GROQ_API_KEY`
 - **Mistral** (LLM): `MISTRAL_API_KEY`
 - **OpenRouter** (LLM): `OPENROUTER_API_KEY`
-- **OpenAI‑compatible** (LLM): `OPENAI_API_KEY`, `OPENAI_BASE_URL`
+- **OpenAI-compatible** (LLM): `OPENAI_API_KEY`, `OPENAI_BASE_URL`
 
 If a key is missing, the corresponding provider will be disabled or fall back to a local alternative (if available).
 
@@ -61,9 +61,9 @@ If a key is missing, the corresponding provider will be disabled or fall back to
 | `ENABLE_SIP_BRIDGE`              | Enable SIP telephony integration      | `false` |
 | `LOG_LEVEL`                      | Logging level (`INFO`, `DEBUG`, etc.) | `INFO`  |
 | `CONVERSATION_CACHE_LIMIT`       | Number of conversation turns to cache | `128`   |
-| `CONVERSATION_CACHE_TTL_SECONDS` | Cache time‑to‑live in seconds         | `900`   |
+| `CONVERSATION_CACHE_TTL_SECONDS` | Cache time-to-live in seconds         | `900`   |
 
-## Docker‑Specific Configuration
+## Docker-Specific Configuration
 
 When running with Docker Compose, many variables are overridden in `docker-compose.yml` to use service names instead of `localhost`. You generally don't need to change them unless you have a custom network setup.
 
@@ -73,5 +73,5 @@ The backend validates environment variables on startup. If a required variable i
 
 ## Next Steps
 
-- [Architecture](../developer-guide/architecture-overview.md) – Understand how the components interact.
-- [Development Guide](../developer-guide/development.md) – Learn how to extend Stimm with custom providers.
+- [Architecture](../developer/architecture-overview.md) – Understand how the components interact.
+- [Development Guide](../developer/development.md) – Learn how to extend Stimm with custom providers.

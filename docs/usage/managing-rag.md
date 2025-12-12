@@ -1,6 +1,6 @@
 # Managing RAG Configurations
 
-Retrieval‑Augmented Generation (RAG) allows Stimm agents to answer questions based on your own documents. This guide explains how to create, configure, and manage RAG configurations.
+Retrieval-Augmented Generation (RAG) allows Stimm agents to answer questions based on your own documents. This guide explains how to create, configure, and manage RAG configurations.
 
 ## What is a RAG Configuration?
 
@@ -8,11 +8,11 @@ A RAG configuration defines:
 
 - **Provider** – Which vector database to use (Qdrant.Internal).
 - **Collection/Index** – The name of the vector collection where documents are stored.
-- **Embedding model** – The sentence‑transformer model used to convert text into vectors.
-- **Retrieval parameters** – Top‑k, similarity threshold, etc.
-- **Ultra‑low‑latency mode** – Optimizations for real‑time retrieval.
+- **Embedding model** – The sentence-transformer model used to convert text into vectors.
+- **Retrieval parameters** – Top-k, similarity threshold, etc.
+- **Ultra-low-latency mode** – Optimizations for real-time retrieval.
 
-Each configuration can be associated with one or more agents, enabling per‑agent knowledge bases.
+Each configuration can be associated with one or more agents, enabling per-agent knowledge bases.
 
 ## Creating a RAG Configuration
 
@@ -23,12 +23,12 @@ Each configuration can be associated with one or more agents, enabling per‑age
 3. Select a provider from the dropdown. The form will dynamically show the required fields for that provider.
 
    **Common fields:**
-   - **Name** – A descriptive name (e.g., “Product‑Docs”, “Internal‑Wiki”).
+   - **Name** – A descriptive name (e.g., “Product-Docs”, “Internal-Wiki”).
    - **Description** – Optional.
    - **Collection Name** – The vector collection (will be created if it doesn’t exist).
-   - **Embedding Model** – Pre‑trained model from Hugging Face (e.g., `all‑MiniLM‑L6‑v2`).
-   - **Top‑K** – Number of chunks to retrieve per query (default 5).
-   - **Ultra‑low‑latency** – Check to enable caching and parallel retrieval.
+   - **Embedding Model** – Pre-trained model from Hugging Face (e.g., `all-MiniLM-L6-v2`).
+   - **Top-K** – Number of chunks to retrieve per query (default 5).
+   - **Ultra-low-latency** – Check to enable caching and parallel retrieval.
 
 4. Click **Save**. The configuration is now ready for document ingestion.
 
@@ -38,11 +38,11 @@ Each configuration can be associated with one or more agents, enabling per‑age
 curl -X POST "http://api.localhost/api/rag-configs/" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "Product‑Docs",
+    "name": "Product-Docs",
     "provider": "qdrant.internal",
     "config": {
       "collection_name": "product_docs",
-      "embedding_model": "all‑MiniLM‑L6‑v2",
+      "embedding_model": "all-MiniLM-L6-v2",
       "top_k": 5,
       "ultra_low_latency": true
     }
@@ -84,11 +84,11 @@ To set a configuration as default:
 1. In the RAG list, click the **Set as Default** button next to the configuration.
 2. Confirm the action.
 
-You can also use the API endpoint `PUT /api/rag-configs/{id}/set‑default`.
+You can also use the API endpoint `PUT /api/rag-configs/{id}/set-default`.
 
 ## Editing a Configuration
 
-You can edit any field of a RAG configuration except the provider (changing the provider would require re‑ingesting all documents). To edit:
+You can edit any field of a RAG configuration except the provider (changing the provider would require re-ingesting all documents). To edit:
 
 1. Click the edit icon (✏️) next to the configuration.
 2. Modify the fields and save.
@@ -112,9 +112,9 @@ If you change an agent’s RAG configuration, existing conversations continue wi
 
 ## Performance Tuning
 
-- **Embedding model**: Smaller models are faster but less accurate. Choose based on your latency/accuracy trade‑off.
-- **Top‑K**: Higher values increase recall but also latency.
-- **Ultra‑low‑latency**: Enable if you need sub‑second retrieval. This pre‑loads the embedding model and caches frequent queries.
+- **Embedding model**: Smaller models are faster but less accurate. Choose based on your latency/accuracy trade-off.
+- **Top-K**: Higher values increase recall but also latency.
+- **Ultra-low-latency**: Enable if you need sub-second retrieval. This pre-loads the embedding model and caches frequent queries.
 - **Chunk size**: The system uses a default chunk size of 512 tokens. This is not configurable via the UI but can be adjusted by modifying the ingestion code.
 
 ## Troubleshooting
@@ -125,6 +125,6 @@ If you change an agent’s RAG configuration, existing conversations continue wi
 
 ## Next Steps
 
-- Learn about [Managing Agents](managing‑agents.md).
-- Explore the [Architecture](../developer‑guide/architecture‑overview.md) to understand how RAG fits into the pipeline.
-- Read the [API Reference](../api/rest.md) for programmatic management.
+- Learn about [Managing Agents](managing-agents.md).
+- Explore the [Architecture](../developer/architecture-overview.md) to understand how RAG fits into the pipeline.
+- Read the [API Reference](../api-reference/rest.md) for programmatic management.

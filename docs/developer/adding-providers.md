@@ -6,7 +6,7 @@ Stimm is designed to be easily extended with new AI providers (LLM, TTS, STT) an
 
 - **LLM Provider** – Generates text responses (e.g., OpenAI, Anthropic, local model).
 - **TTS Provider** – Converts text to speech (e.g., Google TTS, Amazon Polly).
-- **STT Provider** – Converts speech to text (e.g., Google Speech‑to‑Text, Azure STT).
+- **STT Provider** – Converts speech to text (e.g., Google Speech-to-Text, Azure STT).
 - **RAG Provider** – Vector database or retrieval service (e.g., Weaviate, Chroma).
 
 ## Common Pattern
@@ -57,7 +57,7 @@ class MyLLMProvider(BaseLLMProvider):
         system_prompt: Optional[str] = None,
         **kwargs,
     ) -> LLMResult:
-        """Non‑streaming generation."""
+        """Non-streaming generation."""
         # Implement a single call
         return LLMResult(text="Hello from custom LLM", is_final=True)
 
@@ -81,7 +81,7 @@ LLM_PROVIDERS = {
 
 ### 3. Add Configuration
 
-Update `src/services/llm/llm.py`'s `get_llm_config` to include any required environment variables (e.g., `MY_LLM_API_KEY`). Also update the frontend provider constants if needed (`src/front/lib/provider‑constants.ts`).
+Update `src/services/llm/llm.py`'s `get_llm_config` to include any required environment variables (e.g., `MY_LLM_API_KEY`). Also update the frontend provider constants if needed (`src/front/lib/provider-constants.ts`).
 
 ## Adding a TTS/STT Provider
 
@@ -191,12 +191,12 @@ async def test_my_llm_provider():
 
 If your provider should appear in the web interface (e.g., in agent creation dropdowns), you need to update the frontend constants.
 
-- **LLM/TTS/STT providers**: Edit `src/front/lib/provider‑constants.ts`.
+- **LLM/TTS/STT providers**: Edit `src/front/lib/provider-constants.ts`.
 - **RAG providers**: Edit `src/front/components/rag/types.ts`.
 
 ## Environment Variables
 
-Add any required environment variables to `.env.example` and document them in the [Configuration](../user‑guide/configuration.md) page.
+Add any required environment variables to `.env.example` and document them in the [Configuration](../getting-started/configuration.md) page.
 
 ## Contributing Back
 
@@ -206,4 +206,4 @@ If you believe your provider would be useful to others, consider contributing it
 
 - Review the [Development Guide](development.md) for general development practices.
 - Explore the [Testing Guide](testing.md) to ensure your provider works correctly.
-- Check the [API Reference](../api/python.md) for detailed class definitions.
+- Check the [API Reference](../api-reference/python.md) for detailed class definitions.

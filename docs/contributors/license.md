@@ -1,6 +1,6 @@
 # License
 
-The Stimm platform is open‑source software licensed under the **GNU Affero General Public License v3.0 (AGPL v3)**.
+The Stimm platform is open-source software licensed under the **GNU Affero General Public License v3.0 (AGPL v3)**.
 
 ## Full License Text
 
@@ -40,7 +40,7 @@ Under the AGPL v3, you are free to:
 
 ## Key Requirements
 
-If you distribute a modified version of Stimm, or operate a network service that uses Stimm (e.g., a public voice‑assistant service), you must:
+If you distribute a modified version of Stimm, or operate a network service that uses Stimm (e.g., a public voice-assistant service), you must:
 
 1. **Make the source code available** to all users of that service.
 2. **Preserve license notices and copyright statements**.
@@ -51,14 +51,14 @@ This “network use” clause is the primary difference between AGPL and GPL. It
 
 ## Trademark Notice
 
-The name **“Stimm”**, the Stimm logo, and related brand assets are **trademarks** of the project maintainers. They are **not** covered by the open‑source license.
+The name **“Stimm”**, the Stimm logo, and related brand assets are **trademarks** of the project maintainers. They are **not** covered by the open-source license.
 
 - You may fork, modify, and distribute the software under the AGPL v3.
 - However, if you distribute a derivative product or offer a public service based on this code, you **must remove** the Stimm logo and change the name so as not to suggest an official affiliation or endorsement by Stimm.
 
 ## Contributor License Agreement (CLA)
 
-By submitting a pull request to this repository, you agree to the Stimm Contributor License Agreement (CLA) outlined in the [Contributing](contributing.md) page. The CLA grants the project maintainers the right to relicense your contribution under different terms while retaining the open‑source nature of the original contribution.
+By submitting a pull request to this repository, you agree to the Stimm Contributor License Agreement (CLA) outlined in the [Contributing](contributing.md) page. The CLA grants the project maintainers the right to relicense your contribution under different terms while retaining the open-source nature of the original contribution.
 
 ## Questions?
 

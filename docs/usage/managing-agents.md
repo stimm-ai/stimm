@@ -4,13 +4,13 @@ Agents are the core conversational entities in Stimm. Each agent has a unique pe
 
 ## What is an Agent?
 
-An agent is a configured instance that can hold real‑time voice or text conversations. It consists of:
+An agent is a configured instance that can hold real-time voice or text conversations. It consists of:
 
-- **Name** – A unique identifier (e.g., “ava”, “support‑bot”).
-- **Description** – Human‑readable description of the agent’s role.
+- **Name** – A unique identifier (e.g., “ava”, “support-bot”).
+- **Description** – Human-readable description of the agent’s role.
 - **System prompt** – Instructions that define the agent’s behavior and tone.
 - **Provider settings** – Which LLM, TTS, and STT providers to use, along with model selections.
-- **RAG configuration** (optional) – Which knowledge base the agent should use for retrieval‑augmented generation.
+- **RAG configuration** (optional) – Which knowledge base the agent should use for retrieval-augmented generation.
 
 ## Creating an Agent
 
@@ -22,8 +22,8 @@ An agent is a configured instance that can hold real‑time voice or text conver
    - **Name** – Required, alphanumeric and underscores only.
    - **Description** – Optional.
    - **System Prompt** – You can use the default or write your own.
-   - **LLM Provider** – Choose from Groq, Mistral, OpenRouter, Llama.cpp, or OpenAI‑compatible.
-   - **LLM Model** – Model name specific to the provider (e.g., `mixtral‑8x7b‑32768` for Groq).
+   - **LLM Provider** – Choose from Groq, Mistral, OpenRouter, Llama.cpp, or OpenAI-compatible.
+   - **LLM Model** – Model name specific to the provider (e.g., `mixtral-8x7b-32768` for Groq).
    - **TTS Provider** – Deepgram, ElevenLabs, Async.ai, or Kokoro (local).
    - **STT Provider** – Deepgram or Whisper (local).
    - **RAG Configuration** – Select a RAG configuration from the dropdown, or leave empty to use the default.
@@ -38,17 +38,17 @@ You can also create agents programmatically using the REST API:
 curl -X POST "http://api.localhost/api/agents/" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "my‑agent",
+    "name": "my-agent",
     "description": "A helpful assistant",
     "llm_provider": "groq",
-    "llm_model": "mixtral‑8x7b‑32768",
+    "llm_model": "mixtral-8x7b-32768",
     "tts_provider": "deepgram",
     "stt_provider": "deepgram",
-    "rag_config_id": "optional‑uuid"
+    "rag_config_id": "optional-uuid"
   }'
 ```
 
-See the [REST API](../api/rest.md) for full details.
+See the [REST API](../api-reference/rest.md) for full details.
 
 ## Editing an Agent
 
@@ -76,10 +76,10 @@ If you have only one agent, it will be used as the default for the voice interfa
 
 The system prompt is a crucial part of the agent’s behavior. It is sent to the LLM before each conversation to set the tone, constraints, and instructions.
 
-Example prompt for a customer‑support agent:
+Example prompt for a customer-support agent:
 
 ```
-You are a friendly customer‑support representative for Stimm.
+You are a friendly customer-support representative for Stimm.
 Answer questions clearly and concisely, and always be polite.
 If you don’t know the answer, say so and offer to escalate the issue.
 Do not make up information.
@@ -103,13 +103,13 @@ After creating an agent, you can test it immediately:
 
 ## Best Practices
 
-- **Naming**: Use descriptive but short names (e.g., `support‑en`, `sales‑fr`).
+- **Naming**: Use descriptive but short names (e.g., `support-en`, `sales-fr`).
 - **Provider selection**: Choose providers based on latency, cost, and language support.
 - **System prompts**: Keep them concise but explicit about the agent’s role.
 - **RAG**: Associate agents with relevant knowledge bases to improve answer quality.
 
 ## Next Steps
 
-- Learn about [Managing RAG Configurations](managing‑rag.md).
-- Explore the [Web Interface](web‑interface.md) for more administrative tasks.
-- Read about [SIP Integration](sip‑integration.md) to connect agents to phone calls.
+- Learn about [Managing RAG Configurations](managing-rag.md).
+- Explore the [Web Interface](web-interface.md) for more administrative tasks.
+- Read about [SIP Integration](../developer/sip-integration.md) to connect agents to phone calls.

@@ -1,15 +1,15 @@
 # SIP Integration
 
-Stimm can connect incoming phone calls to AI agents via SIP (Session Initiation Protocol). This allows you to offer voice‑based customer support, interactive voice response (IVR), or any other telephony‑powered application.
+Stimm can connect incoming phone calls to AI agents via SIP (Session Initiation Protocol). This allows you to offer voice-based customer support, interactive voice response (IVR), or any other telephony-powered application.
 
 ## Overview
 
 The SIP integration works as follows:
 
 1. An external SIP client (softphone, IP phone, or telephony carrier) places a call to a configured phone number.
-2. The LiveKit SIP server receives the call and creates a LiveKit room with the prefix `sip‑inbound‑`.
+2. The LiveKit SIP server receives the call and creates a LiveKit room with the prefix `sip-inbound-`.
 3. The Stimm SIP bridge detects the new room and spawns an agent specifically for that call.
-4. The agent joins the room and begins a real‑time voice conversation with the caller.
+4. The agent joins the room and begins a real-time voice conversation with the caller.
 5. When the call ends, the room is cleaned up and the agent process terminates.
 
 ## Prerequisites
@@ -71,15 +71,15 @@ The script will guide you through interactive rule creation. Alternatively, you 
 
 ### Health Endpoints
 
-- `GET /health/sip‑bridge` – Basic health check (enabled/running status).
-- `GET /health/sip‑bridge‑status` – Detailed status (active rooms, agent processes, errors).
+- `GET /health/sip-bridge` – Basic health check (enabled/running status).
+- `GET /health/sip-bridge-status` – Detailed status (active rooms, agent processes, errors).
 
 ### Logs
 
 SIP bridge logs are written with the `SIP` prefix. You can view them with:
 
 ```bash
-docker logs stimm‑app | grep SIP
+docker logs stimm-app | grep SIP
 ```
 
 ## Cleaning Up Stale Rooms
@@ -93,7 +93,7 @@ uv run python -m src.cli.main livekit list-rooms
 # Delete all SIP rooms and terminate agent processes
 uv run python -m src.cli.main livekit clear-sip-bridge
 
-# Delete all LiveKit rooms (SIP and non‑SIP)
+# Delete all LiveKit rooms (SIP and non-SIP)
 uv run python -m src.cli.main livekit clear-rooms
 ```
 
@@ -101,7 +101,7 @@ uv run python -m src.cli.main livekit clear-rooms
 
 ### SIP Server Settings
 
-The LiveKit SIP server is configured via `sip‑server‑config.yaml`. Refer to the [LiveKit SIP documentation](https://docs.livekit.io/guides/sip) for advanced options (codecs, DTMF, encryption, etc.).
+The LiveKit SIP server is configured via `sip-server-config.yaml`. Refer to the [LiveKit SIP documentation](https://docs.livekit.io/guides/sip) for advanced options (codecs, DTMF, encryption, etc.).
 
 ### Custom Agent per Number
 
@@ -115,11 +115,11 @@ If no dispatch rule matches the called number, the SIP bridge uses a default age
 
 - **“No agent spawned”**: Check that `ENABLE_SIP_BRIDGE=true` and that there is at least one agent in the database.
 - **“Call rejected”**: Verify that the SIP trunk is correctly configured and that the caller’s IP is allowed.
-- **“One‑way audio”**: Ensure your network allows bidirectional UDP traffic on the RTP ports (50000‑60000 by default).
-- **“High latency”**: Consider using a media server closer to the caller or enabling OPUS low‑bitrate codec.
+- **“One-way audio”**: Ensure your network allows bidirectional UDP traffic on the RTP ports (50000-60000 by default).
+- **“High latency”**: Consider using a media server closer to the caller or enabling OPUS low-bitrate codec.
 
 ## Next Steps
 
-- Learn about [Managing Agents](managing‑agents.md) to create specialized agents for phone support.
-- Explore the [Architecture](../developer‑guide/architecture‑overview.md) to understand how SIP fits into the overall system.
+- Learn about [Managing Agents](../usage/managing-agents.md) to create specialized agents for phone support.
+- Explore the [Architecture](architecture-overview.md) to understand how SIP fits into the overall system.
 - Read the [LiveKit SIP documentation](https://docs.livekit.io/guides/sip) for advanced telephony features.

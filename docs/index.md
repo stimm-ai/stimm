@@ -6,14 +6,14 @@ This documentation covers everything you need to know to get started, understand
 
 ## Quick Links
 
-- [**Installation**](user-guide/installation.md) – Step-by-step guide to install Stimm.
-- [**Quick Start**](user-guide/quick-start.md) – Launch your first agent in minutes.
-- [**Configuration**](user-guide/configuration.md) – Configure providers (LLM, TTS, STT).
-- [**Web Interface**](user-guide/web-interface.md) – Manage agents and RAG via the UI.
-- [**SIP Integration**](user-guide/sip-integration.md) – Connect incoming phone calls.
-- [**Architecture**](developer-guide/architecture-overview.md) – Understand the system design.
-- [**API Reference**](api/rest.md) – REST API endpoints and usage.
-- [**Contributing**](project/contributing.md) – How to contribute to the project.
+- [**Installation**](getting-started/installation.md) – Step-by-step guide to install Stimm.
+- [**Quick Start**](getting-started/quick-start.md) – Launch your first agent in minutes.
+- [**Configuration**](getting-started/configuration.md) – Configure providers (LLM, TTS, STT).
+- [**Web Interface**](usage/web-interface.md) – Manage agents and RAG via the UI.
+- [**SIP Integration**](developer/sip-integration.md) – Connect incoming phone calls.
+- [**Architecture**](developer/architecture-overview.md) – Understand the system design.
+- [**API Reference**](api-reference/rest.md) – REST API endpoints and usage.
+- [**Contributing**](contributors/contributing.md) – How to contribute to the project.
 
 ## Features
 

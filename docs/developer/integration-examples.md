@@ -14,14 +14,14 @@ For production SIP integration, see the [SIP Integration for Deployed Instances]
 
 ## WebRTC with LiveKit
 
-Stimm uses [LiveKit](https://livekit.io/) as its real‑time audio engine. LiveKit provides a robust WebRTC stack that handles media streaming, signaling, and room management. To build a custom client that interacts with Stimm agents, you should connect directly to LiveKit via its client SDKs.
+Stimm uses [LiveKit](https://livekit.io/) as its real-time audio engine. LiveKit provides a robust WebRTC stack that handles media streaming, signaling, and room management. To build a custom client that interacts with Stimm agents, you should connect directly to LiveKit via its client SDKs.
 
 ### Why WebRTC (not REST/WebSocket)?
 
-- **Real‑time audio**: WebRTC is designed for low‑latency, high‑quality media streaming.
-- **Built‑in signaling**: LiveKit manages the signaling channel, removing the need for custom WebSocket endpoints.
+- **Real-time audio**: WebRTC is designed for low-latency, high-quality media streaming.
+- **Built-in signaling**: LiveKit manages the signaling channel, removing the need for custom WebSocket endpoints.
 - **Scalability**: LiveKit rooms can scale horizontally and support many concurrent participants.
-- **Cross‑platform**: LiveKit offers SDKs for web, mobile, and desktop.
+- **Cross-platform**: LiveKit offers SDKs for web, mobile, and desktop.
 
 ### Example: Custom Web Client
 
@@ -30,7 +30,7 @@ You can create a custom web interface that connects to the same LiveKit room as 
 #### Steps
 
 1. **Obtain a LiveKit token**
-   Stimm’s backend provides an endpoint (`/api/livekit/create-room`) that creates a LiveKit room for a given agent and returns a token for the frontend to connect. You can call it from your client (no authentication required for local development) or generate tokens server‑side using the LiveKit API keys.
+   Stimm’s backend provides an endpoint (`/api/livekit/create-room`) that creates a LiveKit room for a given agent and returns a token for the frontend to connect. You can call it from your client (no authentication required for local development) or generate tokens server-side using the LiveKit API keys.
 
 2. **Connect with the LiveKit JavaScript SDK**  
    Install `@livekit/client` and connect to the room:
@@ -76,7 +76,7 @@ LiveKit provides React Native SDKs (`@livekit/react-native`). The integration pa
 
 ## SIP Integration for Deployed Instances
 
-If you have a deployed Stimm instance (e.g., on a public server) and want to connect it to a traditional telephony system, you can use the built‑in SIP bridge.
+If you have a deployed Stimm instance (e.g., on a public server) and want to connect it to a traditional telephony system, you can use the built-in SIP bridge.
 
 ### How It Works
 
@@ -87,7 +87,7 @@ If you have a deployed Stimm instance (e.g., on a public server) and want to con
    Define rules that map incoming SIP calls to specific Stimm agents. For example, you can route calls from a certain DID to an agent named “support”.
 
 3. **Deploy the LiveKit SIP server**  
-   Stimm includes a Docker service (`livekit‑sip`) that acts as a SIP‑to‑WebRTC gateway. It registers with your SIP provider and forwards media to LiveKit rooms.
+   Stimm includes a Docker service (`livekit-sip`) that acts as a SIP-to-WebRTC gateway. It registers with your SIP provider and forwards media to LiveKit rooms.
 
 ### Example: Connecting to a Cloud PBX
 
@@ -105,7 +105,7 @@ For development and validation, you can test your SIP configuration using a soft
 
 ## Using the REST API for Management
 
-While real‑time audio should go through WebRTC, the REST API remains useful for **management tasks**:
+While real-time audio should go through WebRTC, the REST API remains useful for **management tasks**:
 
 - Creating/updating agents.
 - Uploading documents to RAG.
@@ -115,5 +115,5 @@ While real‑time audio should go through WebRTC, the REST API remains useful fo
 ## Next Steps
 
 - Explore the [LiveKit documentation](https://docs.livekit.io/) for detailed SDK guides.
-- Check the [SIP Integration](../user-guide/sip-integration.md) guide for step‑by‑step configuration.
+- Check the [SIP Integration](../developer/sip-integration.md) guide for step-by-step configuration.
 - Look at the [Stimm frontend source](https://github.com/stimm-ai/stimm/tree/main/src/front) for a complete working example.

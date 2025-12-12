@@ -26,7 +26,7 @@ uv sync --group dev --group docs
 docker compose up -d postgres qdrant traefik livekit redis sip
 ```
 
-3. Set up environment variables (copy `.env.example` files as described in [Configuration](../user-guide/configuration.md)).
+3. Set up environment variables (copy `.env.example` files as described in [Configuration](../getting-started/configuration.md)).
 
 4. Run the backend locally:
 
@@ -44,7 +44,7 @@ npm run dev
 
 ## Project Structure
 
-Refer to [Components](../developer-guide/components.md) for a detailed breakdown of each directory.
+Refer to [Components](../developer/components.md) for a detailed breakdown of each directory.
 
 ## Adding a New AI Provider
 
@@ -60,7 +60,7 @@ Stimm is designed to be easily extended with new AI providers (LLM, TTS, STT). E
 
 4. Add any required environment variables (API keys, URLs) to `.env.example`.
 
-5. Update the frontend provider list if needed (see `src/front/lib/provider‑constants.ts`).
+5. Update the frontend provider list if needed (see `src/front/lib/provider-constants.ts`).
 
 ### TTS/STT Provider
 
@@ -131,7 +131,7 @@ npx prettier --check .
 npx prettier --write .
 ```
 
-You can also use the pre‑commit hooks (see `.pre‑commit‑config.yaml`).
+You can also use the pre-commit hooks (see `.pre-commit-config.yaml`).
 
 ## Submitting Changes
 

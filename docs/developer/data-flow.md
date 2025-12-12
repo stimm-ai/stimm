@@ -1,8 +1,8 @@
 # Data Flow: Audio-to-Audio Pipeline
 
-This page describes the step‑by‑step flow of audio data through the Stimm platform, from microphone input to synthesized voice response.
+This page describes the step-by-step flow of audio data through the Stimm platform, from microphone input to synthesized voice response.
 
-## High‑Level Sequence
+## High-Level Sequence
 
 ```mermaid
 sequenceDiagram
@@ -37,13 +37,13 @@ sequenceDiagram
     end
 ```
 
-## Step‑by‑Step Explanation
+## Step-by-Step Explanation
 
 ### 1. Ingestion
 
 Audio is captured by the client (browser) and sent via **WebRTC**.
 
-- **WebRTC** offers lower latency and better real‑time performance.
+- **WebRTC** offers lower latency and better real-time performance.
 
 ### 2. Media Handling
 
@@ -54,7 +54,7 @@ The `WebRTCMediaHandler` (or `WebSocketMediaHandler`) receives the incoming audi
 
 ### 3. Voice Activity Detection (VAD)
 
-The `SileroVADService` analyzes the audio frames in real‑time to detect speech segments.
+The `SileroVADService` analyzes the audio frames in real-time to detect speech segments.
 
 - When speech starts, the VAD emits a `speech_start` event.
 - When speech ends (after a configurable silence threshold), it emits a `speech_end` event.
@@ -66,7 +66,7 @@ The `StimmEventLoop` acts as the central brain, coordinating all services.
 - It subscribes to VAD events and manages the state of the conversation.
 - On `speech_end`, it triggers the STT service with the accumulated audio buffer.
 
-### 5. Speech‑to‑Text (STT)
+### 5. Speech-to-Text (STT)
 
 The `STTService` transcribes the audio buffer into text.
 
@@ -78,9 +78,9 @@ The `STTService` transcribes the audio buffer into text.
 The transcribed text is sent to the `ChatbotService`, which may query **Qdrant** for context (RAG) before sending the prompt to the **LLM**.
 
 - **RAG**: If the agent has a RAG configuration, the system retrieves relevant documents from the vector database and injects them into the prompt.
-- **LLM**: The enriched prompt is sent to the configured LLM provider (Groq, Mistral, etc.). The LLM generates a text response, which is streamed back token‑by‑token.
+- **LLM**: The enriched prompt is sent to the configured LLM provider (Groq, Mistral, etc.). The LLM generates a text response, which is streamed back token-by-token.
 
-### 7. Text‑to‑Speech (TTS)
+### 7. Text-to-Speech (TTS)
 
 The LLM's response is streamed to the `TTSService` which converts text to audio.
 
@@ -93,13 +93,13 @@ The generated audio is sent back via WebRTC (or WebSocket) to the user's browser
 
 ## Latency Considerations
 
-The pipeline is designed for ultra‑low‑latency voice conversations. Key optimizations include:
+The pipeline is designed for ultra-low-latency voice conversations. Key optimizations include:
 
 - **Overlapping processing**: STT starts while the user is still speaking (streaming STT).
 - **Parallel RAG retrieval**: Document retrieval happens concurrently with LLM inference.
-- **Streaming TTS**: Audio is generated and sent incrementally, reducing time‑to‑first‑byte.
+- **Streaming TTS**: Audio is generated and sent incrementally, reducing time-to-first-byte.
 - **Caching**: Frequently accessed embeddings and conversation turns are cached.
 
 ## Monitoring and Debugging
 
-Each step emits detailed logs and metrics. You can enable debug logging to see timings, audio frame counts, and provider‑specific details.
+Each step emits detailed logs and metrics. You can enable debug logging to see timings, audio frame counts, and provider-specific details.

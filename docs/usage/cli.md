@@ -1,4 +1,4 @@
-# Command‑Line Interface
+# Command-Line Interface
 
 Stimm includes a powerful CLI tool for development, testing, and administrative tasks. It can operate in two modes:
 
@@ -23,7 +23,7 @@ uv run python -m src.cli.main [GLOBAL_OPTIONS] <COMMAND> [COMMAND_OPTIONS]
 
 ### `talk`
 
-Start a full, real‑time voice conversation with an agent.
+Start a full, real-time voice conversation with an agent.
 
 ```bash
 # Local mode with agent "ava"
@@ -40,11 +40,11 @@ uv run python -m src.cli.main --http talk --agent-name "ava"
 
 - `--agent-name NAME` – The name of the agent to talk to.
 - `--room-name NAME` – Custom LiveKit room name.
-- `--disable-rag` – Disable Retrieval‑Augmented Generation for the session.
+- `--disable-rag` – Disable Retrieval-Augmented Generation for the session.
 
 ### `chat`
 
-Start an interactive text‑only chat session with an agent.
+Start an interactive text-only chat session with an agent.
 
 ```bash
 # Local text chat with default agent
@@ -54,7 +54,7 @@ uv run python -m src.cli.main chat
 uv run python -m src.cli.main chat --agent-name "ava" --disable-rag
 ```
 
-**Options:** Same as `talk` (except room‑related options).
+**Options:** Same as `talk` (except room-related options).
 
 ### `agents`
 
@@ -96,15 +96,15 @@ uv run python -m src.cli.main livekit list-rooms
 # Delete all SIP rooms and terminate agent processes
 uv run python -m src.cli.main livekit clear-sip-bridge
 
-# Delete all LiveKit rooms (SIP and non‑SIP; non‑SIP rooms may be protected)
+# Delete all LiveKit rooms (SIP and non-SIP; non-SIP rooms may be protected)
 uv run python -m src.cli.main livekit clear-rooms
 ```
 
 **Subcommands:**
 
-- `list‑rooms` – Lists all LiveKit rooms with participant counts.
-- `clear‑rooms` – Deletes all LiveKit rooms (some rooms may be protected and produce a warning).
-- `clear‑sip‑bridge` – Cleans up SIP bridge agent processes and deletes SIP rooms.
+- `list-rooms` – Lists all LiveKit rooms with participant counts.
+- `clear-rooms` – Deletes all LiveKit rooms (some rooms may be protected and produce a warning).
+- `clear-sip-bridge` – Cleans up SIP bridge agent processes and deletes SIP rooms.
 
 ## Examples
 
@@ -135,4 +135,4 @@ uv run python -m src.cli.main livekit list-rooms
 ## Next Steps
 
 - Learn about [Managing Agents](managing-agents.md) via the web interface.
-- Explore the [REST API](../api/rest.md) for programmatic control.
+- Explore the [REST API](../api-reference/rest.md) for programmatic control.

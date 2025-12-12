@@ -104,11 +104,15 @@ build-backend = "hatchling.build"
 packages = ["src"]
 
 [tool.ruff]
-# Match Black's line length
-line-length = 88
+# Be more lenient with line length to avoid manual changes
+line-length = 120
 
 # Match Black's target version
 target-version = "py310"
+
+[tool.ruff.format]
+# Also use the same line length for formatting
+# Note: format line length is configured separately
 
 [tool.ruff.lint]
 # Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default

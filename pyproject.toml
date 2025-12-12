@@ -104,23 +104,17 @@ build-backend = "hatchling.build"
 packages = ["src"]
 
 [tool.ruff]
-# Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default
-select = ["E", "F"]
-
 # Match Black's line length
 line-length = 88
 
 # Match Black's target version
 target-version = "py310"
 
-# Enable automatic fixes for linting issues
-fix = true
+[tool.ruff.lint]
+# Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default
+select = ["E", "F"]
 
-# Show fixes for linting issues
-show-fixes = true
-
-# Enable isort compatibility
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["stimm"]
 
 [tool.mypy]

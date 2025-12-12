@@ -20,6 +20,21 @@
   <a href="https://stimm-ai.github.io/stimm/">
     <img src="https://img.shields.io/badge/docs-online-success" alt="Documentation">
   </a>
+  <a href="#">
+    <img src="https://img.shields.io/badge/code_style-black-000000.svg" alt="Code Style: Black">
+  </a>
+  <a href="#">
+    <img src="https://img.shields.io/badge/%20imports-isort-%231674b1" alt="Imports: isort">
+  </a>
+  <a href="#">
+    <img src="https://img.shields.io/badge/linting-flake8-yellow" alt="Linting: flake8">
+  </a>
+  <a href="#">
+    <img src="https://img.shields.io/badge/eslint-3A33D1?logo=eslint&logoColor=white" alt="ESLint">
+  </a>
+  <a href="#">
+    <img src="https://img.shields.io/badge/prettier-1A2C34?logo=prettier&logoColor=F7B93E" alt="Prettier">
+  </a>
   <div align="center">
     <video src="https://github.com/user-attachments/assets/a87909f2-0f44-45ba-9a27-c4f233805da8" width="100%" controls="controls" muted="muted" autoplay="autoplay">
     </video>

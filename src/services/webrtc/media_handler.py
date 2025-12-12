@@ -4,7 +4,6 @@ import logging
 import time
 
 import av
-import numpy as np
 from aiortc import MediaStreamTrack
 
 from services.agents.event_loop import StimmEventLoop
@@ -32,60 +31,86 @@ class StimmAudioSender(MediaStreamTrack):
         self.sample_rate = AUDIO_RATE
         self.samples_per_frame = int(self.sample_rate * self.packet_time)
 
+        # Internal buffer for packetization
+        self.internal_buffer = bytearray()
+        self.bytes_per_sample = 2  # 16-bit
+        self.bytes_per_frame = self.samples_per_frame * self.bytes_per_sample
+
+    def set_sample_rate(self, sample_rate: int):
+        """Update the sample rate and recalculate frame size."""
+        if self.sample_rate != sample_rate:
+            logger.info(f"🔄 Updating VoicebotAudioSender sample rate: {self.sample_rate} -> {sample_rate} Hz")
+            self.sample_rate = sample_rate
+            self.samples_per_frame = int(self.sample_rate * self.packet_time)
+            self.bytes_per_frame = self.samples_per_frame * self.bytes_per_sample
+            # Note: Existing buffer content assumes old sample rate, but since it's raw bytes,
+            # we can't easily convert it. We just continue processing with new frame size.
+            # This might cause a glitch at transition, but it's better than wrong rate.
+
+    def flush(self):
+        """Clear the internal audio buffer."""
+        self.internal_buffer.clear()
+        logger.info("🗑️ VoicebotAudioSender buffer flushed")
+
     async def recv(self):
         """
         Called by aiortc to get the next audio frame.
+        Handles packetization of large chunks into 20ms frames.
+        Includes pacing to prevent buffering too far ahead in the network stack.
         """
         if self._start_time is None:
             self._start_time = time.time()
 
-        # Get audio data from the queue
-        # The event loop puts {"type": "audio_chunk", "data": bytes}
-        # We need to handle potential silence or waiting
+        # Pacing: Wait if we are too far ahead of real-time
+        # current_pts_time is when this frame should play relative to start
+        current_pts_time = self._timestamp / self.sample_rate
+        # real_time_elapsed is how long we've been playing
+        real_time_elapsed = time.time() - self._start_time
+
+        # We allow buffering ahead by a small margin (e.g. 200ms)
+        # to prevent underruns while keeping latency low for interruption.
+        buffer_margin = 0.2
+
+        wait_time = current_pts_time - real_time_elapsed - buffer_margin
+        if wait_time > 0:
+            await asyncio.sleep(wait_time)
 
         try:
-            # Wait for audio data
-            # We might need a more sophisticated buffering strategy here
-            # to avoid gaps if the TTS is slightly slower than real-time
-            # For now, we block until data is available.
-            # In a real implementation, we might send silence if queue is empty
-            # but we want to avoid drift.
+            # We need enough bytes for one frame
+            while len(self.internal_buffer) < self.bytes_per_frame:
+                try:
+                    # Try to get more data
+                    # If we have some data but not enough, we wait
+                    # If we have no data, we wait
+                    item = await self.output_queue.get()
 
-            # Simple approach: Wait for data.
-            # If the queue is empty, aiortc will just wait (and silence might happen on client side)
-            # or we can generate silence frames if we want to keep the clock ticking strictly.
+                    if item is None:
+                        # End of stream signal
+                        if len(self.internal_buffer) == 0:
+                            self.stop()
+                            return None
+                        else:
+                            # We have leftover bytes, pad with silence?
+                            # Or just return what we have (might cause artifact)
+                            # Let's pad with silence to full frame size
+                            padding = self.bytes_per_frame - len(self.internal_buffer)
+                            self.internal_buffer.extend(b"\x00" * padding)
+                            break
 
-            # Let's try to get data. If empty, maybe send silence?
-            # But StimmEventLoop sends chunks as they are generated.
+                    self.internal_buffer.extend(item)
 
-            # Ideally, we should have a buffer here.
+                except Exception as e:
+                    logger.error(f"Error getting audio from queue: {e}")
+                    raise
 
-            item = await self.output_queue.get()
+            # Extract one frame worth of bytes
+            frame_bytes = self.internal_buffer[: self.bytes_per_frame]
+            del self.internal_buffer[: self.bytes_per_frame]
 
-            if item is None:
-                # End of stream signal if we ever implement one
-                self.stop()
-                return None
-
-            audio_bytes = item
-
-            # Create AudioFrame
-            # Assuming audio_bytes is raw PCM 16-bit
-            # We need to ensure the chunk size matches what we expect (samples_per_frame)
-            # If it doesn't, we might need to buffer/fragment.
-            # For now, let's assume the TTS service produces chunks of appropriate size
-            # or we handle arbitrary sizes.
-
-            # Actually, av.AudioFrame.from_ndarray expects numpy array or similar
-            # Let's convert bytes to AudioFrame
-
-            # We need to know the format.
-            # Kokoro usually outputs 24kHz float32 or int16.
-            # Let's assume int16 for now as it's common.
-
+            # Convert to AudioFrame
             import numpy as np
 
-            audio_array = np.frombuffer(audio_bytes, dtype=np.int16)
+            audio_array = np.frombuffer(frame_bytes, dtype=np.int16)
 
             # Reshape to (channels, samples)
             audio_array = audio_array.reshape(1, -1)
@@ -100,7 +125,7 @@ class StimmAudioSender(MediaStreamTrack):
             return frame
 
         except Exception as e:
-            logger.error(f"Error in StimmAudioSender: {e}")
+            logger.error(f"Error in VoicebotAudioSender: {e}")
             raise
 
 
@@ -169,12 +194,9 @@ class WebRTCMediaHandler:
                         # Extract audio data
                         audio_array = resampled_frame.to_ndarray()
 
-                        # Apply audio gain to make VAD more sensitive
-                        # Scale up the audio by factor of 3 to improve speech detection
-                        audio_array = audio_array * 3
-
-                        # Ensure we don't clip (keep within int16 range)
-                        audio_array = np.clip(audio_array, -32768, 32767)
+                        # Removed artificial gain (was * 3) to prevent false positive interruptions.
+                        # VAD sensitivity should be managed via VAD thresholds, not digital gain
+                        # which amplifies noise and causes clipping.
 
                         # Convert back to bytes
                         audio_bytes = audio_array.tobytes()
@@ -222,6 +244,10 @@ class WebRTCMediaHandler:
                             break
 
                     logger.info(f"🗑️ Flushed {dropped_chunks} audio chunks from queue")
+
+                    # Also flush the sender's internal buffer (crucial for large chunks)
+                    if self.audio_sender:
+                        self.audio_sender.flush()
 
                 elif event_type == "vad_update":
                     # Send VAD status to client via data channel

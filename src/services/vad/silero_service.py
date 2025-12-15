@@ -204,9 +204,16 @@ class SileroVADService:
 
     def _download_model(self, path: str):
         import urllib.request
+        from urllib.parse import urlparse
 
         url = "https://github.com/snakers4/silero-vad/raw/master/files/silero_vad.onnx"
         try:
+            # Validate URL scheme for security
+            parsed_url = urlparse(url)
+            if parsed_url.scheme not in ["http", "https"]:
+                raise ValueError(f"Unsupported URL scheme: {parsed_url.scheme}")
+
+            # Use urlretrieve with security considerations
             urllib.request.urlretrieve(url, path)
             logger.info(f"Downloaded Silero VAD model to {path}")
         except Exception as e:

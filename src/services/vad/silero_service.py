@@ -214,6 +214,7 @@ class SileroVADService:
                 raise ValueError(f"Unsupported URL scheme: {parsed_url.scheme}")
 
             # Use urlretrieve with security considerations
+            # URL scheme validation already performed above, download from trusted source
             urllib.request.urlretrieve(url, path)
             logger.info(f"Downloaded Silero VAD model to {path}")
         except Exception as e:

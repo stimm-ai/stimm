@@ -137,6 +137,38 @@ uv run ruff check src/ tests/
 uv run ruff format src/ tests/
 ```
 
+**Static Application Security Testing (SAST)**:
+
+```bash
+# Install SAST tools
+uv add bandit safety-cli semgrep
+
+# Run Bandit for security checks (recommended approach)
+# For CI and regular security scanning, run on src/ directory only:
+uv run bandit -r src/
+
+# Run Safety for dependency vulnerability checks (specialized tool for dependencies)
+uv run safety check
+
+# Run Semgrep for static analysis
+uv run semgrep scan --config=auto .
+```
+
+**Security Best Practices**:
+
+- **Bandit in CI**: Run `uv run bandit -r src/` (not root) to focus on your code and avoid dependency false positives
+- **Dependency Security**: Use `safety check` (specialized tool) for dependency vulnerability scanning
+- **High severity issues**: Fix immediately (e.g., weak cryptographic hashes, SQL injection)
+- **Medium severity issues**: Review and fix where practical (e.g., hardcoded bindings, unsafe downloads)
+- **Low severity issues**: Often intentional patterns like `try/except/pass` for graceful error handling
+- **Use `# nosec` comments**: Suppress false positives when appropriate with justification
+
+**Tool Recommendations**:
+
+- **Bandit**: Best for Python code security analysis (run on `src/`)
+- **Safety**: Best for dependency vulnerability scanning (run on root)
+- **Semgrep**: Best for comprehensive static analysis across languages
+
 ### Frontend (TypeScript/React)
 
 - **Linter**: `ESLint` (with Next.js core-web-vitals configuration)
@@ -156,6 +188,41 @@ npx prettier --check .
 ```bash
 cd src/front
 npx prettier --write .
+```
+
+**Static Application Security Testing (SAST)**:
+
+```bash
+# Install ESLint security plugin
+npm install --save-dev eslint-plugin-security
+
+# Run ESLint with security rules
+npx eslint --config .eslintrc.security.json .
+
+# Install and run SonarQube Scanner (requires SonarQube server)
+npm install --save-dev sonarqube-scanner
+
+# Configure SonarQube (create sonar-project.properties if not exists)
+# Example sonar-project.properties:
+# sonar.projectKey=stimm-frontend
+# sonar.projectName=Stimm Frontend
+# sonar.projectVersion=1.0
+# sonar.sources=.
+# sonar.sourceEncoding=UTF-8
+# sonar.exclusions=**/node_modules/**,**/dist/**,**/coverage/**
+# sonar.javascript.lcov.reportPaths=coverage/lcov.info
+# sonar.typescript.lcov.reportPaths=coverage/lcov.info
+
+# Run SonarQube Scanner
+npx sonarqube-scanner
+
+# For local SonarQube server setup:
+# 1. Download and install SonarQube from https://www.sonarqube.org/downloads/
+# 2. Start the SonarQube server:
+#   cd /path/to/sonarqube/bin/linux-x86-64
+#   ./sonar.sh start
+# 3. Access the SonarQube dashboard at http://localhost:9000
+# 4. Configure the scanner with your project token
 ```
 
 ## Testing

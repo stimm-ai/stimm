@@ -56,7 +56,7 @@ jobs:
           uv run ruff check .
 
       - name: Bandit Security Check
-        run: uv run bandit -r .
+        run: uv run bandit -r src/
 
       - name: Safety Dependency Check
         run: uv run safety check

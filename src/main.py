@@ -266,4 +266,6 @@ if __name__ == "__main__":
     # For simplicity, we let uvicorn handle the basics via log_level arg,
     # but our configure_logging() above ensures app loggers are set correctly at module level.
     log_level = os.getenv("LOG_LEVEL", "info").lower()
-    uvicorn.run(app, host="0.0.0.0", port=8001, log_level=log_level)
+    host = os.getenv("HOST", "127.0.0.1")  # Default to localhost for security, allow override
+    port = int(os.getenv("PORT", "8001"))
+    uvicorn.run(app, host=host, port=port, log_level=log_level)

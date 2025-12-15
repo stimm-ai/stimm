@@ -55,6 +55,15 @@ jobs:
           uv run ruff format --check .
           uv run ruff check .
 
+      - name: Bandit Security Check
+        run: uv run bandit -r .
+
+      - name: Safety Dependency Check
+        run: uv run safety check
+
+      - name: Semgrep Static Analysis
+        run: uv run semgrep scan --config=auto .
+
   lint-front:
     runs-on: ubuntu-latest
     defaults:
@@ -73,6 +82,12 @@ jobs:
         run: npx prettier --check .
       - name: ESLint Check
         run: npm run lint
+
+      - name: ESLint Security Check
+        run: npx eslint --config .eslintrc.security.json .
+
+      - name: SonarQube Scan
+        run: npx sonarqube-scanner
   test:
     runs-on: ubuntu-latest
     steps:

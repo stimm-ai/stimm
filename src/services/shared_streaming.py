@@ -88,7 +88,7 @@ class SharedStreamingManager:
 
         # Configuration pour l'enregistrement des chunks
         record_chunks = os.getenv("TTS_RECORD_CHUNKS", "false").lower() == "true"
-        chunks_dir = os.getenv("TTS_CHUNKS_DIR", "/tmp/tts_chunks_web")
+        chunks_dir = os.getenv("TTS_CHUNKS_DIR", os.path.join(os.getcwd(), "tts_chunks_web"))
 
         # Créer le dossier d'enregistrement si activé
         if record_chunks:
@@ -156,7 +156,7 @@ class SharedStreamingManager:
 
         # Configuration pour l'enregistrement des chunks
         record_chunks = os.getenv("TTS_RECORD_CHUNKS", "false").lower() == "true"
-        chunks_dir = os.getenv("TTS_CHUNKS_DIR", "/tmp/tts_chunks_web")
+        chunks_dir = os.getenv("TTS_CHUNKS_DIR", os.path.join(os.getcwd(), "tts_chunks_web"))
 
         # Créer le dossier d'enregistrement si activé
         if record_chunks:

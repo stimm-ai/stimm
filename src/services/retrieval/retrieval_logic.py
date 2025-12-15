@@ -25,7 +25,7 @@ _retrieval_cache = {}
 
 def _get_query_hash(text: str) -> str:
     """Generate a hash for query caching"""
-    return hashlib.md5(text.encode("utf-8")).hexdigest()
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 @lru_cache(maxsize=1000)

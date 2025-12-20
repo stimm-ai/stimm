@@ -31,6 +31,7 @@ export default [
     },
     rules: {
       ...sonarjs.configs.recommended.rules,
+
       'security/detect-object-injection': 'warn', // Changed to warn - too many false positives
       'security/detect-child-process': 'error',
       'security/detect-non-literal-fs-filename': 'error',

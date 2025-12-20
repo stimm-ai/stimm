@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Agent } from './types';
-import { THEME, getProviderAccent } from '@/lib/theme';
+import { THEME } from '@/lib/theme';
 import { Edit, Star, Trash2 } from 'lucide-react';
 
 interface AgentCardProps {

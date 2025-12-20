@@ -29,6 +29,12 @@
   <a href="#">
     <img src="https://img.shields.io/badge/prettier-1A2C34?logo=prettier&logoColor=F7B93E" alt="Prettier">
   </a>
+  <a href="#">
+    <img src="https://img.shields.io/badge/semgrep-3A33D1?logo=semgrep&logoColor=white" alt="Semgrep">
+  </a>
+  <a href="#">
+    <img src="https://img.shields.io/badge/security-bandit-yellow" alt="Bandit">
+  </a>
   <div align="center">
     <video src="https://github.com/user-attachments/assets/a87909f2-0f44-45ba-9a27-c4f233805da8" width="100%" controls="controls" muted="muted" autoplay="autoplay">
     </video>
@@ -163,6 +169,26 @@ cd src/front
 npm install
 npm run dev
 ```
+
+## 🛡️ Security & Quality
+
+Stimm follows a modern security-first approach using open-source SAST (Static Application Security Testing) and SCA (Software Composition Analysis) tools integrated into the development workflow.
+
+### Code Security (SAST)
+
+- **[Semgrep](https://semgrep.dev/)**: Multi-language security scanner for finding complex vulnerabilities.
+- **[Bandit](https://bandit.readthedocs.io/)**: Python-specific security scanner for common vulnerabilities.
+- **[ESLint SonarJS](https://github.com/SonarSource/eslint-plugin-sonarjs)**: Advanced code quality and security rules for the React frontend, providing SonarQube-like analysis.
+
+### Dependency Security (SCA)
+
+- **[pip-audit](https://pypi.org/project/pip-audit/)**: Checks Python dependencies for known vulnerabilities.
+- **npm audit**: Checks JavaScript dependencies for known vulnerabilities.
+
+### Quality & Standards
+
+- **[Ruff](https://beta.ruff.rs/)**: Extremely fast Python linter and formatter.
+- **[ESLint](https://eslint.org/)** & **[Prettier](https://prettier.io/)**: Frontend linting and formatting.
 
 ## 🤝 Contributing
 

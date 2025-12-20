@@ -55,14 +55,14 @@ jobs:
           uv run ruff format --check .
           uv run ruff check .
 
-      - name: Bandit Security Check
+      - name: Bandit Security Analysis
         run: uv run bandit -r src/ || true
         # Allow low-severity findings, fail on medium/high
 
-      - name: pip-audit Dependency Scan
+      - name: Security Vulnerability Scan (Python)
         run: uv run pip-audit --desc
 
-      - name: Semgrep Static Analysis
+      - name: Semgrep Static Application Security Testing (SAST)
         run: uv run semgrep scan --config=auto --exclude='docker-compose.yml' --exclude='docker/**' --exclude='*.env.example' .
 
   lint-front:
@@ -81,13 +81,13 @@ jobs:
       - run: npm ci
       - name: Prettier Check
         run: npx prettier --check .
-      - name: ESLint Check
+      - name: ESLint Static Analysis & SonarJS
         run: npm run lint
 
-      - name: ESLint Security Check
+      - name: Security Focused Linting (SAST)
         run: npm run lint:security
 
-      - name: npm audit Security Scan
+      - name: Dependency Vulnerability Audit (JS)
         run: npm audit --audit-level=moderate
   test:
     runs-on: ubuntu-latest

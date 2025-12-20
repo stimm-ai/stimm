@@ -58,8 +58,8 @@ jobs:
       - name: Bandit Security Check
         run: uv run bandit -r src/
 
-      - name: Safety Dependency Check
-        run: uv run safety check
+      - name: Dependency Vulnerability Scan
+        run: uv run python scripts/check_dependencies.py
 
       - name: Semgrep Static Analysis
         run: uv run semgrep scan --config=auto .

@@ -40,13 +40,12 @@ class ONNXSentenceTransformer:
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_folder)
 
         # Try to load pre-converted ONNX model from Optimum repository
-        # Check https://huggingface.co/optimum for available models
+        # Many popular models are pre-converted and available at optimum/{model_name}
         onnx_model_name = f"optimum/{model_name.split('/')[-1]}"
 
         try:
             from huggingface_hub import hf_hub_download
 
-            logger.info(f"Loading ONNX model from: {onnx_model_name}")
             # Download ONNX model file
             model_path = hf_hub_download(
                 repo_id=onnx_model_name,
@@ -58,23 +57,13 @@ class ONNXSentenceTransformer:
             sess_options = ort.SessionOptions()
             sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
             self.session = ort.InferenceSession(model_path, sess_options=sess_options, providers=["CPUExecutionProvider"])
-            logger.info(f"✅ Loaded ONNX model: {onnx_model_name}")
+            logger.info(f"Successfully loaded pre-converted ONNX model: {onnx_model_name}")
 
         except Exception as e:
-            # Provide helpful error message with supported models
-            logger.error(f"Failed to load ONNX model from {onnx_model_name}: {e}")
-            logger.error(f"Model '{model_name}' does not have a pre-converted ONNX version available.")
-            logger.error("")
-            logger.error("✅ ONNX-supported model:")
-            logger.error("  - sentence-transformers/all-MiniLM-L6-v2 (384 dimensions, fast)")
-            logger.error("")
-            logger.error("❌ Models without working ONNX versions:")
-            logger.error("  - sentence-transformers/all-mpnet-base-v2")
-            logger.error("  - BAAI/bge-base-en-v1.5")
-            logger.error("  - intfloat/e5-base-v2")
-            logger.error("")
-            logger.error("Note: While some models claim ONNX support, only MiniLM L6 v2 has a publicly available pre-converted version.")
-            raise RuntimeError(f"ONNX model not found for '{model_name}'. Please use sentence-transformers/all-MiniLM-L6-v2")
+            logger.error(f"Failed to load pre-converted ONNX model from {onnx_model_name}: {e}")
+            logger.error("Please convert your model to ONNX format first.")
+            logger.error(f"Try using: from optimum.exporters.onnx import main_export; main_export('{model_name}')")
+            raise RuntimeError(f"ONNX model not found for {model_name}. Please use a pre-converted model from https://huggingface.co/optimum or convert your model to ONNX format manually.")
 
     def encode(
         self,

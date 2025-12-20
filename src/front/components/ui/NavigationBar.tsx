@@ -3,10 +3,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import Image from 'next/image';
 import { THEME } from '@/lib/theme';
-import { Bot, Database, Mic } from 'lucide-react';
-import logo from '@/assets/dark_theme/logo_stimm_h.png';
+import { Bot, Database } from 'lucide-react';
 
 interface NavigationLink {
   href: string;

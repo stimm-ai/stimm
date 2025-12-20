@@ -141,14 +141,14 @@ uv run ruff format src/ tests/
 
 ```bash
 # Install SAST tools
-uv add bandit safety-cli semgrep
+uv add bandit semgrep
 
 # Run Bandit for security checks (recommended approach)
 # For CI and regular security scanning, run on src/ directory only:
 uv run bandit -r src/
 
-# Run Safety for dependency vulnerability checks (specialized tool for dependencies)
-uv run safety check
+# Run open-source dependency vulnerability scan:
+uv run python scripts/check_dependencies.py
 
 # Run Semgrep for static analysis
 uv run semgrep scan --config=auto .
@@ -157,7 +157,7 @@ uv run semgrep scan --config=auto .
 **Security Best Practices**:
 
 - **Bandit in CI**: Run `uv run bandit -r src/` (not root) to focus on your code and avoid dependency false positives
-- **Dependency Security**: Use `safety check` (specialized tool) for dependency vulnerability scanning
+- **Dependency Security**: Use `uv run python scripts/check_dependencies.py` for dependency vulnerability scanning (uses OSV-Scanner or pip-audit if available)
 - **High severity issues**: Fix immediately (e.g., weak cryptographic hashes, SQL injection)
 - **Medium severity issues**: Review and fix where practical (e.g., hardcoded bindings, unsafe downloads)
 - **Low severity issues**: Often intentional patterns like `try/except/pass` for graceful error handling
@@ -166,7 +166,7 @@ uv run semgrep scan --config=auto .
 **Tool Recommendations**:
 
 - **Bandit**: Best for Python code security analysis (run on `src/`)
-- **Safety**: Best for dependency vulnerability scanning (run on root)
+- **OSV-Scanner/pip-audit**: Best for dependency vulnerability scanning (open-source tools only)
 - **Semgrep**: Best for comprehensive static analysis across languages
 
 ### Frontend (TypeScript/React)

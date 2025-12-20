@@ -50,6 +50,7 @@ dependencies = [
     "bandit>=1.9.2",
     "safety-cli>=0.0.4",
     "semgrep>=1.136.0",
+    "pip-audit>=2.9.0",
 ]
 
 [project.optional-dependencies]

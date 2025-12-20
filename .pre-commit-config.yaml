@@ -20,3 +20,17 @@ repos:
         entry: npm exec --prefix src/front -- prettier --write --ignore-unknown
         language: system
         types_or: [javascript, jsx, ts, tsx, css, json, markdown, yaml]
+
+      # 3. SECURITY (Local)
+      - id: bandit
+        name: bandit
+        entry: uv run bandit -r src/
+        language: system
+        types: [python]
+        files: ^src/
+      - id: semgrep
+        name: semgrep
+        entry: uv run semgrep scan --config=auto --exclude='docker-compose.yml' --exclude='docker/**' --exclude='*.env.example' .
+        language: system
+        types_or: [python, javascript, ts, tsx]
+        pass_filenames: false

@@ -1,4 +1,5 @@
 import security from 'eslint-plugin-security';
+import sonarjs from 'eslint-plugin-sonarjs';
 import typescriptParser from '@typescript-eslint/parser';
 
 export default [
@@ -16,6 +17,7 @@ export default [
     files: ['**/*.{js,jsx,ts,tsx,mjs,cjs}'],
     plugins: {
       security,
+      sonarjs,
     },
     languageOptions: {
       parser: typescriptParser,
@@ -28,6 +30,7 @@ export default [
       },
     },
     rules: {
+      ...sonarjs.configs.recommended.rules,
       'security/detect-object-injection': 'warn', // Changed to warn - too many false positives
       'security/detect-child-process': 'error',
       'security/detect-non-literal-fs-filename': 'error',

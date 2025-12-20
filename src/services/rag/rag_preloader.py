@@ -265,6 +265,40 @@ class RAGPreloader:
 
         return rag_state
 
+    def invalidate_cache(self, agent_id: str = None) -> None:
+        """
+        Invalidate cached RAG state for a specific agent or all agents.
+
+        Call this when RAG configuration changes (e.g., switching embedding models)
+        to force reloading on next request.
+
+        Args:
+            agent_id: Optional agent ID. If provided, clears only that agent's cache.
+                     If None, clears all cached states including global.
+        """
+        if agent_id is None:
+            # Clear all caches
+            logger.info("Invalidating all RAG state caches")
+            self._agent_rag_states.clear()
+            self._rag_state = None
+            self._is_preloaded = False
+        else:
+            # Clear specific agent cache
+            cache_key = str(agent_id)
+            if cache_key in self._agent_rag_states:
+                logger.info(f"Invalidating RAG state cache for agent {cache_key}")
+                del self._agent_rag_states[cache_key]
+            else:
+                logger.debug(f"No cached RAG state found for agent {cache_key}")
+
+    def clear_all_caches(self) -> None:
+        """
+        Clear all cached RAG states.
+
+        Same as invalidate_cache(None) but more explicit name.
+        """
+        self.invalidate_cache(None)
+
     @property
     def is_preloaded(self) -> bool:
         """Check if RAG is preloaded and ready"""

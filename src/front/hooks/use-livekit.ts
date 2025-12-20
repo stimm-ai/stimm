@@ -89,23 +89,132 @@ export function useLiveKit(): UseLiveKitReturn {
   const isMounted = useRef(true);
 
   // Helper to generate unique IDs for messages
-  const generateId = () =>
-    Date.now().toString(36) + Math.random().toString(36).substring(2);
+  const generateId = useCallback(() => crypto.randomUUID(), []);
+
+  const handleTranscriptUpdate = useCallback(
+    (data: any) => {
+      const isFinal = data.is_final;
+      const text = data.text;
+
+      if (isFinal) {
+        setTranscription((prev) => prev + ' ' + text);
+        setMessages((prev) => {
+          const index = prev.findIndex(
+            (m) => m.id === lastUserMessageId.current
+          );
+          if (index >= 0 && !prev[index].isFinal) {
+            const updated = [...prev];
+            updated[index] = {
+              ...updated[index],
+              text: text.trim(),
+              isFinal: true,
+            };
+            return updated;
+          }
+          const id = generateId();
+          lastUserMessageId.current = id;
+          return [
+            ...prev,
+            {
+              id,
+              speaker: 'user',
+              text: text.trim(),
+              isFinal: true,
+              timestamp: Date.now(),
+            },
+          ];
+        });
+      } else {
+        setMessages((prev) => {
+          const index = prev.findIndex(
+            (m) => m.id === lastUserMessageId.current
+          );
+          if (index >= 0 && !prev[index].isFinal) {
+            const updated = [...prev];
+            updated[index] = {
+              ...updated[index],
+              text: text.trim(),
+              isFinal: false,
+            };
+            return updated;
+          }
+          const id = generateId();
+          lastUserMessageId.current = id;
+          return [
+            ...prev,
+            {
+              id,
+              speaker: 'user',
+              text: text.trim(),
+              isFinal: false,
+              timestamp: Date.now(),
+            },
+          ];
+        });
+      }
+    },
+    [generateId]
+  );
+
+  const handleAssistantResponse = useCallback(
+    (data: any) => {
+      if (data.text) {
+        setResponse((prev) => prev + data.text);
+        setMessages((prev) => {
+          const index = prev.findIndex(
+            (m) => m.id === lastAgentMessageId.current
+          );
+          if (index >= 0) {
+            const updated = [...prev];
+            updated[index] = {
+              ...updated[index],
+              text: updated[index].text + data.text,
+              isFinal: false,
+            };
+            return updated;
+          }
+          const id = generateId();
+          lastAgentMessageId.current = id;
+          return [
+            ...prev,
+            {
+              id,
+              speaker: 'agent',
+              text: data.text,
+              isFinal: false,
+              timestamp: Date.now(),
+            },
+          ];
+        });
+      }
+      if (data.is_complete) {
+        setResponse((prev) => prev + '\n\n');
+        setLlmState(false);
+        setMessages((prev) => {
+          const index = prev.findIndex(
+            (m) => m.id === lastAgentMessageId.current
+          );
+          if (index >= 0) {
+            const updated = [...prev];
+            updated[index] = { ...updated[index], isFinal: true };
+            return updated;
+          }
+          return prev;
+        });
+      }
+    },
+    [generateId]
+  );
 
   useEffect(() => {
     isMounted.current = true;
 
-    // Set up event listeners
     liveKitClient.onConnectionStateChange = (state: string) => {
-      if (isMounted.current) {
-        setConnectionState(state as ConnectionState);
-      }
+      if (isMounted.current) setConnectionState(state as ConnectionState);
     };
 
-    liveKitClient.onAgentJoined = (participant: RemoteParticipant) => {
-      if (isMounted.current) {
-        setAgentParticipant(participant);
-      }
+    liveKitClient.onAgentJoined = (p: RemoteParticipant) => {
+      if (isMounted.current) setAgentParticipant(p);
     };
 
     liveKitClient.onAgentLeft = () => {
@@ -115,242 +224,112 @@ export function useLiveKit(): UseLiveKitReturn {
       }
     };
 
-    liveKitClient.onAudioTrack = (stream: MediaStream) => {
-      if (isMounted.current) {
-        setAudioStream(stream);
-      }
+    liveKitClient.onAudioTrack = (s: MediaStream) => {
+      if (isMounted.current) setAudioStream(s);
     };
 
-    liveKitClient.onLocalAudioTrack = (stream: MediaStream) => {
-      if (isMounted.current) {
-        setLocalAudioStream(stream);
-      }
+    liveKitClient.onLocalAudioTrack = (s: MediaStream) => {
+      if (isMounted.current) setLocalAudioStream(s);
     };
 
     liveKitClient.onError = (err: string) => {
       if (isMounted.current) {
         setError(err);
-        // If error occurs during connection, reset state
-        if (connectionState === 'connecting') {
-          setConnectionState('failed');
-        }
+        if (connectionState === 'connecting') setConnectionState('failed');
       }
     };
 
-    liveKitClient.onDataReceived = (
-      payload: Uint8Array,
-      participant?: RemoteParticipant
-    ) => {
+    liveKitClient.onDataReceived = (payload: Uint8Array) => {
       if (!isMounted.current) return;
-
       try {
-        const text = new TextDecoder().decode(payload);
-        const data = JSON.parse(text);
-
-        //console.log('📦 Hook Data:', data)
-
+        const data = JSON.parse(new TextDecoder().decode(payload));
         switch (data.type) {
           case 'transcript_update':
-            if (data.is_final) {
-              // Final transcript
-              setTranscription((prev) => prev + ' ' + data.text);
-              setMessages((prev) => {
-                const lastIndex = prev.findIndex(
-                  (m) => m.id === lastUserMessageId.current
-                );
-                if (lastIndex >= 0 && !prev[lastIndex].isFinal) {
-                  // Update existing non-final user message
-                  const updated = [...prev];
-                  updated[lastIndex] = {
-                    ...updated[lastIndex],
-                    text: data.text.trim(),
-                    isFinal: true,
-                  };
-                  return updated;
-                } else {
-                  // Create new final user message
-                  const id = generateId();
-                  lastUserMessageId.current = id;
-                  const newMessage: Message = {
-                    id,
-                    speaker: 'user',
-                    text: data.text.trim(),
-                    isFinal: true,
-                    timestamp: Date.now(),
-                  };
-                  return [...prev, newMessage];
-                }
-              });
-            } else {
-              // Partial transcript
-              setMessages((prev) => {
-                const lastIndex = prev.findIndex(
-                  (m) => m.id === lastUserMessageId.current
-                );
-                if (lastIndex >= 0 && !prev[lastIndex].isFinal) {
-                  // Update existing non-final user message
-                  const updated = [...prev];
-                  updated[lastIndex] = {
-                    ...updated[lastIndex],
-                    text: data.text.trim(),
-                    isFinal: false,
-                  };
-                  return updated;
-                } else {
-                  // Create new non-final user message
-                  const id = generateId();
-                  lastUserMessageId.current = id;
-                  const newMessage: Message = {
-                    id,
-                    speaker: 'user',
-                    text: data.text.trim(),
-                    isFinal: false,
-                    timestamp: Date.now(),
-                  };
-                  return [...prev, newMessage];
-                }
-              });
-            }
+            handleTranscriptUpdate(data);
             break;
-
           case 'assistant_response':
-            if (data.text) {
-              setResponse((prev) => prev + data.text);
-              setMessages((prev) => {
-                const lastIndex = prev.findIndex(
-                  (m) => m.id === lastAgentMessageId.current
-                );
-                if (lastIndex >= 0) {
-                  // Update existing message
-                  const updated = [...prev];
-                  updated[lastIndex] = {
-                    ...updated[lastIndex],
-                    text: updated[lastIndex].text + data.text,
-                    isFinal: false,
-                  };
-                  return updated;
-                } else {
-                  // Create new agent message
-                  const id = generateId();
-                  lastAgentMessageId.current = id;
-                  const newMessage: Message = {
-                    id,
-                    speaker: 'agent',
-                    text: data.text,
-                    isFinal: false,
-                    timestamp: Date.now(),
-                  };
-                  return [...prev, newMessage];
-                }
-              });
-            }
-            if (data.is_complete) {
-              setResponse((prev) => prev + '\n\n');
-              setLlmState(false);
-              // Mark the last agent message as final
-              setMessages((prev) => {
-                const lastIndex = prev.findIndex(
-                  (m) => m.id === lastAgentMessageId.current
-                );
-                if (lastIndex >= 0) {
-                  const updated = [...prev];
-                  updated[lastIndex] = {
-                    ...updated[lastIndex],
-                    isFinal: true,
-                  };
-                  return updated;
-                }
-                return prev;
-              });
-            }
+            handleAssistantResponse(data);
             break;
-
           case 'vad_update':
             setVadState({ energy: data.energy, state: data.state });
-            if (data.telemetry) {
-              updateTelemetry(data.telemetry);
-            }
+            if (data.telemetry) updateTelemetry(data.telemetry);
             break;
-
           case 'speech_start':
             setVadState((prev) => ({ ...prev, state: 'speaking' }));
-            resetTelemetry(); // Reset telemetry on new speech start
+            resetTelemetry();
             updateTelemetry({ vad_speech_detected: true });
             break;
-
           case 'speech_end':
             setVadState((prev) => ({ ...prev, state: 'silence' }));
             lastSpeechEnd.current = Date.now();
             updateTelemetry({ vad_end_of_speech_detected: true });
             break;
-
           case 'bot_responding_start':
-            // Clear response for new turn
             setResponse('');
             setLlmState(true);
-            // Create a new agent message placeholder
-            const id = generateId();
-            lastAgentMessageId.current = id;
-            const newMessage: Message = {
-              id,
-              speaker: 'agent',
-              text: '',
-              isFinal: false,
-              timestamp: Date.now(),
-            };
-            setMessages((prev) => [...prev, newMessage]);
+            {
+              const id = generateId();
+              lastAgentMessageId.current = id;
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id,
+                  speaker: 'agent',
+                  text: '',
+                  isFinal: false,
+                  timestamp: Date.now(),
+                },
+              ]);
+            }
             break;
-
           case 'bot_responding_end':
             setLlmState(false);
-            setTtsState(false); // Assuming TTS ends shortly after or we track chunks
+            setTtsState(false);
             break;
-
           case 'audio_chunk':
-            // Calculate latency if this is the first chunk after speech end
-            let currentLatency: number | undefined;
-            if (lastSpeechEnd.current > 0) {
-              currentLatency = Date.now() - lastSpeechEnd.current;
-              lastSpeechEnd.current = 0; // Reset so we don't calculate for subsequent chunks
+            {
+              const now = Date.now();
+              const latency =
+                lastSpeechEnd.current > 0
+                  ? now - lastSpeechEnd.current
+                  : undefined;
+              if (latency !== undefined) lastSpeechEnd.current = 0;
+              setMetrics((prev) => ({
+                ...prev,
+                audioChunks: prev.audioChunks + 1,
+                latency: latency !== undefined ? latency : prev.latency,
+              }));
+              setTtsState(true);
             }
-
-            setMetrics((prev) => ({
-              ...prev,
-              audioChunks: prev.audioChunks + 1,
-              latency:
-                currentLatency !== undefined ? currentLatency : prev.latency,
-            }));
-            setTtsState(true);
             break;
-
           case 'telemetry_update':
-            if (data.data) {
-              updateTelemetry(data.data);
-            }
+            if (data.data) updateTelemetry(data.data);
             break;
-
           case 'rag_loading_start':
             setRagLoading(true);
-            setRagLoadingMessage(
-              data.message || 'Initialisation du système RAG...'
-            );
+            setRagLoadingMessage(data.message || 'Initialisation...');
             break;
-
           case 'rag_loading_complete':
-            setRagLoading(false);
-            setRagLoadingMessage('');
-            break;
-
           case 'rag_loading_error':
             setRagLoading(false);
             setRagLoadingMessage('');
-            console.error('RAG loading error:', data.error);
             break;
         }
       } catch (e) {
-        console.error('Failed to parse data packet:', e);
+        console.error('Data error:', e);
       }
     };
+  }, [
+    connectionState,
+    handleTranscriptUpdate,
+    handleAssistantResponse,
+    generateId,
+    updateTelemetry,
+    resetTelemetry,
+  ]);
+
+  useEffect(() => {
+    isMounted.current = true;
 
     // Check initial state
     if (liveKitClient.isConnected()) {

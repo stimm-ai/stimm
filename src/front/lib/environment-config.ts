@@ -43,7 +43,6 @@ function detectServerEnvironment(): { isDocker: boolean; hostname: string } {
   try {
     // Check for .dockerenv file
     const fs = require('fs');
-    const path = require('path');
 
     if (fs.existsSync('/.dockerenv')) {
       return {

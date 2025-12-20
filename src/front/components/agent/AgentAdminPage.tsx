@@ -2,13 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PageLayout } from '@/components/ui/PageLayout';
 import { PageHeaderActions } from '@/components/ui/PageHeaderActions';
 import { AgentGrid } from './AgentGrid';
 import { AgentCard } from './AgentCard';
 import { Agent } from './types';
-import { Bot, Plus, Mic } from 'lucide-react';
+import { Bot, Plus } from 'lucide-react';
 import { THEME } from '@/lib/theme';
 
 export function AgentAdminPage() {
@@ -26,8 +25,10 @@ export function AgentAdminPage() {
       setLoading(true);
       setError(null);
 
+      const API_URL =
+        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
       // Fetch agents from FastAPI backend
-      const response = await fetch('http://localhost:8001/api/agents/');
+      const response = await fetch(`${API_URL}/api/agents/`);
       if (!response.ok) {
         throw new Error(`Failed to load agents: ${response.statusText}`);
       }
@@ -37,7 +38,7 @@ export function AgentAdminPage() {
 
       // Fetch default agent separately
       const defaultResponse = await fetch(
-        'http://localhost:8001/api/agents/default/current/'
+        `${API_URL}/api/agents/default/current/`
       );
       if (defaultResponse.ok) {
         const defaultAgent = await defaultResponse.json();
@@ -54,8 +55,10 @@ export function AgentAdminPage() {
 
   const handleSetDefault = async (agentId: string) => {
     try {
+      const API_URL =
+        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
       const response = await fetch(
-        `http://localhost:8001/api/agents/${agentId}/set-default/`,
+        `${API_URL}/api/agents/${agentId}/set-default/`,
         {
           method: 'PUT',
           headers: {
@@ -86,12 +89,11 @@ export function AgentAdminPage() {
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:8001/api/agents/${agentId}/`,
-        {
-          method: 'DELETE',
-        }
-      );
+      const API_URL =
+        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+      const response = await fetch(`${API_URL}/api/agents/${agentId}/`, {
+        method: 'DELETE',
+      });
 
       if (!response.ok) {
         throw new Error('Failed to delete agent');

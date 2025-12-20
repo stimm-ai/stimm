@@ -4,8 +4,6 @@ import {
   Room,
   RoomEvent,
   RemoteParticipant,
-  LocalParticipant,
-  RemoteTrackPublication,
   LocalTrackPublication,
 } from 'livekit-client';
 import { apiClient } from './frontend-config';

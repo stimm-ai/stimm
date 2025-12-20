@@ -55,8 +55,10 @@ export function DocumentUpload({
         formData.append('files', file);
 
         try {
+          const API_URL =
+            process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
           const response = await fetch(
-            `http://localhost:8001/api/rag-configs/${ragConfigId}/documents/upload`,
+            `${API_URL}/api/rag-configs/${ragConfigId}/documents/upload`,
             {
               method: 'POST',
               body: formData,
@@ -67,7 +69,7 @@ export function DocumentUpload({
             throw new Error(`Upload failed: ${response.statusText}`);
           }
 
-          const result = await response.json();
+          await response.json();
 
           setUploadingFiles((prev) =>
             prev.map((f, idx) =>

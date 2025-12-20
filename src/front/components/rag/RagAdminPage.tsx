@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PageLayout } from '@/components/ui/PageLayout';
 import { PageHeaderActions } from '@/components/ui/PageHeaderActions';
 import { RagConfig } from './types';
@@ -10,7 +9,6 @@ import { THEME, getProviderAccent } from '@/lib/theme';
 import {
   Database,
   Plus,
-  Mic,
   Edit,
   Star,
   Trash2,
@@ -33,7 +31,9 @@ export function RagAdminPage() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch('http://localhost:8001/api/rag-configs/');
+      const API_URL =
+        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+      const response = await fetch(`${API_URL}/api/rag-configs/`);
       if (!response.ok) {
         throw new Error(`Failed to load RAG configs: ${response.statusText}`);
       }
@@ -57,8 +57,10 @@ export function RagAdminPage() {
 
   const handleSetDefault = async (configId: string) => {
     try {
+      const API_URL =
+        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
       const response = await fetch(
-        `http://localhost:8001/api/rag-configs/${configId}/set-default/`,
+        `${API_URL}/api/rag-configs/${configId}/set-default/`,
         {
           method: 'PUT',
           headers: {
@@ -89,12 +91,11 @@ export function RagAdminPage() {
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:8001/api/rag-configs/${configId}/`,
-        {
-          method: 'DELETE',
-        }
-      );
+      const API_URL =
+        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+      const response = await fetch(`${API_URL}/api/rag-configs/${configId}/`, {
+        method: 'DELETE',
+      });
 
       if (!response.ok) {
         throw new Error('Failed to delete RAG config');

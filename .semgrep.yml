@@ -1,0 +1,27 @@
+rules:
+  # Use Semgrep auto configuration but exclude specific false positives
+  - id: exclude-dev-websocket-warnings
+    patterns:
+      - pattern: ws://
+    paths:
+      exclude:
+        # Exclude local development configuration files
+        - docker-compose.yml
+        - docker/*/docker-compose.yml
+        - docker/*/.env.example
+        - "*.env.example"
+        - livekit.yaml
+        - livekit.toml
+        - sip-server-config.yaml
+        # Focus on actual application code
+      include:
+        - src/**/*.py
+        - src/**/*.js
+        - src/**/*.ts
+        - src/**/*.tsx
+    message: "Insecure WebSocket connection in production code"
+    languages:
+      - python
+      - javascript
+      - typescript
+    severity: WARNING

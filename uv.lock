@@ -4037,20 +4037,6 @@ wheels = [
 ]
 
 [[package]]
-name = "safety-cli"
-version = "0.0.4"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "click" },
-    { name = "packaging" },
-    { name = "requests" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/5a/af/d758946478cb9fe42f50abfd2d79c1e93a3e52dabb8d73e8528f46eb2f4c/safety-cli-0.0.4.tar.gz", hash = "sha256:d35b0543dc5923c6531fdb77d76c47722f1c88eeb13508143c5b57cb0a2e6752", size = 4465, upload-time = "2017-01-06T10:25:32.145Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f4/3b/fdc66dda927ee6686d022e9ed718eac0ff54b58325f67ba0907bae0f7cf4/safety_cli-0.0.4-py2.py3-none-any.whl", hash = "sha256:8d998ba64fabf489f27eeb66526ee5feb4c1f79d330a09d9c6bf098c8479e239", size = 6492, upload-time = "2017-01-06T10:25:33.996Z" },
-]
-
-[[package]]
 name = "scikit-learn"
 version = "1.7.2"
 source = { registry = "https://pypi.org/simple" }
@@ -4372,7 +4358,6 @@ dependencies = [
     { name = "python-multipart" },
     { name = "qdrant-client" },
     { name = "rank-bm25" },
-    { name = "safety-cli" },
     { name = "scipy" },
     { name = "semgrep" },
     { name = "sentence-transformers" },
@@ -4484,7 +4469,6 @@ requires-dist = [
     { name = "qdrant-client", specifier = "==1.9.0" },
     { name = "rank-bm25", specifier = "==0.2.2" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4.0" },
-    { name = "safety-cli", specifier = ">=0.0.4" },
     { name = "scipy", specifier = "==1.13.0" },
     { name = "semgrep", specifier = ">=1.136.0" },
     { name = "sentence-transformers", specifier = "==3.0.1" },

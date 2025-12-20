@@ -36,7 +36,7 @@ class RetrievalConfig:
         self.qdrant_api_key = os.getenv("QDRANT_API_KEY")
 
         # Embedding configuration
-        self.embed_model_name = os.getenv("QDRANT_EMBEDDING_MODEL", "BAAI/bge-base-en-v1.5")
+        self.embed_model_name = os.getenv("QDRANT_EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
         self.embed_batch_size = int(os.getenv("EMBED_BATCH_SIZE", "16"))
         self.embed_normalize = os.getenv("EMBED_NORMALIZE", "true").lower() in {"1", "true", "yes"}
 

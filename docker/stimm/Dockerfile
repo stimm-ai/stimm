@@ -43,8 +43,10 @@ RUN chmod +x /entrypoint.sh
 RUN uv sync
 
 # Preload RAG models during Docker build to cache them
-# This significantly speeds up server startup
-RUN uv run python src/scripts/preload_rag_models.py
+# NOTE: Disabled temporarily - default model BAAI/bge-base-en-v1.5 doesn't have pre-converted ONNX version
+# Models will be downloaded on first use instead. To enable preloading, use a model with ONNX support
+# like sentence-transformers/all-MiniLM-L6-v2 by setting QDRANT_EMBEDDING_MODEL environment variable.
+# RUN uv run python src/scripts/preload_rag_models.py
 
 # Expose port
 EXPOSE 8001

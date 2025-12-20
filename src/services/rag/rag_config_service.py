@@ -345,6 +345,13 @@ class RagConfigService:
             session.commit()
             session.refresh(rag_config)
 
+            # Invalidate RAG cache to force reload with new configuration
+            # This ensures embedding model changes take effect immediately
+            from .rag_preloader import rag_preloader
+
+            rag_preloader.invalidate_cache()  # Clear all caches since we don't track which agents use this config
+            logger.info("Invalidated RAG cache after config update")
+
             logger.info(f"Updated RAG config: {rag_config.name} (ID: {rag_config.id})")
             return RagConfigResponse.model_validate(rag_config)
         finally:

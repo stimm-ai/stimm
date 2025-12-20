@@ -49,14 +49,11 @@ class QdrantInternalProvider:
                 "type": "select",
                 "label": "Embedding Model",
                 "required": True,
-                "description": "Model used to generate embeddings",
+                "description": "Model used to generate embeddings (ONNX-compatible only)",
                 "options": [
-                    {"value": "BAAI/bge-base-en-v1.5", "label": "BGE Base En v1.5"},
-                    {"value": "sentence-transformers/all-MiniLM-L6-v2", "label": "MiniLM L6 v2"},
-                    {"value": "sentence-transformers/all-mpnet-base-v2", "label": "MPNet Base v2"},
-                    {"value": "intfloat/e5-base-v2", "label": "E5 Base v2"},
+                    {"value": "sentence-transformers/all-MiniLM-L6-v2", "label": "MiniLM L6 v2 (384 dims, fast)"},
                 ],
-                "default": "BAAI/bge-base-en-v1.5",
+                "default": "sentence-transformers/all-MiniLM-L6-v2",
             },
             "top_k": {
                 "type": "number",

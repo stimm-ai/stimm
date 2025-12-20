@@ -12,7 +12,8 @@ from typing import Any, AsyncIterator, Dict, List, Optional, Tuple
 
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as qmodels
-from sentence_transformers import CrossEncoder, SentenceTransformer
+
+from services.embeddings import CrossEncoder, SentenceTransformer
 
 from .config import retrieval_config
 from .retrieval_models import RetrievalCandidate, StoredDocument

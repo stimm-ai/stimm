@@ -14,8 +14,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as qmodels
-from sentence_transformers import CrossEncoder, SentenceTransformer
 
+from services.embeddings import CrossEncoder, SentenceTransformer
 from services.retrieval.config import retrieval_config as global_retrieval_config
 from services.retrieval.retrieval_models import RetrievalCandidate, StoredDocument
 

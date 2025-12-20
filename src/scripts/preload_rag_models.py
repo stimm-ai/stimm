@@ -26,8 +26,7 @@ def preload_models():
 
     try:
         # Import required modules
-        from sentence_transformers import CrossEncoder, SentenceTransformer
-
+        from services.embeddings import CrossEncoder, SentenceTransformer
         from services.retrieval.config import retrieval_config
 
         logger.info(f"Preloading embedding model: {retrieval_config.embed_model_name}")

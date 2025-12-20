@@ -13,8 +13,8 @@ from typing import Any, Dict, List
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from qdrant_client import QdrantClient
-from sentence_transformers import CrossEncoder, SentenceTransformer
 
+from services.embeddings import CrossEncoder, SentenceTransformer
 from services.retrieval import _bootstrap_documents, _ensure_collection, _retrieve_contexts
 from services.retrieval.config import retrieval_config
 

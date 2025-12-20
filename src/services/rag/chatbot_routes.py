@@ -56,7 +56,8 @@ async def _lazy_initialize_rag_state():
     try:
         # Import required modules
         from qdrant_client import QdrantClient
-        from sentence_transformers import CrossEncoder, SentenceTransformer
+
+        from services.embeddings import CrossEncoder, SentenceTransformer
 
         # Initialize RAG state
         rag_state = RagState()

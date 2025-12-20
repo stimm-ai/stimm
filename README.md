@@ -61,6 +61,7 @@ A modular, real-time AI voice assistant platform built with Python (FastAPI) and
 
 - **Ultra-low latency** thanks to optimized Silero VAD and LiveKit real-time media pipeline.
 - **Provider-agnostic** (LLM, TTS, STT): choose any AI stack.
+- **Lightweight dependencies**: Pure ONNX Runtime inference (no PyTorch/CUDA required) for fast installation and small Docker images.
 - **Scalable architecture**: Docker, Traefik, Postgres, and a technical foundation designed for production deployment.
 
 ## 🧩 Use Cases

@@ -9,7 +9,8 @@ from collections import OrderedDict
 from typing import Any, Dict, Iterable
 
 from qdrant_client import QdrantClient
-from sentence_transformers import CrossEncoder, SentenceTransformer
+
+from services.embeddings import CrossEncoder, SentenceTransformer
 
 from .rag_models import StoredDocument
 

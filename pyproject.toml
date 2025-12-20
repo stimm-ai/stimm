@@ -20,12 +20,11 @@ dependencies = [
     
     # Vector database and RAG
     "qdrant-client==1.9.0",
-    "sentence-transformers==3.0.1",
     "huggingface-hub==0.23.2",
     "rank-bm25==0.2.2",
+    "transformers>=4.36.0",
     
     # AI/ML dependencies
-    "torch>=2.1.0",
     "numpy==1.26.4",
     "scipy==1.13.0",
     "onnxruntime>=1.16.0",

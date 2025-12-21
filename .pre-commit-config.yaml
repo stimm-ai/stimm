@@ -34,3 +34,25 @@ repos:
         language: system
         types_or: [python, javascript, ts, tsx]
         pass_filenames: false
+
+      # 4. DEPENDENCY AUDITS (Local)
+      - id: pip-audit
+        name: pip-audit
+        entry: uv run pip-audit
+        language: system
+        types: [python]
+        pass_filenames: false
+      - id: npm-audit
+        name: npm-audit
+        entry: npm audit --prefix src/front --audit-level=moderate
+        language: system
+        always_run: true
+        pass_filenames: false
+
+      # 5. FRONTEND SECURITY LINT
+      - id: front-security-lint
+        name: frontend-security-lint
+        entry: npm run --prefix src/front lint:security
+        language: system
+        files: ^src/front/
+        pass_filenames: false

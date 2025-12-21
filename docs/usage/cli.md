@@ -13,6 +13,13 @@ The CLI is part of the Stimm Python package. If you have installed the project d
 uv run python -m src.cli.main [GLOBAL_OPTIONS] <COMMAND> [COMMAND_OPTIONS]
 ```
 
+> [!IMPORTANT]
+> Some commands (like `talk` or `test echo`) require local audio hardware access via `pyaudio`. You must install the project with the `audio` extra to use these:
+>
+> ```bash
+> uv sync --extra audio
+> ```
+
 ## Global Options
 
 - `--http [URL]` – Activate HTTP mode. If `URL` is provided, it uses that specific backend URL. If omitted, it uses the URL from your `.env` file.
@@ -131,6 +138,7 @@ uv run python -m src.cli.main livekit list-rooms
 - **“Agent not found”** – Ensure the agent exists in the database (create it via the web interface or API).
 - **“Cannot connect to LiveKit”** – Verify that LiveKit is running and the `LIVEKIT_URL` environment variable is correct.
 - **“No audio heard”** – Check your microphone permissions and that your speakers are working. Use the `test echo` command to verify the audio pipeline.
+- **“ModuleNotFoundError: No module named 'pyaudio'”** – The CLI audio tools require the `audio` extra. Run `uv sync --extra audio` to install it.
 
 ## Next Steps
 

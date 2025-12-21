@@ -4269,7 +4269,6 @@ dependencies = [
     { name = "onnxruntime" },
     { name = "pip-audit" },
     { name = "psycopg2-binary" },
-    { name = "pyaudio" },
     { name = "pydantic" },
     { name = "pypdf2" },
     { name = "python-docx" },
@@ -4293,7 +4292,6 @@ audio = [
     { name = "pyaudio" },
     { name = "sounddevice" },
     { name = "soundfile" },
-    { name = "webrtcvad" },
 ]
 dev = [
     { name = "mypy" },
@@ -4373,7 +4371,6 @@ requires-dist = [
     { name = "pip-audit", specifier = ">=2.9.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.0.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.0" },
-    { name = "pyaudio", specifier = ">=0.2.13" },
     { name = "pyaudio", marker = "extra == 'audio'", specifier = ">=0.2.13" },
     { name = "pydantic", specifier = "==2.7.4" },
     { name = "pypdf2", specifier = ">=3.0.0" },
@@ -4397,7 +4394,6 @@ requires-dist = [
     { name = "starlette", specifier = "==0.37.2" },
     { name = "transformers", specifier = ">=4.53.0" },
     { name = "uvicorn", specifier = "==0.30.1" },
-    { name = "webrtcvad", marker = "extra == 'audio'", specifier = "==2.0.10" },
     { name = "websockets", specifier = ">=12.0" },
 ]
 provides-extras = ["dev", "audio", "livekit", "docs"]
@@ -4870,12 +4866,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/ea/c4/55e0d36da61d7b8b2
 wheels = [
     { url = "https://files.pythonhosted.org/packages/09/78/533ef890536e5ba0fd4f7df37482b5800ecaaceae9afc30978a1a7f88ff1/wcmatch-8.5.2-py3-none-any.whl", hash = "sha256:17d3ad3758f9d0b5b4dedc770b65420d4dac62e680229c287bf24c9db856a478", size = 39397, upload-time = "2024-05-15T12:51:06.2Z" },
 ]
-
-[[package]]
-name = "webrtcvad"
-version = "2.0.10"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/89/34/e2de2d97f3288512b9ea56f92e7452f8207eb5a0096500badf9dfd48f5e6/webrtcvad-2.0.10.tar.gz", hash = "sha256:f1bed2fb25b63fb7b1a55d64090c993c9c9167b28485ae0bcdd81cf6ede96aea", size = 66156, upload-time = "2017-01-07T23:05:18.732Z" }
 
 [[package]]
 name = "websockets"

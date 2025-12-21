@@ -67,7 +67,8 @@ A modular, real-time AI voice assistant platform built with Python (FastAPI) and
 
 - **Ultra-low latency** thanks to optimized Silero VAD and LiveKit real-time media pipeline.
 - **Provider-agnostic** (LLM, TTS, STT): choose any AI stack.
-- **Lightweight dependencies**: Pure ONNX Runtime inference (no PyTorch/CUDA required) for fast installation and small Docker images.
+- **Trimmable dependencies**: Heavy build-time dependencies (like `pyaudio`) are optional, keeping the core image lean and secure.
+- **Lightweight core**: Pure ONNX Runtime inference for fast installation.
 - **Scalable architecture**: Docker, Traefik, Postgres, and a technical foundation designed for production deployment.
 
 ## 🧩 Use Cases
@@ -155,8 +156,8 @@ For local development, see the [Development Guide](https://stimm-ai.github.io/st
 # Start supporting services (PostgreSQL, Qdrant, LiveKit, Redis, SIP)
 docker compose up -d postgres qdrant traefik livekit redis sip
 
-# Install Python dependencies
-uv sync --group dev --group docs
+# Install Python dependencies (add --extra audio for local CLI audio/testing)
+uv sync --group dev --group docs --all-extras
 
 # Set up environment files and Python path (optional)
 ./scripts/setup_env.sh

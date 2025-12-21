@@ -13,13 +13,13 @@ def test_conversation_management():
     """Test conversation management endpoints."""
     # Manually initialize the RAG service
     from qdrant_client import QdrantClient
-    from sentence_transformers import SentenceTransformer
 
+    from services.embeddings import SentenceTransformer
     from services.rag.rag_routes import app
     from services.rag.rag_state import RagState
 
     # Initialize the RAG service
-    embedder = SentenceTransformer("BAAI/bge-base-en-v1.5")
+    embedder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
     # Use environment-aware Qdrant connection
     from environment_config import get_environment_config

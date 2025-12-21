@@ -29,7 +29,6 @@ dependencies = [
     # Audio processing
     "sounddevice",
     "soundfile",
-    "pyaudio>=0.2.13",
     "aiortc>=1.8.0",
     "av>=11.0.0",
     # LiveKit integration
@@ -69,8 +68,7 @@ dev = [
 audio = [
     "pyaudio>=0.2.13",
     "sounddevice",
-    "soundfile", 
-    "webrtcvad==2.0.10",
+    "soundfile",
 ]
 
 livekit = [

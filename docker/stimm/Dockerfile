@@ -1,55 +1,60 @@
-# Use Python 3.10-slim for optimal size and performance
-FROM python:3.10-slim
+# Build stage
+FROM python:3.10-slim AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Set PYTHONPATH to ensure the application can find the src/ directory
-ENV PYTHONPATH=/app/src
-
-# Install system dependencies including audio libraries
+# Install build dependencies
 RUN apt-get update && apt-get install -y \
     portaudio19-dev \
     gcc \
     g++ \
     build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv (most reliable method)
+RUN pip install uv
+
+# Copy dependency files
+COPY pyproject.toml uv.lock ./
+
+# Install dependencies (without dev dependencies)
+# We create a virtual environment in /app/.venv
+# Note: we don't install the project itself yet to avoid frequent cache invalidation
+RUN uv sync --no-dev --no-install-project
+
+# Final stage
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Set PYTHONPATH to ensure the application can find the src/ directory
+ENV PYTHONPATH=/app/src
+# Add venv bin to PATH
+ENV PATH="/app/.venv/bin:$PATH"
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    libportaudio2 \
     pulseaudio-utils \
     libpulse0 \
     ffmpeg \
-    curl \
-    git \
     netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv using pip (most reliable method)
-RUN pip install uv
+# Copy virtual environment from builder
+COPY --from=builder /app/.venv /app/.venv
 
-# Copy source code (src/ directory)
+# Copy source code and configuration
 COPY src/ src/
-
-# Copy pyproject.toml first for better Docker layer caching
 COPY pyproject.toml ./pyproject.toml
-
-# Copy alembic configuration
 COPY alembic.ini ./alembic.ini
-# Copy alembic migration scripts
 COPY alembic/ alembic/
-
-# Copy entrypoint script
 COPY docker/stimm/entrypoint.sh /entrypoint.sh
+
 RUN chmod +x /entrypoint.sh
-
-# Install the package in development mode
-RUN uv sync
-
-# Preload RAG models during Docker build to cache them
-# NOTE: Disabled temporarily - default model BAAI/bge-base-en-v1.5 doesn't have pre-converted ONNX version
-# Models will be downloaded on first use instead. To enable preloading, use a model with ONNX support
-# like sentence-transformers/all-MiniLM-L6-v2 by setting QDRANT_EMBEDDING_MODEL environment variable.
-# RUN uv run python src/scripts/preload_rag_models.py
 
 # Expose port
 EXPOSE 8001
 
-# Use entrypoint script to run migrations and start server
+# Use entrypoint script
 CMD ["/entrypoint.sh"]

@@ -17,7 +17,7 @@ This guide is for developers who want to contribute to Stimm or extend it with c
 ```bash
 git clone https://github.com/stimm/stimm.git
 cd stimm
-uv sync --group dev --group docs
+uv sync --group dev --group docs --all-extras
 ```
 
 2. Start supporting services:

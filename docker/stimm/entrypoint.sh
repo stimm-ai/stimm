@@ -14,8 +14,8 @@ while ! nc -z postgres 5432; do
 done
 
 echo "Running database migrations..."
-uv run alembic upgrade head
+alembic upgrade head
 
 echo "Starting stimm API server..."
 LOG_LEVEL_LOWER=$(echo "${LOG_LEVEL:-info}" | tr '[:upper:]' '[:lower:]')
-exec uv run uvicorn src.main:app --host 0.0.0.0 --port 8001 --reload --log-level $LOG_LEVEL_LOWER
+exec uvicorn src.main:app --host 0.0.0.0 --port 8001 --reload --log-level $LOG_LEVEL_LOWER

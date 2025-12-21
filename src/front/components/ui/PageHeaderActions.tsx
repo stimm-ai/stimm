@@ -18,7 +18,8 @@ export function PageHeaderActions({ type }: PageHeaderActionsProps) {
     },
   };
 
-  const config = createConfig[type];
+  // Validate type to prevent object injection
+  const config = type in createConfig ? createConfig[type] : createConfig.agent;
 
   return (
     <>

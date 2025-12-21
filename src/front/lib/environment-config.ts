@@ -59,7 +59,13 @@ function detectServerEnvironment(): { isDocker: boolean; hostname: string } {
     ];
 
     for (const envVar of dockerEnvVars) {
-      if (process.env[envVar]) {
+      // Validate envVar to prevent object injection vulnerabilities
+      if (
+        typeof envVar === 'string' &&
+        envVar.length > 0 &&
+        dockerEnvVars.includes(envVar) &&
+        process.env[envVar]
+      ) {
         return {
           isDocker: true,
           hostname: 'stimm',

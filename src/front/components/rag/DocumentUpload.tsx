@@ -52,7 +52,13 @@ export function DocumentUpload({
       for (let i = 0; i < filesArray.length; i++) {
         const file = filesArray[i];
         const formData = new FormData();
-        formData.append('files', file);
+        // Validate file name before appending to form data
+        if (file && file.name) {
+          formData.append('files', file);
+        } else {
+          console.warn('Invalid file object:', file);
+          continue;
+        }
 
         try {
           const API_URL =

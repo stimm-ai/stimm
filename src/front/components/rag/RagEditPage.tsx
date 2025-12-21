@@ -151,8 +151,11 @@ export function RagEditPage({ configId }: RagEditPageProps) {
 
       const newConfig: Record<string, any> = {};
       Object.entries(fields).forEach(([field, fieldDef]) => {
-        newConfig[field] =
-          fieldDef.default !== undefined ? fieldDef.default : '';
+        // Validate field name before using it
+        if (typeof field === 'string' && field.length > 0) {
+          newConfig[field] =
+            fieldDef.default !== undefined ? fieldDef.default : '';
+        }
       });
       handleInputChange('provider_config', newConfig);
     } else {
@@ -227,6 +230,12 @@ export function RagEditPage({ configId }: RagEditPageProps) {
     field: string,
     value: string | boolean | number
   ) => {
+    // Validate field name to prevent object injection
+    if (typeof field !== 'string' || field.length === 0) {
+      console.warn('Invalid field name in handleConfigChange:', field);
+      return;
+    }
+
     setConfig((prev) => ({
       ...prev,
       provider_config: {
@@ -381,9 +390,15 @@ export function RagEditPage({ configId }: RagEditPageProps) {
                 {config.provider && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-4 border-l-2 border-green-500/30">
                     {Object.entries(providerFields).map(([field, fieldDef]) => {
-                      const value = (
-                        config.provider_config as Record<string, any>
-                      )?.[field];
+                      // Validate field name before accessing config
+                      const value =
+                        typeof field === 'string' &&
+                        config.provider_config &&
+                        (config.provider_config as Record<string, any>)[field]
+                          ? (config.provider_config as Record<string, any>)[
+                              field
+                            ]
+                          : fieldDef.default || '';
                       if (fieldDef.type === 'select') {
                         return (
                           <div key={field}>

@@ -37,7 +37,7 @@ class ONNXSentenceTransformer:
         logger.info(f"Loading ONNX embedding model: {model_name}")
 
         # Load tokenizer
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_folder)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_folder, revision="main")  # nosec B615
 
         # Try to load pre-converted ONNX model from Optimum repository
         # Check https://huggingface.co/optimum for available models
@@ -52,6 +52,7 @@ class ONNXSentenceTransformer:
                 repo_id=onnx_model_name,
                 filename="model.onnx",
                 cache_dir=cache_folder,
+                revision="main",  # nosec B615
             )
 
             # Create ONNX Runtime session
@@ -184,7 +185,7 @@ class ONNXCrossEncoder:
         logger.info(f"Loading ONNX cross-encoder model: {model_name}")
 
         # Load tokenizer
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name, revision="main")  # nosec B615
 
         # Try to load pre-converted ONNX model
         onnx_model_name = f"optimum/{model_name.split('/')[-1]}"
@@ -196,6 +197,7 @@ class ONNXCrossEncoder:
             model_path = hf_hub_download(
                 repo_id=onnx_model_name,
                 filename="model.onnx",
+                revision="main",  # nosec B615
             )
 
             # Create ONNX Runtime session

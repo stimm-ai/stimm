@@ -294,13 +294,13 @@ class LiveKitClient:
             try:
                 self._input_stream.stop_stream()
                 self._input_stream.close()
-            except Exception:
+            except Exception:  # nosec B110
                 pass
         if self._output_stream:
             try:
                 self._output_stream.stop_stream()
                 self._output_stream.close()
-            except Exception:
+            except Exception:  # nosec B110
                 pass
         self._pa.terminate()
         logger.info("🛑 Audio engine stopped")

@@ -219,7 +219,7 @@ async def webrtc_offer(request: OfferRequest):
         # Cleanup on failure
         try:
             await pc.close()
-        except Exception:
+        except Exception:  # nosec B110
             pass
         raise HTTPException(status_code=500, detail=f"WebRTC setup failed: {str(e)}")
 

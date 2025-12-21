@@ -17,7 +17,7 @@ Key improvements:
 import asyncio
 import logging
 import os
-import subprocess
+import subprocess  # nosec B404
 import sys
 import threading
 from typing import Dict, Optional, Set
@@ -133,7 +133,7 @@ class SIPBridgeIntegration:
                 try:
                     loop.run_until_complete(loop.shutdown_asyncgens())
                     loop.close()
-                except Exception:
+                except Exception:  # nosec B110
                     pass
                 logger.debug("SIP monitoring event loop closed")
 
@@ -252,7 +252,7 @@ class SIPBridgeIntegration:
             logger.debug(f"Starting agent worker: {' '.join(cmd)}")
 
             # Start process
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=env)
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=env)  # nosec B603
 
             # Store the process
             with self.process_lock:

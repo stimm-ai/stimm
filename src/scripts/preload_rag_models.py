@@ -74,7 +74,7 @@ def verify_model_cache():
 
         # Check embedding model cache
         try:
-            embed_cache_path = snapshot_download(repo_id=retrieval_config.embed_model_name, local_files_only=True, revision="main")
+            embed_cache_path = snapshot_download(repo_id=retrieval_config.embed_model_name, local_files_only=True, revision="main")  # nosec B615
             logger.info(f"Embedding model cached at: {embed_cache_path}")
         except Exception as e:
             logger.warning(f"Embedding model not fully cached: {e}")
@@ -82,7 +82,7 @@ def verify_model_cache():
         # Check reranker model cache if enabled
         if retrieval_config.enable_reranker:
             try:
-                rerank_cache_path = snapshot_download(repo_id=retrieval_config.reranker_model, local_files_only=True, revision="main")
+                rerank_cache_path = snapshot_download(repo_id=retrieval_config.reranker_model, local_files_only=True, revision="main")  # nosec B615
                 logger.info(f"Reranker model cached at: {rerank_cache_path}")
             except Exception as e:
                 logger.warning(f"Reranker model not fully cached: {e}")

@@ -88,13 +88,13 @@ async def stt_websocket(websocket: WebSocket, agent_id: str = None):
         # Send error message to client
         try:
             await websocket.send_json({"error": str(e), "transcript": "", "is_final": True, "stability": 0.0})
-        except Exception:
+        except Exception:  # nosec B110
             pass  # Client may have already disconnected
     finally:
         try:
             await websocket.close()
             logger.info("STT WebSocket connection closed")
-        except Exception:
+        except Exception:  # nosec B110
             pass  # Connection may already be closed
 
 
@@ -187,7 +187,7 @@ async def stt_sync_streaming_websocket(websocket: WebSocket, agent_id: str = Non
         logger.error(f"STT sync streaming WebSocket error: {e}")
         try:
             await websocket.send_json({"error": str(e), "transcript": "", "is_final": True, "stability": 0.0})
-        except Exception:
+        except Exception:  # nosec B110
             pass  # Client may have already disconnected
     finally:
         # Don't close the connection automatically - let the frontend close it

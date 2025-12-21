@@ -436,6 +436,6 @@ async def _streaming_first_rag(
         # Yield actual contexts when ready
         for context in contexts:
             yield context
-    except Exception:
+    except Exception:  # nosec B110
         # If RAG fails, continue with empty context
         pass

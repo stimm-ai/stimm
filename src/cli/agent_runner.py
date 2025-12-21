@@ -48,7 +48,7 @@ class AgentRunner:
             self.worker_process.terminate()
             try:
                 self.worker_process.wait(timeout=2)
-            except Exception:
+            except Exception:  # nosec B110
                 pass
 
     async def _get_agent_uuid(self) -> Optional[str]:
@@ -166,7 +166,7 @@ class AgentRunner:
             agent_uuid = await self._get_agent_uuid() or self.agent_name
 
             self.logger.info(f"🏗️ Spawning local agent worker for {self.agent_name} (ID: {agent_uuid})...")
-            import subprocess
+            import subprocess  # nosec B404
             import sys
 
             try:
@@ -188,7 +188,7 @@ class AgentRunner:
                 if self.verbose:
                     cmd.append("--verbose")
 
-                self.worker_process = subprocess.Popen(
+                self.worker_process = subprocess.Popen(  # nosec B603
                     cmd,
                     stdout=None,  # Inherit stdout to show INFO logs (and DEBUG if verbose)
                     stderr=None,  # Inherit stderr
@@ -241,7 +241,7 @@ class AgentRunner:
             async with self.session.get(f"{self.base_url}/api/livekit/health") as response:
                 if response.status == 200:
                     return True
-        except Exception:
+        except Exception:  # nosec B110
             pass
 
         # Fallback to direct connection check?

@@ -3,7 +3,7 @@ export interface Agent {
   name: string;
   description?: string;
   system_prompt?: string;
-  rag_config_id?: string;
+  rag_config_id?: string | null;
   llm_provider?: string;
   llm_config?: {
     model?: string;

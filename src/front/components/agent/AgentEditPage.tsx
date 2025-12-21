@@ -52,7 +52,7 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
     llm_provider: '',
     tts_provider: '',
     stt_provider: '',
-    rag_config_id: '',
+    rag_config_id: null,
     llm_config: {},
     tts_config: {},
     stt_config: {},
@@ -210,7 +210,10 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
         name: agent.name || '',
         description: agent.description || '',
         system_prompt: agent.system_prompt || '',
-        rag_config_id: agent.rag_config_id || undefined,
+        rag_config_id:
+          agent.rag_config_id === '' || agent.rag_config_id === 'none'
+            ? null
+            : agent.rag_config_id || null,
         llm_config: agent.llm_provider
           ? {
               provider: agent.llm_provider,
@@ -264,7 +267,7 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
     }
   };
 
-  const handleInputChange = (field: string, value: string | object) => {
+  const handleInputChange = (field: string, value: string | object | null) => {
     setAgent((prev) => ({
       ...prev,
       [field]: value,
@@ -570,14 +573,14 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
               </Label>
               <Select
                 value={
-                  agent.rag_config_id === ''
+                  agent.rag_config_id === null || agent.rag_config_id === ''
                     ? 'none'
-                    : agent.rag_config_id || ''
+                    : agent.rag_config_id
                 }
                 onValueChange={(value) =>
                   handleInputChange(
                     'rag_config_id',
-                    value === 'none' ? '' : value
+                    value === 'none' ? null : value
                   )
                 }
               >

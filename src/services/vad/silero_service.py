@@ -215,7 +215,7 @@ class SileroVADService:
 
             # Use urlretrieve with security considerations
             # URL scheme validation already performed above, download from trusted source
-            urllib.request.urlretrieve(url, path)
+            urllib.request.urlretrieve(url, path)  # nosec B310
             logger.info(f"Downloaded Silero VAD model to {path}")
         except Exception as e:
             logger.error(f"Failed to download model: {e}")

@@ -363,7 +363,7 @@ async def run_talk_mode(args):
 async def test_echo_pipeline(args):
     """Test LiveKit audio pipeline with echo server and client"""
     import os
-    import subprocess
+    import subprocess  # nosec B404
     import time
 
     logging.info("🚀 Starting LiveKit echo pipeline test")
@@ -378,7 +378,7 @@ async def test_echo_pipeline(args):
     try:
         # Start echo server
         logging.info("🔄 Starting echo server...")
-        server_process = subprocess.Popen(
+        server_process = subprocess.Popen(  # nosec B603
             [sys.executable, "-m", "src.cli.echo_server"],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -392,7 +392,7 @@ async def test_echo_pipeline(args):
 
         # Start echo client
         logging.info("🎧 Starting echo client...")
-        client_process = subprocess.Popen(
+        client_process = subprocess.Popen(  # nosec B603
             [sys.executable, "-m", "src.cli.echo_client"],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,

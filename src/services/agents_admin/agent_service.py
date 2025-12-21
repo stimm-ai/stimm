@@ -335,59 +335,58 @@ class AgentService:
             if agent_data.rag_config_id is not None:
                 self._validate_rag_config_id(agent_data.rag_config_id, user_id, session)
 
-            # Update fields
-            update_fields = {}
+            # Update fields using model_dump(exclude_unset=True) to handle Optional fields set to None
+            update_data = agent_data.model_dump(exclude_unset=True)
 
-            if agent_data.name is not None:
-                update_fields["name"] = agent_data.name
-            if agent_data.description is not None:
-                update_fields["description"] = agent_data.description
-            if agent_data.system_prompt is not None:
-                update_fields["system_prompt"] = agent_data.system_prompt
-            if agent_data.is_default is not None:
-                update_fields["is_default"] = agent_data.is_default
-            if agent_data.is_active is not None:
-                update_fields["is_active"] = agent_data.is_active
-            if agent_data.rag_config_id is not None:
-                update_fields["rag_config_id"] = agent_data.rag_config_id
+            # Map fields correctly to the Agent model
+            if "rag_config_id" in update_data:
+                agent.rag_config_id = update_data["rag_config_id"]
+            if "name" in update_data:
+                agent.name = update_data["name"]
+            if "description" in update_data:
+                agent.description = update_data["description"]
+            if "system_prompt" in update_data:
+                agent.system_prompt = update_data["system_prompt"]
+            if "is_default" in update_data:
+                agent.is_default = update_data["is_default"]
+            if "is_active" in update_data:
+                agent.is_active = update_data["is_active"]
 
-            # Update provider configurations - merge with existing configs to preserve API keys
-            # Mapping is now handled within each provider implementation
-            if agent_data.llm_config is not None:
-                update_fields["llm_provider"] = agent_data.llm_config.provider
+            # Handle provider configurations
+            if "llm_config" in update_data and agent_data.llm_config is not None:
+                agent.llm_provider = agent_data.llm_config.provider
                 # Merge new config with existing config to preserve API keys if not provided
                 merged_llm_config = agent.llm_config.copy()
                 merged_llm_config.update(agent_data.llm_config.config)
-                update_fields["llm_config"] = merged_llm_config
+                agent.llm_config = merged_llm_config
 
-            if agent_data.tts_config is not None:
-                update_fields["tts_provider"] = agent_data.tts_config.provider
+            if "tts_config" in update_data and agent_data.tts_config is not None:
+                agent.tts_provider = agent_data.tts_config.provider
                 # Merge new config with existing config to preserve API keys if not provided
                 merged_tts_config = agent.tts_config.copy()
                 merged_tts_config.update(agent_data.tts_config.config)
-                update_fields["tts_config"] = merged_tts_config
+                agent.tts_config = merged_tts_config
 
-            if agent_data.stt_config is not None:
-                update_fields["stt_provider"] = agent_data.stt_config.provider
+            if "stt_config" in update_data and agent_data.stt_config is not None:
+                agent.stt_provider = agent_data.stt_config.provider
                 # Merge new config with existing config to preserve API keys if not provided
                 merged_stt_config = agent.stt_config.copy()
                 merged_stt_config.update(agent_data.stt_config.config)
-                update_fields["stt_config"] = merged_stt_config
-
-            # Apply updates
-            for field, value in update_fields.items():
-                setattr(agent, field, value)
+                agent.stt_config = merged_stt_config
 
             session.commit()
             session.refresh(agent)
 
-            # Invalidate agent manager cache to ensure real-time updates
+            # Invalidate agent manager cache and RAG preloader cache
             try:
+                from services.rag.rag_preloader import rag_preloader
+
                 from .agent_manager import get_agent_manager
 
                 agent_manager = get_agent_manager()
                 agent_manager.invalidate_cache(agent_id)
-                logger.debug(f"Invalidated cache for agent {agent_id}")
+                rag_preloader.invalidate_cache(str(agent_id))
+                logger.debug(f"Invalidated cache for updated agent {agent_id}")
             except Exception as e:
                 logger.warning(f"Failed to invalidate agent cache: {e}")
 
@@ -428,6 +427,14 @@ class AgentService:
 
             session.delete(agent)
             session.commit()
+
+            # Invalidate RAG preloader cache
+            try:
+                from services.rag.rag_preloader import rag_preloader
+
+                rag_preloader.invalidate_cache(str(agent_id))
+            except Exception as e:
+                logger.warning(f"Failed to invalidate RAG cache for deleted agent: {e}")
 
             logger.info(f"Deleted agent: {agent.name} (ID: {agent.id})")
             return True
@@ -496,12 +503,15 @@ class AgentService:
             session.commit()
             session.refresh(agent)
 
-            # Invalidate agent manager cache for the new default agent
+            # Invalidate agent manager cache and RAG preloader cache
             try:
+                from services.rag.rag_preloader import rag_preloader
+
                 from .agent_manager import get_agent_manager
 
                 agent_manager = get_agent_manager()
                 agent_manager.invalidate_cache(agent_id)
+                rag_preloader.invalidate_cache(str(agent_id))
                 logger.debug(f"Invalidated cache for new default agent {agent_id}")
             except Exception as e:
                 logger.warning(f"Failed to invalidate agent cache: {e}")

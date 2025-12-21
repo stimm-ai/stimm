@@ -188,8 +188,11 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
       const configFields = providerFields[providerType];
       const newConfig: Record<string, string> = {};
 
+      // Validate field names before using them
       Object.keys(configFields).forEach((field) => {
-        newConfig[field] = '';
+        if (typeof field === 'string' && field.length > 0) {
+          newConfig[field] = '';
+        }
       });
 
       handleInputChange(`${providerType}_config`, newConfig);
@@ -273,6 +276,12 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
     field: string,
     value: string
   ) => {
+    // Validate field name to prevent object injection
+    if (typeof field !== 'string' || field.length === 0) {
+      console.warn('Invalid field name in handleConfigChange:', field);
+      return;
+    }
+
     setAgent((prev) => ({
       ...prev,
       [configField]: {
@@ -396,8 +405,11 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
                       id={`llm_${field}`}
                       type={fieldDef.type === 'password' ? 'password' : 'text'}
                       value={
-                        (agent.llm_config as Record<string, string>)?.[field] ||
-                        ''
+                        typeof field === 'string' &&
+                        agent.llm_config &&
+                        (agent.llm_config as Record<string, string>)[field]
+                          ? (agent.llm_config as Record<string, string>)[field]
+                          : ''
                       }
                       onChange={(e) =>
                         handleConfigChange('llm_config', field, e.target.value)
@@ -459,8 +471,11 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
                       id={`tts_${field}`}
                       type={fieldDef.type === 'password' ? 'password' : 'text'}
                       value={
-                        (agent.tts_config as Record<string, string>)?.[field] ||
-                        ''
+                        typeof field === 'string' &&
+                        agent.tts_config &&
+                        (agent.tts_config as Record<string, string>)[field]
+                          ? (agent.tts_config as Record<string, string>)[field]
+                          : ''
                       }
                       onChange={(e) =>
                         handleConfigChange('tts_config', field, e.target.value)
@@ -522,8 +537,11 @@ export function AgentEditPage({ agentId }: AgentEditPageProps) {
                       id={`stt_${field}`}
                       type={fieldDef.type === 'password' ? 'password' : 'text'}
                       value={
-                        (agent.stt_config as Record<string, string>)?.[field] ||
-                        ''
+                        typeof field === 'string' &&
+                        agent.stt_config &&
+                        (agent.stt_config as Record<string, string>)[field]
+                          ? (agent.stt_config as Record<string, string>)[field]
+                          : ''
                       }
                       onChange={(e) =>
                         handleConfigChange('stt_config', field, e.target.value)

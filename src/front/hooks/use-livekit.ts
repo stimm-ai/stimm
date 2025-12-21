@@ -243,6 +243,31 @@ export function useLiveKit(): UseLiveKitReturn {
       if (!isMounted.current) return;
       try {
         const data = JSON.parse(new TextDecoder().decode(payload));
+
+        // Validate data.type to prevent object injection vulnerabilities
+        const validDataTypes = [
+          'transcript_update',
+          'assistant_response',
+          'vad_update',
+          'speech_start',
+          'speech_end',
+          'bot_responding_start',
+          'bot_responding_end',
+          'audio_chunk',
+          'telemetry_update',
+          'rag_loading_start',
+          'rag_loading_complete',
+          'rag_loading_error',
+        ];
+
+        if (
+          typeof data.type !== 'string' ||
+          !validDataTypes.includes(data.type)
+        ) {
+          console.warn('Invalid or unknown data type received:', data.type);
+          return;
+        }
+
         switch (data.type) {
           case 'transcript_update':
             handleTranscriptUpdate(data);

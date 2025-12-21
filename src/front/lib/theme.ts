@@ -103,7 +103,13 @@ export function getProviderBadgeClasses(
     stt: THEME.badge.orange,
     rag: THEME.badge.green,
   };
-  return colors[providerType] || THEME.badge.default;
+
+  // Validate providerType to prevent object injection vulnerabilities
+  const validTypes = ['llm', 'tts', 'stt', 'rag'];
+  if (typeof providerType === 'string' && validTypes.includes(providerType)) {
+    return colors[providerType] || THEME.badge.default;
+  }
+  return THEME.badge.default;
 }
 
 // Get provider accent color
@@ -130,11 +136,21 @@ export function getProviderAccent(providerType: 'llm' | 'tts' | 'stt' | 'rag') {
       border: THEME.accent.greenBorder,
     },
   };
-  return (
-    colors[providerType] || {
-      text: THEME.text.primary,
-      bg: 'bg-white/20',
-      border: 'border-white/20',
-    }
-  );
+
+  // Validate providerType to prevent object injection vulnerabilities
+  const validTypes = ['llm', 'tts', 'stt', 'rag'];
+  if (typeof providerType === 'string' && validTypes.includes(providerType)) {
+    return (
+      colors[providerType] || {
+        text: THEME.text.primary,
+        bg: 'bg-white/20',
+        border: 'border-white/20',
+      }
+    );
+  }
+  return {
+    text: THEME.text.primary,
+    bg: 'bg-white/20',
+    border: 'border-white/20',
+  };
 }

@@ -18,9 +18,9 @@ dependencies = [
     "psycopg2-binary>=2.9.0",
     # Vector database and RAG
     "qdrant-client==1.9.0",
-    "huggingface-hub==0.23.2",
+    "huggingface-hub>=0.30.0",
     "rank-bm25==0.2.2",
-    "transformers>=4.36.0",
+    "transformers>=4.53.0",
     
     # AI/ML dependencies
     "numpy==1.26.4",

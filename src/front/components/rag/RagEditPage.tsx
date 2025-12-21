@@ -401,7 +401,7 @@ export function RagEditPage({ configId }: RagEditPageProps) {
                           : fieldDef.default || '';
                       if (fieldDef.type === 'select') {
                         return (
-                          <div key={field}>
+                          <div key={field} className="space-y-1">
                             <Label
                               htmlFor={`provider_${field}`}
                               className={THEME.text.secondary}
@@ -416,7 +416,7 @@ export function RagEditPage({ configId }: RagEditPageProps) {
                             >
                               <SelectTrigger
                                 id={`provider_${field}`}
-                                className={`${THEME.input.select} mt-1`}
+                                className={`${THEME.input.select}`}
                               >
                                 <SelectValue
                                   placeholder={`Select ${fieldDef.label}`}
@@ -434,36 +434,45 @@ export function RagEditPage({ configId }: RagEditPageProps) {
                                 ))}
                               </SelectContent>
                             </Select>
+                            {fieldDef.description && (
+                              <p className="text-xs text-gray-400 italic px-1">
+                                {fieldDef.description}
+                              </p>
+                            )}
                           </div>
                         );
                       }
                       if (fieldDef.type === 'boolean') {
                         return (
-                          <div
-                            key={field}
-                            className="flex items-center space-x-2"
-                          >
-                            <input
-                              type="checkbox"
-                              id={`provider_${field}`}
-                              checked={!!value}
-                              onChange={(e) =>
-                                handleConfigChange(field, e.target.checked)
-                              }
-                              className="h-4 w-4 rounded border-white/20 bg-white/10"
-                            />
-                            <Label
-                              htmlFor={`provider_${field}`}
-                              className={THEME.text.secondary}
-                            >
-                              {fieldDef.label}
-                            </Label>
+                          <div key={field} className="flex flex-col space-y-1">
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                id={`provider_${field}`}
+                                checked={!!value}
+                                onChange={(e) =>
+                                  handleConfigChange(field, e.target.checked)
+                                }
+                                className="h-4 w-4 rounded border-white/20 bg-white/10"
+                              />
+                              <Label
+                                htmlFor={`provider_${field}`}
+                                className={THEME.text.secondary}
+                              >
+                                {fieldDef.label}
+                              </Label>
+                            </div>
+                            {fieldDef.description && (
+                              <p className="text-xs text-gray-400 italic px-6">
+                                {fieldDef.description}
+                              </p>
+                            )}
                           </div>
                         );
                       }
                       if (fieldDef.type === 'number') {
                         return (
-                          <div key={field}>
+                          <div key={field} className="space-y-1">
                             <Label
                               htmlFor={`provider_${field}`}
                               className={THEME.text.secondary}
@@ -485,13 +494,18 @@ export function RagEditPage({ configId }: RagEditPageProps) {
                                 )
                               }
                               placeholder={`Enter ${fieldDef.label}`}
-                              className={`${THEME.input.base} mt-1`}
+                              className={`${THEME.input.base}`}
                             />
+                            {fieldDef.description && (
+                              <p className="text-xs text-gray-400 italic px-1">
+                                {fieldDef.description}
+                              </p>
+                            )}
                           </div>
                         );
                       }
                       return (
-                        <div key={field}>
+                        <div key={field} className="space-y-1">
                           <Label
                             htmlFor={`provider_${field}`}
                             className={THEME.text.secondary}
@@ -508,8 +522,13 @@ export function RagEditPage({ configId }: RagEditPageProps) {
                               handleConfigChange(field, e.target.value)
                             }
                             placeholder={`Enter ${fieldDef.label}`}
-                            className={`${THEME.input.base} mt-1`}
+                            className={`${THEME.input.base}`}
                           />
+                          {fieldDef.description && (
+                            <p className="text-xs text-gray-400 italic px-1">
+                              {fieldDef.description}
+                            </p>
+                          )}
                         </div>
                       );
                     })}

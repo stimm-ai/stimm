@@ -248,7 +248,11 @@ class RetrievalEngine:
             inputs.append((question, snippet))
 
         loop = asyncio.get_running_loop()
+        start = time.time()
+        # Explicitly run in executor to not block the event loop
+        # and measure actual wall time
         raw_scores = await loop.run_in_executor(None, lambda: self.reranker.predict(inputs))
+        print(f"DEBUG: Reranker predict took {time.time() - start:.3f}s for {len(inputs)} inputs")
         if raw_scores is None:
             raw_scores = []
         if hasattr(raw_scores, "tolist"):  # numpy arrays
@@ -275,9 +279,11 @@ class RetrievalEngine:
     ) -> Tuple[List[RetrievalCandidate], List[RetrievalCandidate]]:
         """Run dense and lexical search in parallel."""
         loop = asyncio.get_running_loop()
+        start = time.time()
         dense_task = loop.run_in_executor(None, self._dense_candidates, text, top_k, namespace)
         lexical_task = loop.run_in_executor(None, self._lexical_candidates, text, top_k, namespace)
         dense_candidates, lexical_candidates = await asyncio.gather(dense_task, lexical_task)
+        print(f"DEBUG: Parallel retrieval took {time.time() - start:.3f}s")
         return dense_candidates, lexical_candidates
 
     async def retrieve_contexts(
@@ -288,65 +294,25 @@ class RetrievalEngine:
         use_cache: bool = True,
     ) -> List[Any]:
         """
-        Retrieve contexts using both dense and lexical search with reranking.
-
-        Returns:
-            List of QueryContext objects (from services.rag.rag_models).
+        Alias for ultra_fast_retrieve_contexts to maintain compatibility.
+        Reranking is currently disabled as it exceeds the latency budget for voice.
         """
-        from services.rag.rag_models import QueryContext
-
-        effective_top_k = top_k or self.top_k
-
-        # Check cache first
-        if use_cache:
-            query_hash = self._get_query_hash(text)
-            cached = self._retrieval_cache.get(query_hash)
-            if cached:
-                cached_time, cached_result = cached
-                if time.time() - cached_time < 300:  # 5 minute TTL
-                    return cached_result
-
-        # Run parallel retrieval
-        dense_candidates, lexical_candidates = await self._retrieve_parallel(text, effective_top_k, namespace)
-        combined_candidates = self._combine_candidates(dense_candidates, lexical_candidates)
-
-        reranked = await self._apply_reranker(text, combined_candidates)
-        limited = reranked[:effective_top_k]
-
-        contexts: List[QueryContext] = []
-        for candidate in limited:
-            metadata = dict(candidate.metadata)
-            metadata.setdefault("doc_id", candidate.id)
-            metadata["retrieval_sources"] = sorted(candidate.sources)
-            metadata["initial_score"] = candidate.initial_score
-            if candidate.final_score is not None:
-                metadata["reranker_score"] = candidate.final_score
-            contexts.append(
-                QueryContext(
-                    text=candidate.text,
-                    score=(candidate.final_score if candidate.final_score is not None else candidate.initial_score),
-                    metadata=metadata,
-                )
-            )
-
-        # Cache the result
-        if use_cache:
-            query_hash = self._get_query_hash(text)
-            self._retrieval_cache[query_hash] = (time.time(), contexts)
-
-        return contexts
+        return await self.ultra_fast_retrieve_contexts(text, namespace, use_cache)
 
     async def ultra_fast_retrieve_contexts(
         self,
         text: str,
         namespace: Optional[str] = None,
         use_cache: bool = True,
+        top_k: Optional[int] = None,
     ) -> List[Any]:
         """
         Ultra-fast context retrieval optimized for stimm latency requirements.
-        Uses dense search only and skips lexical/reranker.
+        Uses dense search with larger candidate pool for better quality while remaining fast.
         """
         from services.rag.rag_models import QueryContext
+
+        effective_top_k = top_k or self.ultra_top_k
 
         # Check cache first
         if use_cache:
@@ -357,12 +323,12 @@ class RetrievalEngine:
                 if time.time() - cached_time < 300:
                     return cached_result
 
-        # Fast embedding with minimal processing
+        # Fast embedding
         try:
             vector = self.embedder.encode(
                 [text],
                 show_progress_bar=False,
-                normalize_embeddings=False,  # Skip normalization for speed
+                normalize_embeddings=self.embed_normalize,
             )[0].tolist()
         except Exception:
             return []
@@ -390,7 +356,7 @@ class RetrievalEngine:
             return []
 
         contexts: List[QueryContext] = []
-        for point in results[: self.ultra_top_k]:
+        for point in results[:effective_top_k]:
             payload = point.payload or {}
             text_value = (payload.get("text") or "").strip()
             if not text_value:

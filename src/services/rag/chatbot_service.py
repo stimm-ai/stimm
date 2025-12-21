@@ -139,9 +139,11 @@ class ChatbotService:
                     LOGGER.info("Using ultra-low latency retrieval mode")
                     if rag_state.retrieval_engine is not None:
                         # Use per‑agent retrieval engine (respects RAG config collection)
-                        contexts = await rag_state.retrieval_engine.ultra_fast_retrieve_contexts(
+                        # We use cache=True to avoid repeated latency
+                        contexts = await rag_state.retrieval_engine.retrieve_contexts(
                             text=message,
                             namespace=None,
+                            use_cache=True,
                         )
                         LOGGER.info(f"Using retrieval engine with collection: {rag_state.retrieval_engine.collection_name}")
                     else:

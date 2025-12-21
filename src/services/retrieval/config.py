@@ -46,21 +46,21 @@ class RetrievalConfig:
         self.max_text_length = int(os.getenv("RAG_MAX_TEXT_LENGTH", "2048"))  # Reduced for voice
 
         # Candidate counts - optimized for stimm
-        self.dense_candidate_count = int(os.getenv("QDRANT_DENSE_CANDIDATE_COUNT", "8"))  # Reduced
-        self.lexical_candidate_count = int(os.getenv("QDRANT_LEXICAL_CANDIDATE_COUNT", "8"))  # Reduced
+        self.dense_candidate_count = int(os.getenv("QDRANT_DENSE_CANDIDATE_COUNT", "24"))  # Higher for better reranking coverage
+        self.lexical_candidate_count = int(os.getenv("QDRANT_LEXICAL_CANDIDATE_COUNT", "24"))  # Higher for better reranking coverage
 
-        # Reranker configuration
-        self.reranker_model = os.getenv("RAG_RERANKER_MODEL", "BAAI/bge-reranker-base").strip()
-        self.enable_reranker = self.reranker_model.lower() not in {"", "none", "false", "0"}
-        self.rerank_max_candidates = int(os.getenv("RAG_RERANK_MAX_CANDIDATES", "48"))
+        # Reranker configuration (Legacy - reranking is too slow for voice)
+        self.reranker_model = os.getenv("RAG_RERANKER_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2").strip()
+        self.enable_reranker = False  # Globally disabled for latency
+        self.rerank_max_candidates = int(os.getenv("RAG_RERANK_MAX_CANDIDATES", "24"))
         self.rerank_max_chars = int(os.getenv("RAG_RERANK_MAX_CHARS", "1200"))
 
-        # Ultra-low latency configuration for stimm
-        self.ultra_low_latency_mode = os.getenv("STIMM_ULTRA_LOW_LATENCY", "true").lower() in {"1", "true", "yes"}
+        # Ultra-low latency configuration for stimm (Production path)
+        self.ultra_low_latency_mode = True  # Always on
         self.fast_embed_model = os.getenv("STIMM_FAST_EMBED_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
-        self.ultra_top_k = int(os.getenv("STIMM_ULTRA_TOP_K", "1"))
-        self.ultra_dense_candidates = int(os.getenv("STIMM_ULTRA_DENSE_CANDIDATES", "2"))
-        self.ultra_lexical_candidates = int(os.getenv("STIMM_ULTRA_LEXICAL_CANDIDATES", "2"))
+        self.ultra_top_k = int(os.getenv("STIMM_ULTRA_TOP_K", "6"))
+        self.ultra_dense_candidates = int(os.getenv("STIMM_ULTRA_DENSE_CANDIDATES", "40"))
+        self.ultra_lexical_candidates = int(os.getenv("STIMM_ULTRA_LEXICAL_CANDIDATES", "40"))
 
         # Token pattern for lexical indexing
         self._token_pattern = re.compile(r"[A-Za-z0-9']+")

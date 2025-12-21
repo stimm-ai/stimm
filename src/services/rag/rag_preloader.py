@@ -7,7 +7,8 @@ to eliminate the 25+ second delay on first user request.
 
 import logging
 import time
-from typing import Optional
+import uuid
+from typing import Any, Optional
 
 from services.retrieval import _bootstrap_documents, _ensure_collection
 from services.retrieval.config import retrieval_config
@@ -32,6 +33,20 @@ class RAGPreloader:
         self._preload_error: Optional[str] = None
         # Cache for agent-specific RAG states
         self._agent_rag_states: dict = {}  # agent_id -> RagState
+
+    def _safe_get_uuid(self, id_val: Any) -> Optional[uuid.UUID]:
+        """
+        Safely convert a value to a UUID object.
+        Returns None if conversion fails.
+        """
+        if isinstance(id_val, uuid.UUID):
+            return id_val
+        if not isinstance(id_val, str):
+            return None
+        try:
+            return uuid.UUID(id_val)
+        except (ValueError, AttributeError):
+            return None
 
     async def preload_all(self, agent_id: str = None) -> bool:
         """
@@ -104,16 +119,16 @@ class RAGPreloader:
             # Try to get agent-specific config if agent_id provided
             if agent_id:
                 try:
-                    import uuid
-
                     from services.agents_admin.agent_manager import get_agent_manager
                     from services.rag.rag_config_service import RagConfigService
 
                     # Convert agent_id to UUID if it's a string
-                    if isinstance(agent_id, str):
-                        agent_uuid = uuid.UUID(agent_id)
-                    else:
-                        agent_uuid = agent_id  # Already a UUID object
+                    agent_uuid = self._safe_get_uuid(agent_id)
+
+                    if not agent_uuid:
+                        logger.info(f"ℹ️ agent_id '{agent_id}' is not a valid UUID, using global configuration")
+                        # Skip agent-specific logic
+                        raise ValueError("Invalid agent_id format")
 
                     agent_manager = get_agent_manager()
                     agent_config = agent_manager.get_agent_config(agent_uuid)
@@ -163,16 +178,15 @@ class RAGPreloader:
             # This must be done AFTER embedder and client are initialized
             if agent_id:
                 try:
-                    import uuid
-
                     from services.agents_admin.agent_manager import get_agent_manager
                     from services.rag.rag_config_service import RagConfigService
 
                     # Convert agent_id to UUID if it's a string
-                    if isinstance(agent_id, str):
-                        agent_uuid = uuid.UUID(agent_id)
-                    else:
-                        agent_uuid = agent_id
+                    agent_uuid = self._safe_get_uuid(agent_id)
+
+                    if not agent_uuid:
+                        # Already logged above, just skip
+                        raise ValueError("Invalid agent_id format")
 
                     agent_manager = get_agent_manager()
                     agent_config = agent_manager.get_agent_config(agent_uuid)

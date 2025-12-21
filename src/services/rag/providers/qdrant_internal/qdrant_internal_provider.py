@@ -26,7 +26,6 @@ class QdrantInternalProvider:
             "collection_name",
             "embedding_model",
             "top_k",
-            # Optional fields are not required for validation
         ]
 
     @classmethod
@@ -57,60 +56,21 @@ class QdrantInternalProvider:
             },
             "top_k": {
                 "type": "number",
-                "label": "Top K",
+                "label": "Results Count (Top K)",
                 "required": True,
-                "description": "Number of retrieved documents to return (higher values increase recall but may impact latency)",
+                "description": "Number of context chunks to send to the LLM. Recommended: 4-8.",
                 "min": 1,
-                "max": 10,
-                "default": 2,
-            },
-            "enable_reranker": {
-                "type": "boolean",
-                "label": "Enable Reranker",
-                "required": False,
-                "description": "Whether to use cross-encoder reranking",
-                "default": False,
-            },
-            "ultra_low_latency": {
-                "type": "boolean",
-                "label": "Ultra Low Latency Mode",
-                "required": False,
-                "description": "Optimize for stimm latency (reduces retrieval quality)",
-                "default": True,
-            },
-            "qdrant_use_tls": {
-                "type": "boolean",
-                "label": "Use TLS",
-                "required": False,
-                "description": "Whether to use HTTPS for Qdrant connection",
-                "default": False,
+                "max": 20,
+                "default": 6,
             },
             "dense_candidate_count": {
                 "type": "number",
-                "label": "Dense Candidate Count",
+                "label": "Search Depth (Candidates)",
                 "required": False,
-                "description": "Number of dense candidates to retrieve before reranking",
+                "description": "Number of points to explore in vector space. Recommended: 20-40 for high precision without latency impact.",
                 "min": 1,
                 "max": 100,
-                "default": 24,
-            },
-            "lexical_candidate_count": {
-                "type": "number",
-                "label": "Lexical Candidate Count",
-                "required": False,
-                "description": "Number of lexical candidates to retrieve before reranking",
-                "min": 1,
-                "max": 100,
-                "default": 24,
-            },
-            "max_top_k": {
-                "type": "number",
-                "label": "Max Top K",
-                "required": False,
-                "description": "Maximum allowed top_k value (safety limit)",
-                "min": 1,
-                "max": 20,
-                "default": 8,
+                "default": 40,
             },
         }
 

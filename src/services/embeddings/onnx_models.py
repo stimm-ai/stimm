@@ -6,13 +6,53 @@ instead of PyTorch, significantly reducing dependency size and complexity.
 """
 
 import logging
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 import onnxruntime as ort
 from transformers import AutoTokenizer
 
 logger = logging.getLogger(__name__)
+
+# Centralized mapping for HuggingFace model names to their respective ONNX-converted repositories and filenames.
+# This avoids duplication and ensures consistent resolution across different classes.
+ONNX_MODEL_MAPPING: Dict[str, Dict[str, str]] = {
+    "BAAI/bge-reranker-base": {
+        "repo_id": "onnx-community/bge-reranker-base",
+        "filename": "onnx/model.onnx",
+    },
+    "BAAI/bge-reranker-large": {
+        "repo_id": "onnx-community/bge-reranker-large",
+        "filename": "onnx/model.onnx",
+    },
+    "cross-encoder/ms-marco-MiniLM-L-6-v2": {
+        "repo_id": "Xenova/ms-marco-MiniLM-L-6-v2",
+        "filename": "onnx/model.onnx",
+    },
+    "sentence-transformers/all-MiniLM-L6-v2": {
+        "repo_id": "optimum/all-MiniLM-L6-v2",
+        "filename": "model.onnx",
+    },
+}
+
+
+def resolve_onnx_model(model_name: str) -> tuple[str, str]:
+    """
+    Resolve a HuggingFace model name to its ONNX repository and filename.
+
+    Args:
+        model_name: The original HuggingFace model name
+
+    Returns:
+        A tuple of (onnx_repo_id, onnx_filename)
+    """
+    if model_name in ONNX_MODEL_MAPPING:
+        mapping = ONNX_MODEL_MAPPING[model_name]
+        return mapping["repo_id"], mapping["filename"]
+
+    # Fallback: assume optimum organization and standard filename
+    repo_id = f"optimum/{model_name.split('/')[-1]}"
+    return repo_id, "model.onnx"
 
 
 class ONNXSentenceTransformer:
@@ -39,18 +79,17 @@ class ONNXSentenceTransformer:
         # Load tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_folder, revision="main")  # nosec B615
 
-        # Try to load pre-converted ONNX model from Optimum repository
-        # Check https://huggingface.co/optimum for available models
-        onnx_model_name = f"optimum/{model_name.split('/')[-1]}"
+        # Resolve ONNX model location
+        onnx_repo_id, onnx_filename = resolve_onnx_model(model_name)
 
         try:
             from huggingface_hub import hf_hub_download
 
-            logger.info(f"Loading ONNX model from: {onnx_model_name}")
+            logger.info(f"Loading ONNX model from: {onnx_repo_id}/{onnx_filename}")
             # Download ONNX model file
             model_path = hf_hub_download(
-                repo_id=onnx_model_name,
-                filename="model.onnx",
+                repo_id=onnx_repo_id,
+                filename=onnx_filename,
                 cache_dir=cache_folder,
                 revision="main",  # nosec B615
             )
@@ -59,23 +98,19 @@ class ONNXSentenceTransformer:
             sess_options = ort.SessionOptions()
             sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
             self.session = ort.InferenceSession(model_path, sess_options=sess_options, providers=["CPUExecutionProvider"])
-            logger.info(f"✅ Loaded ONNX model: {onnx_model_name}")
+            logger.info(f"✅ Loaded ONNX model: {onnx_repo_id}")
 
         except Exception as e:
             # Provide helpful error message with supported models
-            logger.error(f"Failed to load ONNX model from {onnx_model_name}: {e}")
-            logger.error(f"Model '{model_name}' does not have a pre-converted ONNX version available.")
+            logger.error(f"Failed to load ONNX model from {onnx_repo_id}: {e}")
+            logger.error(f"Model '{model_name}' does not have a working pre-converted ONNX version configuration.")
             logger.error("")
-            logger.error("✅ ONNX-supported model:")
-            logger.error("  - sentence-transformers/all-MiniLM-L6-v2 (384 dimensions, fast)")
+            logger.error("✅ ONNX-supported models (mapped):")
+            for m in ONNX_MODEL_MAPPING.keys():
+                logger.error(f"  - {m}")
             logger.error("")
-            logger.error("❌ Models without working ONNX versions:")
-            logger.error("  - sentence-transformers/all-mpnet-base-v2")
-            logger.error("  - BAAI/bge-base-en-v1.5")
-            logger.error("  - intfloat/e5-base-v2")
-            logger.error("")
-            logger.error("Note: While some models claim ONNX support, only MiniLM L6 v2 has a publicly available pre-converted version.")
-            raise RuntimeError(f"ONNX model not found for '{model_name}'. Please use sentence-transformers/all-MiniLM-L6-v2")
+            logger.error("Note: While some models claim ONNX support, only a subset have been verified and mapped.")
+            raise RuntimeError(f"ONNX model not found for '{model_name}'.")
 
     def encode(
         self,
@@ -187,16 +222,17 @@ class ONNXCrossEncoder:
         # Load tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, revision="main")  # nosec B615
 
-        # Try to load pre-converted ONNX model
-        onnx_model_name = f"optimum/{model_name.split('/')[-1]}"
+        # Resolve ONNX model location
+        onnx_repo_id, onnx_filename = resolve_onnx_model(model_name)
 
         try:
             from huggingface_hub import hf_hub_download
 
+            logger.info(f"Downloading ONNX cross-encoder from: {onnx_repo_id}/{onnx_filename}")
             # Download ONNX model file
             model_path = hf_hub_download(
-                repo_id=onnx_model_name,
-                filename="model.onnx",
+                repo_id=onnx_repo_id,
+                filename=onnx_filename,
                 revision="main",  # nosec B615
             )
 
@@ -204,11 +240,11 @@ class ONNXCrossEncoder:
             sess_options = ort.SessionOptions()
             sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
             self.session = ort.InferenceSession(model_path, sess_options=sess_options, providers=["CPUExecutionProvider"])
-            logger.info(f"Successfully loaded ONNX cross-encoder: {onnx_model_name}")
+            logger.info(f"Successfully loaded ONNX cross-encoder: {onnx_repo_id}")
 
         except Exception as e:
-            logger.error(f"Failed to load ONNX cross-encoder {model_name}: {e}")
-            raise RuntimeError(f"ONNX cross-encoder not found for {model_name}. Please use a pre-converted model from https://huggingface.co/optimum")
+            logger.error(f"Failed to load ONNX cross-encoder {model_name} from {onnx_repo_id}: {e}")
+            raise RuntimeError(f"ONNX cross-encoder not found for {model_name}. Please check the model mapping.")
 
     def predict(
         self,

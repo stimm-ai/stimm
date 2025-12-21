@@ -186,6 +186,17 @@ Stimm follows a modern security-first approach using open-source SAST (Static Ap
 - **[pip-audit](https://pypi.org/project/pip-audit/)**: Checks Python dependencies for known vulnerabilities.
 - **npm audit**: Checks JavaScript dependencies for known vulnerabilities.
 
+### Running All Checks
+
+Developers can run the entire suite of security, quality, and formatting checks with a single command:
+
+```bash
+# Run all checks on all files in the repository
+pre-commit run --all-files
+```
+
+This command runs Ruff (lint/format), Prettier, Bandit, Semgrep, pip-audit, npm audit, and frontend-security-lint in sequence. It is highly recommended to run this before submitting any pull request.
+
 ### Quality & Standards
 
 - **[Ruff](https://beta.ruff.rs/)**: Extremely fast Python linter and formatter.

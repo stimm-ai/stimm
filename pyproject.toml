@@ -8,10 +8,9 @@ authors = [
 ]
 dependencies = [
     # Core web framework
-    "fastapi==0.111.0",
+    "fastapi>=0.115.0",
     "uvicorn==0.30.1",
     "pydantic==2.7.4",
-    "starlette==0.37.2",
     # Database
     "sqlalchemy>=2.0.0",
     "alembic>=1.12.0",

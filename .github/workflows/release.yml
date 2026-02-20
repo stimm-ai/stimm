@@ -49,18 +49,22 @@ jobs:
       - run: pip install build
       - run: python -m build
       - uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_TOKEN }}
+        # No password needed when PyPI trusted publisher is configured
 
   publish-npm:
     needs: test
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # Required for npm OIDC trusted publishing
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
+      - name: Upgrade npm (trusted publishing requires ≥11.5.1)
+        run: npm install -g npm@latest
       - name: Install & Build
         working-directory: packages/protocol-ts
         run: |
@@ -69,8 +73,7 @@ jobs:
       - name: Publish
         working-directory: packages/protocol-ts
         run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        # No token needed — npm CLI auto-detects OIDC when trusted publisher is configured
 
   publish-docker:
     needs: [publish-pypi]  # stimm must be on PyPI before the Docker build installs it

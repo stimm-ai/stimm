@@ -43,8 +43,8 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/etienne/stimm"
-Repository = "https://github.com/etienne/stimm"
+Homepage = "https://github.com/stimm-ai/stimm"
+Repository = "https://github.com/stimm-ai/stimm"
 
 [build-system]
 requires = ["hatchling"]

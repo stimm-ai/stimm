@@ -7,6 +7,7 @@ for the dual-agent setup.
 from __future__ import annotations
 
 import logging
+from datetime import timedelta
 from typing import Any
 from uuid import uuid4
 
@@ -179,7 +180,7 @@ class StimmRoom:
 
         token = lkapi.AccessToken(self._api_key, self._api_secret)
         token.identity = identity
-        token.ttl = ttl_seconds
+        token.ttl = timedelta(seconds=ttl_seconds)
 
         grant = lkapi.VideoGrants(
             room_join=True,

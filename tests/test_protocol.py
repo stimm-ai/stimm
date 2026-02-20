@@ -3,6 +3,7 @@
 import json
 
 from stimm.protocol import (
+    _MESSAGE_TYPES,
     ActionResultMessage,
     BeforeSpeakMessage,
     ContextMessage,
@@ -13,7 +14,6 @@ from stimm.protocol import (
     StateMessage,
     StimmProtocol,
     TranscriptMessage,
-    _MESSAGE_TYPES,
 )
 
 
@@ -138,7 +138,5 @@ class TestStimmProtocol:
         import asyncio
 
         asyncio.get_event_loop().run_until_complete(
-            proto.send_transcript(
-                TranscriptMessage(partial=True, text="test", timestamp=0)
-            )
+            proto.send_transcript(TranscriptMessage(partial=True, text="test", timestamp=0))
         )

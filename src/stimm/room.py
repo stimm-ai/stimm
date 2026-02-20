@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import logging
 from datetime import timedelta
-from typing import Any
 from uuid import uuid4
 
 from stimm.supervisor import Supervisor
@@ -92,9 +91,7 @@ class StimmRoom:
             self._api_key,
             self._api_secret,
         )
-        await room_service.create_room(
-            lkapi.CreateRoomRequest(name=self._room_name)
-        )
+        await room_service.create_room(lkapi.CreateRoomRequest(name=self._room_name))
         logger.info("Created LiveKit room: %s", self._room_name)
 
         # Connect supervisor (data-only)

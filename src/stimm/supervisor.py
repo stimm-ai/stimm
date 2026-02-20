@@ -156,9 +156,7 @@ class Supervisor:
             append: If ``True``, append to existing context. If ``False``,
                 replace all existing context.
         """
-        await self._protocol.send_context(
-            ContextMessage(text=text, append=append)
-        )
+        await self._protocol.send_context(ContextMessage(text=text, append=append))
 
     async def send_action_result(
         self,

@@ -1,0 +1,102 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  check-versions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify versions match tag
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"   # e.g. "0.2.0"
+
+          PY_VERSION=$(grep -m1 '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          NPM_VERSION=$(grep -m1 '"version"' packages/protocol-ts/package.json | sed 's/.*"version": "\(.*\)".*/\1/')
+
+          echo "Tag:          $TAG"
+          echo "pyproject:    $PY_VERSION"
+          echo "package.json: $NPM_VERSION"
+
+          if [[ "$PY_VERSION" != "$TAG" ]]; then
+            echo "::error::pyproject.toml version ($PY_VERSION) does not match tag ($TAG)"
+            echo "Run: scripts/bump-version $TAG"
+            exit 1
+          fi
+          if [[ "$NPM_VERSION" != "$TAG" ]]; then
+            echo "::error::packages/protocol-ts/package.json version ($NPM_VERSION) does not match tag ($TAG)"
+            echo "Run: scripts/bump-version $TAG"
+            exit 1
+          fi
+          echo "All versions match $TAG ✓"
+
+  test:
+    needs: check-versions
+    uses: ./.github/workflows/ci.yml
+
+  publish-pypi:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # For trusted publishing
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install build
+      - run: python -m build
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_TOKEN }}
+
+  publish-npm:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+      - name: Install & Build
+        working-directory: packages/protocol-ts
+        run: |
+          npm install
+          npm run build
+      - name: Publish
+        working-directory: packages/protocol-ts
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-docker:
+    needs: [publish-pypi]  # stimm must be on PyPI before the Docker build installs it
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: docker/agent
+          push: true
+          tags: |
+            ghcr.io/stimm-ai/stimm-agent:latest
+            ghcr.io/stimm-ai/stimm-agent:${{ steps.version.outputs.version }}

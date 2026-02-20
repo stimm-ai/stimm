@@ -15,6 +15,8 @@ Environment:
     LIVEKIT_API_SECRET (default: secret)
 """
 
+import asyncio
+
 from livekit.agents import AgentSession, JobContext, WorkerOptions, cli
 from livekit.plugins import deepgram, openai, silero
 
@@ -42,7 +44,10 @@ async def entrypoint(ctx: JobContext) -> None:
     await ctx.connect()
     session = AgentSession()
     await session.start(agent=make_agent(), room=ctx.room)
-    await session.wait()
+    # Keep the entrypoint alive until the room disconnects.
+    disconnect = asyncio.Event()
+    ctx.add_shutdown_callback(lambda: disconnect.set())
+    await disconnect.wait()
 
 
 if __name__ == "__main__":

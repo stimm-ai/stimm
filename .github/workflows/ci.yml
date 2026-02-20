@@ -52,7 +52,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y portaudio19-dev libasound2-dev
       - run: pip install uv
-      - run: uv sync
+      - run: uv sync --extra dev
 
       - name: Ruff Check
         run: |
@@ -66,8 +66,7 @@ jobs:
       - name: Security Vulnerability Scan (Python)
         run: uv run pip-audit --desc
 
-      - name: Semgrep Static Application Security Testing (SAST)
-        run: uv run semgrep scan --config=auto --exclude='docker-compose.yml' --exclude='docker/**' --exclude='*.env.example' .
+      # Semgrep runs via a dedicated GitHub Action in release.yml (local dep broken)
 
   test:
     runs-on: ubuntu-latest
@@ -106,7 +105,7 @@ jobs:
         run: bash scripts/setup_env.sh
 
       - name: Install dependencies
-        run: $HOME/.local/bin/uv sync --group dev
+        run: $HOME/.local/bin/uv sync --extra dev
 
       - name: Start Docker services
         timeout-minutes: 5

@@ -1,164 +1,61 @@
 [project]
 name = "stimm"
 version = "0.1.0"
-description = "Stimm application with real-time audio processing"
+description = "Dual-agent voice orchestration built on livekit-agents"
+readme = "README.md"
 requires-python = ">=3.10"
+license = "MIT"
 authors = [
-    {name = "Stimm Team", email = "team@stimm.dev"}
+    {name = "Etienne"}
 ]
+keywords = ["voice", "agent", "livekit", "dual-agent", "orchestration", "realtime"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Multimedia :: Sound/Audio",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
 dependencies = [
-    # Core web framework
-    "fastapi>=0.115.0",
-    "uvicorn==0.30.1",
-    "pydantic==2.7.4",
-    # Database
-    "sqlalchemy>=2.0.0",
-    "alembic>=1.12.0",
-    "psycopg2-binary>=2.9.0",
-    # Vector database and RAG
-    "qdrant-client==1.9.0",
-    "huggingface-hub>=0.30.0",
-    "rank-bm25==0.2.2",
-    "transformers>=4.53.0",
-    
-    # AI/ML dependencies
-    "numpy==1.26.4",
-    "scipy==1.13.0",
-    "onnxruntime>=1.16.0",
-    # Audio processing
-    "sounddevice",
-    "soundfile",
-    "aiortc>=1.8.0",
-    "av>=11.0.0",
-    # LiveKit integration
-    "livekit>=0.9.0",
-    "livekit-api>=0.9.0",
-    "livekit-agents>=0.8.0",
-    "livekit-plugins-silero>=0.6.0",
-    # Providers
-    "deepgram-sdk>=3.0.0",
-    # HTTP and networking
-    "aiohttp>=3.10",
-    "websockets>=12.0",
-    "httpx>=0.27.0",
-    # Document processing
-    "PyPDF2>=3.0.0",
-    "python-docx>=1.1.0",
-    "python-multipart>=0.0.6",
-    # Environment and utilities
-    "python-dotenv==1.0.1",
-    # Security scanning tools
-    "bandit>=1.9.2",
-    "semgrep>=1.136.0",
-    "pip-audit>=2.9.0",
+    "livekit-agents>=1.1",
+    "livekit-plugins-silero>=1.1",
+    "pydantic>=2.0",
 ]
 
 [project.optional-dependencies]
+deepgram = ["livekit-plugins-deepgram>=1.1"]
+openai = ["livekit-plugins-openai>=1.1"]
+elevenlabs = ["livekit-plugins-elevenlabs>=1.1"]
+cartesia = ["livekit-plugins-cartesia>=1.1"]
+google = ["livekit-plugins-google>=1.1"]
+anthropic = ["livekit-plugins-anthropic>=1.1"]
+all = ["stimm[deepgram,openai,elevenlabs,cartesia,google,anthropic]"]
 dev = [
-    "pytest>=7.0.0",
-    "pytest-asyncio>=0.21.0",
-    "pytest-cov>=4.0.0",
-    "pytest-mock>=3.10.0",
-    "ruff>=0.4.0",
-    "mypy>=1.0.0",
-    "pre-commit>=3.0.0",
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.4",
 ]
 
-audio = [
-    "pyaudio>=0.2.13",
-    "sounddevice",
-    "soundfile",
-]
-
-livekit = [
-    "livekit>=0.9.0",
-    "livekit-api>=0.9.0",
-    "livekit-agents>=0.8.0",
-    "livekit-plugins-silero>=0.6.0",
-]
-
-docs = [
-    "mkdocs>=1.5.0",
-    "mkdocs-material>=9.5.0",
-    "mkdocstrings>=0.24.0",
-    "mkdocstrings-python>=1.10.0",
-    "mkdocs-awesome-pages-plugin>=2.9.0",
-    "mkdocs-git-revision-date-localized-plugin>=1.2.0",
-    "mkdocs-mermaid2-plugin>=1.0.0",
-    "mkdocs-swagger-ui-tag>=0.7.0",
-]
+[project.urls]
+Homepage = "https://github.com/etienne/stimm"
+Repository = "https://github.com/etienne/stimm"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src"]
+packages = ["src/stimm"]
 
 [tool.ruff]
-# Be more lenient with line length to avoid manual changes
-line-length = 200
-
-# Match Black's target version
+line-length = 100
 target-version = "py310"
 
-[tool.ruff.format]
-quote-style = "double"
-# Also use the same line length for formatting
-# Note: format line length is configured separately
-
 [tool.ruff.lint]
-# E: Pycodestyle, F: Pyflakes, I: Isort
-select = ["E", "F", "I"]
-ignore = []
-
-
-[tool.ruff.lint.isort]
-known-first-party = ["stimm"]
-
-[tool.mypy]
-python_version = "3.10"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
+select = ["E", "F", "I", "UP"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
 asyncio_mode = "auto"
-addopts = "--cov=. --cov-report=term-missing"
-
-[dependency-groups]
-dev = [
-    "ruff>=0.4.0",
-    "pytest>=9.0.1",
-    "pytest-asyncio>=1.3.0",
-    "pytest-cov>=7.0.0",
-    "pre-commit>=4.5.0",
-]
-docs = [
-    "mkdocs>=1.5.0",
-    "mkdocs-material>=9.5.0",
-    "mkdocstrings>=0.24.0",
-    "mkdocstrings-python>=1.10.0",
-    "mkdocs-awesome-pages-plugin>=2.9.0",
-    "mkdocs-git-revision-date-localized-plugin>=1.2.0",
-    "mkdocs-mermaid2-plugin>=1.0.0",
-    "mkdocs-swagger-ui-tag>=0.7.0",
-]
-
-[tool.hatch.envs.default]
-skip-install = true
-PYTHONPATH = "src"
-dependencies = []
-
-[tool.hatch.envs.default.scripts]
-# Scripts pour faciliter le lancement
-run = "python -m src.main"
-debug = "python -m src.main --log-level debug"
-test = "pytest tests/ -v"
-lint = "ruff format src/ && ruff check --fix src/"
-docs-serve = "mkdocs serve"
-docs-build = "mkdocs build"
-
-[project.scripts]
-stimm-start = "uvicorn.run:app"
+testpaths = ["tests"]

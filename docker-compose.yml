@@ -1,127 +1,13 @@
+# LiveKit server for local development
+# Usage: docker compose up -d
+
 services:
-  postgres:
-    extends:
-      file: ./docker/postgres/docker-compose.yml
-      service: stimm-postgres
-    networks:
-      - stimm-network
-    env_file:
-      - .env
-  stimm:
-    extends:
-      file: ./docker/stimm/docker-compose.yml
-      service: stimm
-    networks:
-      - stimm-network
-    # Expose UDP ports for WebRTC ICE connectivity
-    ports:
-      - "8001:8001" # HTTP API
-      - "3478:3478/udp" # STUN
-      - "49160-49200:49160-49200/udp" # UDP range for ICE candidates
-    env_file:
-      - .env
-      - docker/stimm/.env
-    environment:
-      - ENABLE_SIP_BRIDGE=true
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.api.rule=Host(`api.localhost`)"
-      - "traefik.http.routers.api.entrypoints=web"
-      - "traefik.http.services.api.loadbalancer.server.port=8001"
-  stimm-front:
-    extends:
-      file: ./docker/stimm-front/docker-compose.yml
-      service: stimm-front
-    networks:
-      - stimm-network
-    env_file:
-      - ./src/front/.env
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.front.rule=Host(`front.localhost`)"
-      - "traefik.http.routers.front.entrypoints=web"
-      - "traefik.http.services.front.loadbalancer.server.port=3000"
-  qdrant:
-    extends:
-      file: ./docker/qdrant/docker-compose.yml
-      service: qdrant
-    networks:
-      - stimm-network
-  traefik:
-    image: traefik:v3.2
-    container_name: traefik
-    command:
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-    ports:
-      - "80:80"
-      - "443:443"
-      - "8080:8080" # Dashboard
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-    networks:
-      - stimm-network
-    labels:
-      - "traefik.enable=true"
-  redis:
-    image: redis
-    volumes:
-      - redis_data:/data
-    ports:
-      - 6379:6379
-    networks:
-      - stimm-network
   livekit:
-    image: livekit/livekit-server
-    command: --config /etc/livekit.yaml --node-ip 0.0.0.0 --redis-host redis:6379 --bind 0.0.0.0
-    volumes:
-      - ./livekit.yaml:/etc/livekit.yaml:ro
+    image: livekit/livekit-server:latest
+    command: --dev --bind 0.0.0.0
     ports:
-      - "7880:7880"
-      - "7881:7881"
-      - "7882:7882/udp"
-      - "50000-50100:50000-50100/udp" # RTC port range for debugging
+      - "7880:7880"   # WebSocket (clients + agents)
+      - "7881:7881"   # HTTP API
+      - "50000-50100:50000-50100/udp"  # WebRTC UDP
     environment:
-      - LIVEKIT_LOG_LEVEL=debug
-    depends_on:
-      redis:
-        condition: service_started
-    networks:
-      - stimm-network
-  sip:
-    image: livekit/sip
-    ports:
-      - "5060:5060/udp"
-      - "5060:5060/tcp"
-    environment:
-      SIP_CONFIG_BODY: |
-        api_key: 'devkey'
-        api_secret: 'secret'
-        ws_url: 'ws://livekit:7880'
-        redis:
-          address: 'redis:6379'
-        sip_port: 5060
-        rtp_port_range: 10000-20000
-        use_external_ip: false
-        logging:
-          level: debug
-        bind_address: "0.0.0.0"
-        public_ip: "172.23.126.232"
-        allow_anonymous: true
-    networks:
-      - stimm-network
-
-networks:
-  stimm-network:
-    name: stimm-network
-    driver: bridge
-
-volumes:
-  llm-models:
-  qdrant_storage:
-  postgres_storage:
-  redis_data:
-  stimm_front_node_modules:
+      LIVEKIT_KEYS: "devkey: secret"

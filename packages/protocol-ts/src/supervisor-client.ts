@@ -132,8 +132,8 @@ export class StimmSupervisorClient {
 
   private onData(
     payload: Uint8Array,
-    participant: any,
-    kind: DataPacket_Kind,
+    participant?: unknown,
+    kind?: DataPacket_Kind,
     topic?: string,
   ): void {
     if (topic !== STIMM_TOPIC) return;

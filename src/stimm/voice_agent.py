@@ -10,9 +10,8 @@ from __future__ import annotations
 import logging
 import time
 from typing import Any
-from uuid import uuid4
 
-from livekit.agents import Agent, AgentSession
+from livekit.agents import Agent
 
 from stimm.buffering import BufferingLevel, TextBufferingStrategy
 from stimm.protocol import (
@@ -140,9 +139,7 @@ class VoiceAgent(Agent):
         """
         turn_id = f"t_{self._turn_counter:04d}"
         self._turn_counter += 1
-        await self._protocol.send_before_speak(
-            BeforeSpeakMessage(text=text, turn_id=turn_id)
-        )
+        await self._protocol.send_before_speak(BeforeSpeakMessage(text=text, turn_id=turn_id))
         return text
 
     # -- Instruction handling ------------------------------------------------

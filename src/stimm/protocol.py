@@ -10,7 +10,7 @@ import asyncio
 import json
 import logging
 from collections.abc import Callable, Coroutine
-from typing import Any, Literal, Union
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
@@ -116,17 +116,17 @@ class OverrideMessage(BaseModel):
 # Union of all message types
 # ---------------------------------------------------------------------------
 
-StimmMessage = Union[
-    TranscriptMessage,
-    StateMessage,
-    BeforeSpeakMessage,
-    MetricsMessage,
-    InstructionMessage,
-    ContextMessage,
-    ActionResultMessage,
-    ModeMessage,
-    OverrideMessage,
-]
+StimmMessage = (
+    TranscriptMessage
+    | StateMessage
+    | BeforeSpeakMessage
+    | MetricsMessage
+    | InstructionMessage
+    | ContextMessage
+    | ActionResultMessage
+    | ModeMessage
+    | OverrideMessage
+)
 
 _MESSAGE_TYPES: dict[str, type[BaseModel]] = {
     "transcript": TranscriptMessage,

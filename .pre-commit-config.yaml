@@ -1,0 +1,40 @@
+repos:
+  - repo: local
+    hooks:
+      # 1. Python formatting & linting (via uv)
+      - id: ruff-format
+        name: ruff-format
+        entry: uv run ruff format --force-exclude
+        language: system
+        types: [python]
+
+      - id: ruff
+        name: ruff
+        entry: uv run ruff check --fix --force-exclude
+        language: system
+        types: [python]
+
+      # 2. Python security (Local)
+      - id: bandit
+        name: bandit
+        entry: uv run bandit -r src/
+        language: system
+        types: [python]
+        files: ^src/
+
+      # semgrep: runs in CI only (incompatible opentelemetry dep in local venv)
+
+      # 3. Python dependency audit
+      - id: pip-audit
+        name: pip-audit
+        entry: uv run pip-audit
+        language: system
+        pass_filenames: false
+
+      # 4. TypeScript package — type-check on changes to packages/protocol-ts/
+      - id: protocol-ts-typecheck
+        name: protocol-ts typecheck
+        entry: bash -c 'cd packages/protocol-ts && npm run check'
+        language: system
+        files: ^packages/protocol-ts/src/
+        pass_filenames: false

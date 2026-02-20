@@ -1,12 +1,7 @@
 """Tests for VoiceAgent instruction handling and context building."""
 
-import pytest
-
 from stimm.protocol import (
-    AgentMode,
-    ContextMessage,
     InstructionMessage,
-    ModeMessage,
 )
 from stimm.voice_agent import VoiceAgent
 

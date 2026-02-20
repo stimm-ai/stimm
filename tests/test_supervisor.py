@@ -2,7 +2,7 @@
 
 import pytest
 
-from stimm.protocol import TranscriptMessage, StateMessage, BeforeSpeakMessage, MetricsMessage
+from stimm.protocol import BeforeSpeakMessage, MetricsMessage, StateMessage, TranscriptMessage
 from stimm.supervisor import Supervisor
 
 
@@ -22,30 +22,22 @@ class TestSupervisorHandlers:
     @pytest.mark.asyncio
     async def test_on_transcript_default(self) -> None:
         sup = Supervisor()
-        await sup.on_transcript(
-            TranscriptMessage(partial=False, text="hello", timestamp=0)
-        )
+        await sup.on_transcript(TranscriptMessage(partial=False, text="hello", timestamp=0))
 
     @pytest.mark.asyncio
     async def test_on_state_change_default(self) -> None:
         sup = Supervisor()
-        await sup.on_state_change(
-            StateMessage(state="listening", timestamp=0)
-        )
+        await sup.on_state_change(StateMessage(state="listening", timestamp=0))
 
     @pytest.mark.asyncio
     async def test_on_before_speak_default(self) -> None:
         sup = Supervisor()
-        await sup.on_before_speak(
-            BeforeSpeakMessage(text="hi", turn_id="t_001")
-        )
+        await sup.on_before_speak(BeforeSpeakMessage(text="hi", turn_id="t_001"))
 
     @pytest.mark.asyncio
     async def test_on_metrics_default(self) -> None:
         sup = Supervisor()
-        await sup.on_metrics(
-            MetricsMessage(turn=1)
-        )
+        await sup.on_metrics(MetricsMessage(turn=1))
 
 
 class TestSupervisorSubclass:
@@ -58,7 +50,5 @@ class TestSupervisorSubclass:
                 received.append(msg.text)
 
         sup = Custom()
-        await sup.on_transcript(
-            TranscriptMessage(partial=False, text="test", timestamp=0)
-        )
+        await sup.on_transcript(TranscriptMessage(partial=False, text="test", timestamp=0))
         assert received == ["test"]

@@ -14,10 +14,10 @@ Environment:
 """
 
 import asyncio
-import os
 import logging
+import os
 
-from stimm import Supervisor, TranscriptMessage, BeforeSpeakMessage, MetricsMessage
+from stimm import BeforeSpeakMessage, MetricsMessage, Supervisor, TranscriptMessage
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("demo.supervisor")

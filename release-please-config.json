@@ -1,0 +1,23 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "bootstrap-sha": "dedebf1",
+  "packages": {
+    ".": {
+      "release-type": "python",
+      "package-name": "stimm",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true
+    },
+    "packages/protocol-ts": {
+      "release-type": "node",
+      "package-name": "@stimm/protocol",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true
+    }
+  },
+  "linked-versions": [
+    [".", "packages/protocol-ts"]
+  ]
+}

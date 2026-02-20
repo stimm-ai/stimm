@@ -1,223 +1,147 @@
-<div align="center">
-  <img src=".github/assets/logo_stimm_h.png" alt="Stimm Voice Agent Platform" width="200" height="56">
-  <p>
-    <b>The Open Source Voice Agent Platform</b><br>
-    Orchestrate ultra-low latency AI pipelines for real-time conversations over WebRTC.
-  </p>
+# stimm
 
-  <a href="https://github.com/stimm-ai/stimm/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/stimm-ai/stimm/ci.yml?label=tests" alt="Tests">
-  </a>
-  <a href="https://github.com/stimm-ai/stimm/blob/main/LICENSE">
-    <img src="https://img.shields.io/badge/license-AGPL_v3-blue" alt="License">
-  </a>
-  <a href="#">
-    <img src="https://img.shields.io/badge/python-3.12-blue" alt="Python">
-  </a>
-  <a href="#">
-    <img src="https://img.shields.io/badge/livekit-compatible-purple" alt="LiveKit">
-  </a>
-  <a href="https://stimm-ai.github.io/stimm/">
-    <img src="https://img.shields.io/badge/docs-online-success" alt="Documentation">
-  </a>
-  <a href="#">
-    <img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff">
-  </a>
-  <a href="#">
-    <img src="https://img.shields.io/badge/eslint-3A33D1?logo=eslint&logoColor=white" alt="ESLint">
-  </a>
-  <a href="#">
-    <img src="https://img.shields.io/badge/prettier-1A2C34?logo=prettier&logoColor=F7B93E" alt="Prettier">
-  </a>
-  <a href="#">
-    <img src="https://img.shields.io/badge/semgrep-3A33D1?logo=semgrep&logoColor=white" alt="Semgrep">
-  </a>
-  <a href="#">
-    <img src="https://img.shields.io/badge/security-bandit-yellow" alt="Bandit">
-  </a>
-  <div align="center">
-    <video src="https://github.com/user-attachments/assets/a87909f2-0f44-45ba-9a27-c4f233805da8" width="100%" controls="controls" muted="muted" autoplay="autoplay">
-    </video>
-    <p><i>🔊 Sound on! Watch the ultra-low latency (< 1s) in action.</i></p>
-  </div>
-</div>
-<br>
+**Dual-agent voice orchestration built on [livekit-agents](https://github.com/livekit/agents).**
 
-A modular, real-time AI voice assistant platform built with Python (FastAPI) and Next.js. This project provides a flexible infrastructure for creating, managing, and interacting with voice agents using various LLM, TTS, and STT providers.
+One agent talks fast. One agent thinks deep. They collaborate in real-time.
 
-📚 **[Read the Full Documentation](https://stimm-ai.github.io/stimm/)**
-
-#### [Features](#-features) · [Why Stimm?](#-why-stimm) · [Use Cases](#-use-cases) · [How it Works](#-how-it-works) · [Quick Start](#-quick-start) · [Docs](https://stimm-ai.github.io/stimm/)
-
-## 🚀 Features
-
-- **Real-time Voice Interaction**: Low-latency voice conversations using WebRTC and WebSocket transports.
-- **SIP Telephony Integration**: Connect incoming phone calls to AI agents via SIP protocol.
-- **Modular AI Providers**:
-  - **LLM**: Support for Groq, Mistral, OpenRouter, and local Llama.cpp.
-  - **TTS**: Deepgram, ElevenLabs, Async.ai, and local Kokoro.
-  - **STT**: Deepgram and local Whisper.
-- **Administrable RAG Configurations**: Create and manage multiple RAG configurations with Qdrant and per‑agent knowledge bases.
-- **Agent Management**: Admin interface to configure and manage multiple agents with different personalities and provider settings.
-- **Modern Frontend**: Responsive web interface built with Next.js 16 and Tailwind CSS.
-- **Robust Infrastructure**: Dockerized deployment with Traefik reverse proxy, PostgreSQL for data persistence, and Alembic for migrations.
-- **Voice Activity Detection**: Integrated Silero VAD for accurate speech detection.
-
-## 💡 Why Stimm?
-
-- **Ultra-low latency** thanks to optimized Silero VAD and LiveKit real-time media pipeline.
-- **Provider-agnostic** (LLM, TTS, STT): choose any AI stack.
-- **Trimmable dependencies**: Heavy build-time dependencies (like `pyaudio`) are optional, keeping the core image lean and secure.
-- **Lightweight core**: Pure ONNX Runtime inference for fast installation.
-- **Scalable architecture**: Docker, Traefik, Postgres, and a technical foundation designed for production deployment.
-
-## 🧩 Use Cases
-
-- **Customer support voicebots**: Handle common queries automatically.
-- **Interactive phone-based assistants (SIP)**: Connect traditional telephony to AI.
-- **Real-time agent demos**: Perfect for AI research and prototyping.
-- **On-premise conversational agents**: Deploy securely with AGPL-friendly terms.
-
-## 🔄 How it Works
-
-```mermaid
-graph LR
-    %% High Contrast Theme
-    classDef person fill:#FF007F,stroke:#fff,stroke-width:4px,color:white,font-weight:bold;
-    classDef transport fill:#00B0FF,stroke:#fff,stroke-width:2px,color:white,font-weight:bold;
-    classDef input fill:#7F00FF,stroke:#fff,stroke-width:2px,color:white,font-weight:bold;
-    classDef brain fill:#FFD700,stroke:#FF8C00,stroke-width:3px,color:black,font-weight:bold,stroke-dasharray: 5 5;
-    classDef output fill:#00E676,stroke:#fff,stroke-width:2px,color:black,font-weight:bold;
-
-    %% Multi-platform User
-    User([👤 📱 💻 📞 User]):::person
-
-    %% LiveKit Layer
-    subgraph "📡 LiveKit Infrastructure"
-        direction TB
-        Room[🔄 Real-time Room <br/> WebRTC / SIP]:::transport
-    end
-
-    %% Stimm Core Layer
-    subgraph "⚡ Stimm Core"
-        direction TB
-        Hear[👂 Hear & Transcribe]:::input
-        Think(🧠 Think & Retrieve):::brain
-        Speak[🗣️ Speak & Respond]:::output
-    end
-
-    %% Connections
-    User <==>|Audio Stream| Room
-    Room ==>|Raw Audio| Hear
-    Hear ==>|Text| Think
-    Think ==>|Text| Speak
-    Speak ==>|Synthesized Audio| Room
-
-    %% Link Styles
-    linkStyle default stroke-width:3px,fill:none,stroke:#666
+```
+┌─────────────────────────────────────────────────────────────┐
+│  stimm — dual-agent voice orchestration on LiveKit          │
+│                                                             │
+│  ┌────────────────────┐   ┌─────────────────────────────┐   │
+│  │  VoiceAgent        │   │  Supervisor                 │   │
+│  │  (livekit Agent)   │◄──│  (any language/runtime)     │   │
+│  │                    │──►│                             │   │
+│  │  Talks to user     │   │  Watches transcript         │   │
+│  │  Fast LLM          │   │  Calls tools                │   │
+│  │  VAD→STT→LLM→TTS  │   │  Sends instructions         │   │
+│  │  Pre-TTS buffering │   │  Controls flow              │   │
+│  └────────────────────┘   └─────────────────────────────┘   │
+│           │                         │                       │
+│           └──── Data Channel ───────┘                       │
+│                 (stimm protocol)                            │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-## 🏁 Quick Start
-
-Get Stimm up and running in minutes:
+## Install
 
 ```bash
-# Clone the repository
-git clone https://github.com/stimm-ai/stimm.git
-cd stimm
+# Python (voice agent + supervisor base class)
+pip install stimm[deepgram,openai]
 
-# Set up environment (copies .env.example files)
-chmod +x scripts/setup_env.sh
-./scripts/setup_env.sh
-
-# Start all services with Docker Compose
-docker-compose up --build
+# TypeScript (supervisor client for Node.js consumers)
+npm install @stimm/protocol
 ```
 
-Once the services are running, open your browser to:
+## Quick Start
 
-- **Frontend Admin**: http://front.localhost/agent/admin (or http://localhost:3000/agent/admin)
-- **API Documentation**: http://api.localhost/docs (or http://localhost:8001/docs)
+### Voice Agent (Python)
 
-For detailed instructions, refer to the [Full Documentation](https://stimm-ai.github.io/stimm/) or check the guides below:
+```python
+from stimm import VoiceAgent
+from livekit.plugins import silero, deepgram, openai
 
-- [**Configuration**](https://stimm-ai.github.io/stimm/user-guide/configuration/): Configure providers (LLM, TTS, STT).
-- [**Web Interface**](https://stimm-ai.github.io/stimm/user-guide/web-interface/): Manage agents and RAG via the UI.
-- [**SIP Integration**](https://stimm-ai.github.io/stimm/user-guide/sip-integration/): Connect phone numbers to your agents.
-- [**Development**](https://stimm-ai.github.io/stimm/developer-guide/development/): Setup local environment.
+agent = VoiceAgent(
+    stt=deepgram.STT(),
+    tts=openai.TTS(),
+    vad=silero.VAD.load(),
+    fast_llm=openai.LLM(model="gpt-4o-mini"),
+    buffering_level="MEDIUM",
+    mode="hybrid",
+    instructions="You are a helpful voice assistant.",
+)
 
-## 💻 Development
+if __name__ == "__main__":
+    from livekit.agents import WorkerOptions, cli
+    cli.run_app(WorkerOptions(entrypoint_fnc=agent.entrypoint))
+```
 
-For local development, see the [Development Guide](https://stimm-ai.github.io/stimm/developer-guide/development/) in the documentation.
+### Supervisor (Python)
 
-### Quick Development Setup
+```python
+from stimm import Supervisor, TranscriptMessage
+
+class MySupervisor(Supervisor):
+    async def on_transcript(self, msg: TranscriptMessage):
+        if not msg.partial:
+            # Process with your powerful LLM, call tools, etc.
+            result = await my_big_llm.process(msg.text)
+            await self.instruct(result.text, speak=True)
+
+supervisor = MySupervisor()
+await supervisor.connect("ws://localhost:7880", token)
+```
+
+### Supervisor (TypeScript)
+
+```typescript
+import { StimmSupervisorClient } from "@stimm/protocol";
+
+const client = new StimmSupervisorClient({
+  livekitUrl: "ws://localhost:7880",
+  token: supervisorToken,
+});
+
+client.on("transcript", async (msg) => {
+  if (!msg.partial) {
+    const result = await myAgent.process(msg.text);
+    await client.instruct({ text: result, speak: true, priority: "normal" });
+  }
+});
+
+await client.connect();
+```
+
+## Concepts
+
+### Dual-Agent Architecture
+
+| Agent | Role | LLM | Latency |
+|-------|------|-----|---------|
+| **VoiceAgent** | Talks to the user | Fast, small (e.g. GPT-4o-mini) | ~500ms |
+| **Supervisor** | Thinks, plans, uses tools | Large, capable (e.g. Claude, GPT-4o) | Background |
+
+They communicate via **LiveKit data channels** using the stimm protocol — structured JSON messages flowing both directions.
+
+### Modes
+
+| Mode | Behavior |
+|------|----------|
+| `autonomous` | Voice agent uses its own fast LLM independently |
+| `relay` | Voice agent speaks exactly what the supervisor sends |
+| `hybrid` (default) | Voice agent responds autonomously but incorporates supervisor instructions |
+
+### Pre-TTS Buffering
+
+Controls how LLM tokens are batched before TTS:
+
+| Level | Behavior |
+|-------|----------|
+| `NONE` | Every token immediately (lowest latency, choppiest) |
+| `LOW` | Buffer until word boundary |
+| `MEDIUM` | Buffer until 4+ words or punctuation (default) |
+| `HIGH` | Buffer until sentence boundary |
+
+## Development
 
 ```bash
-# Start supporting services (PostgreSQL, Qdrant, LiveKit, Redis, SIP)
-docker compose up -d postgres qdrant traefik livekit redis sip
+# Local LiveKit server
+docker compose up -d
 
-# Install Python dependencies (add --extra audio for local CLI audio/testing)
-uv sync --group dev --group docs --all-extras
+# Install in dev mode
+pip install -e ".[dev]"
 
-# Set up environment files and Python path (optional)
-./scripts/setup_env.sh
+# Run tests
+pytest
 
-# Run backend locally
-uv run python -m src.main
-
-# In another terminal, run frontend
-cd src/front
-npm install
-npm run dev
+# Lint
+ruff check src/ tests/
 ```
 
-## 🛡️ Security & Quality
+## Protocol
 
-Stimm follows a modern security-first approach using open-source SAST (Static Application Security Testing) and SCA (Software Composition Analysis) tools integrated into the development workflow.
+See [docs/protocol.md](docs/protocol.md) for the full message specification.
 
-### Code Security (SAST)
+## License
 
-- **[Semgrep](https://semgrep.dev/)**: Multi-language security scanner for finding complex vulnerabilities.
-- **[Bandit](https://bandit.readthedocs.io/)**: Python-specific security scanner for common vulnerabilities.
-- **[ESLint SonarJS](https://github.com/SonarSource/eslint-plugin-sonarjs)**: Advanced code quality and security rules for the React frontend, providing SonarQube-like analysis.
-
-### Dependency Security (SCA)
-
-- **[pip-audit](https://pypi.org/project/pip-audit/)**: Checks Python dependencies for known vulnerabilities.
-- **npm audit**: Checks JavaScript dependencies for known vulnerabilities.
-
-### Running All Checks
-
-Developers can run the entire suite of security, quality, and formatting checks with a single command:
-
-```bash
-# Run all checks on all files in the repository
-pre-commit run --all-files
-```
-
-This command runs Ruff (lint/format), Prettier, Bandit, Semgrep, pip-audit, npm audit, and frontend-security-lint in sequence. It is highly recommended to run this before submitting any pull request.
-
-### Quality & Standards
-
-- **[Ruff](https://beta.ruff.rs/)**: Extremely fast Python linter and formatter.
-- **[ESLint](https://eslint.org/)** & **[Prettier](https://prettier.io/)**: Frontend linting and formatting.
-
-## 🤝 Contributing
-
-We welcome contributions! Please read our [Contributing Guide](https://stimm-ai.github.io/stimm/project/contributing/) for details on how to submit pull requests, report issues, and our code of conduct.
-
-By contributing, you agree to the [Contributor License Agreement (CLA)](https://stimm-ai.github.io/stimm/project/contributing/#contributor-license-agreement-cla).
-
-## ⚖️ License
-
-Stimm is open-source software licensed under the **GNU Affero General Public License v3.0 (AGPL v3)**. See the [LICENSE](LICENSE) file for details.
-
-**Trademark Notice**: The name "Stimm" and the Stimm logo are exclusive trademarks of the project maintainers and are not covered by the open-source license. Derivative works must remove the logo and change the name to avoid suggesting official affiliation.
-
-## ⚡ Acknowledgments
-
-**Built with LiveKit**
-
-Stimm relies on [LiveKit](https://livekit.io/) for high-performance real-time media transport (WebRTC).
-
-_Disclaimer: Stimm is an independent project and is not affiliated with, endorsed by, or sponsored by LiveKit._
+MIT

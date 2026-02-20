@@ -1,0 +1,36 @@
+{
+  "name": "@stimm/protocol",
+  "version": "0.1.0",
+  "description": "TypeScript types and supervisor client for Stimm dual-agent voice orchestration",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "livekit-client": "^2.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/etienne/stimm",
+    "directory": "packages/protocol-ts"
+  },
+  "keywords": [
+    "stimm",
+    "voice",
+    "livekit",
+    "dual-agent",
+    "protocol"
+  ]
+}

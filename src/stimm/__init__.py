@@ -31,6 +31,9 @@ Usage::
 """
 
 from stimm.buffering import BufferingLevel, TextBufferingStrategy
+from stimm.conversation_supervisor import ConversationSupervisor
+from stimm.room_manager import RoomManager, SessionInfo
+from stimm.worker import SupervisorFactory, make_agent, make_entrypoint
 from stimm.protocol import (
     ActionResultMessage,
     AgentMode,
@@ -54,8 +57,15 @@ __all__ = [
     # Core classes
     "VoiceAgent",
     "Supervisor",
+    "ConversationSupervisor",
     "StimmRoom",
+    "RoomManager",
+    "SessionInfo",
     "StimmProtocol",
+    # Worker / entrypoint helpers
+    "make_agent",
+    "make_entrypoint",
+    "SupervisorFactory",
     # Buffering
     "BufferingLevel",
     "TextBufferingStrategy",

@@ -206,20 +206,15 @@ class ConversationSupervisor(Supervisor, ABC):
         text = msg.text.strip()
         if not text:
             return
-        # Deduplicate consecutive identical final transcripts.  Some STT
-        # providers (e.g. Deepgram) emit FINAL_TRANSCRIPT twice for the same
-        # utterance via two distinct livekit-agents code paths (direct STT
-        # callback + commit_user_turn interim-promotion).  Guard here — at the
-        # boundary where turns enter the history — so the history never contains
-        # two identical consecutive user turns.
+        # Deduplicate consecutive identical final transcripts.
         last_user = next(
             (t for t in reversed(self._history) if t.role == "user"), None
         )
         if last_user is not None and last_user.text.strip() == text:
-            logger.debug("← user (duplicate, dropped): %s", text[:80])
+            logger.info("[SUPERVISOR] DEDUP DROP user transcript=%r", text[:80])
             return
+        logger.info("[SUPERVISOR] ACCEPT user transcript=%r (history_len=%d)", text[:80], len(self._history))
         self._push("user", text)
-        logger.debug("← user: %s", text[:80])
 
     async def on_before_speak(self, msg: BeforeSpeakMessage) -> None:
         # Capture what the voice agent is about to say for history continuity.

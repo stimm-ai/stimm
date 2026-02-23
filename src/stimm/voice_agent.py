@@ -254,10 +254,17 @@ class VoiceAgent(Agent):
     async def _generate_reply_from_current_context(self) -> None:
         """Force a fast-LLM turn from the currently injected context (idle trigger path)."""
         if self._reply_trigger_inflight:
+            logger.info("[VOICE_AGENT] generate_reply SKIPPED (inflight)")
             return
         session = self._current_session()
         if session is None:
             return
+        logger.info(
+            "[VOICE_AGENT] generate_reply TRIGGERED by supervisor context "
+            "(agent_state=%s current_speech=%s)",
+            getattr(session, "agent_state", "?"),
+            getattr(session, "current_speech", None) is not None,
+        )
         self._reply_trigger_inflight = True
         try:
             # Use an explicit relay instruction so delayed supervisor context
@@ -278,8 +285,19 @@ class VoiceAgent(Agent):
         """Whether it's safe to force a context-driven reply right now."""
         agent_state = getattr(session, "agent_state", None)
         user_state = getattr(session, "user_state", None)
-        # Trigger when the agent is not already thinking/speaking and the user is silent.
-        return agent_state in {"idle", "listening"} and user_state != "speaking"
+        # Never trigger when the agent is already thinking or speaking.
+        if agent_state not in {"idle", "listening"}:
+            return False
+        # Never trigger when the user is currently speaking.
+        if user_state == "speaking":
+            return False
+        # Never trigger when a SpeechHandle is already in flight — avoids a
+        # double-TTS race where the fast LLM already started generating a
+        # reply but agent_state has not yet transitioned to "thinking".
+        current_speech = getattr(session, "current_speech", None)
+        if current_speech is not None:
+            return False
+        return True
 
     def _is_context_trigger_duplicate(self) -> bool:
         """Prevent duplicate trigger bursts for the same latest supervisor context."""

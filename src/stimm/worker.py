@@ -247,6 +247,13 @@ def make_entrypoint(
             )
         )
 
+        # Re-apply INFO level on stimm.* loggers here, after livekit-agents has
+        # finished its own logging setup (which runs before entrypoint is called
+        # and can reset levels set in basicConfig / module-level code).
+        import logging as _logging
+        for _n in ("stimm", "openclaw"):
+            _logging.getLogger(_n).setLevel(_logging.INFO)
+
         agent = make_agent()
         session = AgentSession()
 
@@ -266,13 +273,20 @@ def make_entrypoint(
 
             is_final = bool(ev.is_final)
             text: str = ev.transcript or ""
+            logger.info(
+                "[TRANSCRIPT] is_final=%s text=%r agent_state=%s current_speech=%s",
+                is_final, text,
+                getattr(session, "agent_state", "?"),
+                getattr(session, "current_speech", None) is not None,
+            )
             if is_final:
                 now = time.monotonic()
                 if text == _last_final[0] and now - _last_final[1] < _FINAL_DEDUP_WINDOW_S:
-                    logger.debug("Dropped duplicate final transcript: %r", text)
+                    logger.info("[TRANSCRIPT] DEDUP DROP final=%r (%.3fs ago)", text, now - _last_final[1])
                     return
                 _last_final[0] = text
                 _last_final[1] = now
+                logger.info("[TRANSCRIPT] PASS final=%r → publish_transcript", text)
             asyncio.ensure_future(
                 agent.publish_transcript(text, partial=not is_final)
             )

@@ -37,10 +37,10 @@ Usage::
     import asyncio, aiohttp
 
     class MySupervisor(ConversationSupervisor):
-        async def process(self, history: str, system_prompt: str | None) -> str:
+        async def process(self, history: str) -> str:
             async with aiohttp.ClientSession() as http:
                 resp = await http.post("http://my-backend/supervisor",
-                                       json={"history": history, "systemPrompt": system_prompt})
+                                       json={"history": history})
                 data = await resp.json()
                 return data.get("text") or self.NO_ACTION
 
@@ -208,6 +208,8 @@ def make_agent(instructions: str | None = None) -> VoiceAgent:
 
 def make_entrypoint(
     supervisor_factory: SupervisorFactory,
+    *,
+    room_input_options: Any = None,
 ) -> Callable[[JobContext], Any]:
     """Return a livekit-agents entrypoint function wired to *supervisor_factory*.
 
@@ -223,6 +225,10 @@ def make_entrypoint(
         supervisor_factory: ``(room_name, channel) -> ConversationSupervisor``
             callable. ``channel`` comes from the ``STIMM_CHANNEL`` env var
             (default ``"default"``).
+        room_input_options: Optional ``RoomInputOptions`` passed to
+            ``session.start()``. Use this to bind audio input to a specific
+            participant identity (e.g. ``participant_identity="user"`` for
+            browser clients).
 
     Example::
 
@@ -246,10 +252,29 @@ def make_entrypoint(
 
         # Forward STT transcripts to the Stimm data-channel protocol so the
         # supervisor receives them as TranscriptMessage events.
+        # Dedup guard: some STT providers (e.g. Deepgram) emit a final
+        # transcript event twice for the same utterance — once from the STT
+        # plugin and once from the turn-detector flush.  Drop any identical
+        # final transcript arriving within a 2-second window to prevent a
+        # double LLM call and therefore double TTS output.
+        _last_final: list[Any] = ["", 0.0]
+        _FINAL_DEDUP_WINDOW_S = 2.0
+
         @session.on("user_input_transcribed")
         def _on_transcript(ev) -> None:  # type: ignore[no-untyped-def]
+            import time
+
+            is_final = bool(ev.is_final)
+            text: str = ev.transcript or ""
+            if is_final:
+                now = time.monotonic()
+                if text == _last_final[0] and now - _last_final[1] < _FINAL_DEDUP_WINDOW_S:
+                    logger.debug("Dropped duplicate final transcript: %r", text)
+                    return
+                _last_final[0] = text
+                _last_final[1] = now
             asyncio.ensure_future(
-                agent.publish_transcript(ev.transcript, partial=not ev.is_final)
+                agent.publish_transcript(text, partial=not is_final)
             )
 
         @session.on("conversation_item_added")
@@ -263,7 +288,9 @@ def make_entrypoint(
             if isinstance(text, str) and text.strip():
                 asyncio.ensure_future(agent.publish_before_speak(text))
 
-        await session.start(agent=agent, room=ctx.room)
+        from livekit.agents import RoomInputOptions as _RIO
+        _opts = room_input_options if room_input_options is not None else _RIO()
+        await session.start(agent=agent, room=ctx.room, room_input_options=_opts)
 
         # Bind the Stimm protocol after session.start() so the room is ready.
         agent.protocol.bind(ctx.room)

@@ -7,6 +7,7 @@ LiveKit data channels.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from typing import Any
@@ -77,6 +78,11 @@ class VoiceAgent(Agent):
         self._supervisor_context: list[str] = []
         self._instructions_window = supervisor_instructions_window
         self._turn_counter = 0
+        self._deferred_context_reply_trigger = False
+        self._reply_trigger_inflight = False
+        self._last_context_trigger_fingerprint = ""
+        self._last_context_trigger_ts = 0.0
+        self._context_trigger_cooldown_s = 8.0
 
     @property
     def protocol(self) -> StimmProtocol:
@@ -96,6 +102,15 @@ class VoiceAgent(Agent):
         self._protocol.on_context(self._handle_context)
         self._protocol.on_mode(self._handle_mode_change)
         self._protocol.on_override(self._handle_override)
+        session = self._current_session()
+        if session is not None:
+            @session.on("agent_state_changed")
+            def _on_agent_state_changed(ev) -> None:  # type: ignore[no-untyped-def]
+                if getattr(ev, "new_state", None) in {"idle", "listening"}:
+                    asyncio.ensure_future(self._flush_deferred_context_reply_trigger())
+            @session.on("user_state_changed")
+            def _on_user_state_changed(_ev) -> None:  # type: ignore[no-untyped-def]
+                asyncio.ensure_future(self._flush_deferred_context_reply_trigger())
         logger.info("VoiceAgent entered room, mode=%s", self._mode)
 
     async def on_exit(self) -> None:
@@ -150,18 +165,22 @@ class VoiceAgent(Agent):
 
         if self._mode == "relay" and msg.speak:
             # In relay mode, speak exactly what the supervisor says.
-            if self.session:
-                await self.session.say(msg.text)
+            session = self._current_session()
+            if session is not None:
+                await session.say(msg.text)
         elif self._mode == "hybrid":
             # In hybrid mode, incorporate into next LLM context.
             self._pending_instructions.append(msg)
-            if msg.priority == "interrupt" and self.session:
+            session = self._current_session()
+            if msg.priority == "interrupt" and session is not None:
                 # Interrupt current speech and speak the instruction immediately.
-                await self.session.interrupt()
-                await self.session.say(msg.text)
+                await session.interrupt()
+                await session.say(msg.text)
         elif self._mode == "autonomous":
             # In autonomous mode, still store instructions for optional use.
             self._pending_instructions.append(msg)
+
+        await self._sync_instructions()
 
     async def _handle_context(self, msg: ContextMessage) -> None:
         """Process context from the supervisor."""
@@ -170,6 +189,8 @@ class VoiceAgent(Agent):
         else:
             self._supervisor_context = [msg.text]
         logger.debug("Context updated: %d entries", len(self._supervisor_context))
+        await self._sync_instructions()
+        await self._trigger_context_reply_if_idle_or_defer()
 
     async def _handle_mode_change(self, msg: ModeMessage) -> None:
         """Process a mode switch command."""
@@ -180,9 +201,100 @@ class VoiceAgent(Agent):
     async def _handle_override(self, msg: OverrideMessage) -> None:
         """Process an override command — cancel pending speech and replace."""
         logger.debug("Override for turn %s", msg.turn_id)
-        if self.session:
-            await self.session.interrupt()
-            await self.session.say(msg.replacement)
+        session = self._current_session()
+        if session is not None:
+            await session.interrupt()
+            await session.say(msg.replacement)
+
+    async def _sync_instructions(self) -> None:
+        """Push merged supervisor context/instructions into the active LLM prompt."""
+        merged = self.build_context_with_instructions()
+        await self.update_instructions(merged)
+
+    def _current_session(self):  # type: ignore[no-untyped-def]
+        """Best-effort access to AgentSession (not available in unit tests/offline contexts)."""
+        try:
+            return self.session
+        except RuntimeError:
+            return None
+
+    async def _trigger_context_reply_if_idle_or_defer(self) -> None:
+        """If a new supervisor context arrives, speak it now when idle, or defer until idle."""
+        session = self._current_session()
+        if session is None:
+            return
+        if self._is_context_trigger_duplicate():
+            logger.debug("Skipping duplicate supervisor context trigger")
+            return
+        if self._can_trigger_context_reply_now(session):
+            await self._generate_reply_from_current_context()
+            return
+        self._deferred_context_reply_trigger = True
+        logger.debug(
+            "Deferred supervisor context trigger (agent_state=%s user_state=%s)",
+            getattr(session, "agent_state", None),
+            getattr(session, "user_state", None),
+        )
+
+    async def _flush_deferred_context_reply_trigger(self) -> None:
+        if not self._deferred_context_reply_trigger:
+            return
+        session = self._current_session()
+        if session is None:
+            return
+        if self._is_context_trigger_duplicate():
+            self._deferred_context_reply_trigger = False
+            logger.debug("Dropping deferred duplicate supervisor context trigger")
+            return
+        if not self._can_trigger_context_reply_now(session):
+            return
+        self._deferred_context_reply_trigger = False
+        await self._generate_reply_from_current_context()
+
+    async def _generate_reply_from_current_context(self) -> None:
+        """Force a fast-LLM turn from the currently injected context (idle trigger path)."""
+        if self._reply_trigger_inflight:
+            return
+        session = self._current_session()
+        if session is None:
+            return
+        self._reply_trigger_inflight = True
+        try:
+            # Use an explicit relay instruction so delayed supervisor context
+            # is spoken even when no fresh user utterance arrives.
+            session.generate_reply(
+                input_modality="text",
+                instructions=(
+                    "A new `--Supervisor--` instruction/context has just been injected. "
+                    "Relay its latest relevant content to the user now."
+                ),
+            )
+        except Exception:
+            logger.exception("Failed to trigger idle reply from supervisor context")
+        finally:
+            self._reply_trigger_inflight = False
+
+    def _can_trigger_context_reply_now(self, session: Any) -> bool:
+        """Whether it's safe to force a context-driven reply right now."""
+        agent_state = getattr(session, "agent_state", None)
+        user_state = getattr(session, "user_state", None)
+        # Trigger when the agent is not already thinking/speaking and the user is silent.
+        return agent_state in {"idle", "listening"} and user_state != "speaking"
+
+    def _is_context_trigger_duplicate(self) -> bool:
+        """Prevent duplicate trigger bursts for the same latest supervisor context."""
+        latest = self._supervisor_context[-1].strip() if self._supervisor_context else ""
+        if not latest:
+            return False
+        now = time.monotonic()
+        if (
+            latest == self._last_context_trigger_fingerprint
+            and now - self._last_context_trigger_ts < self._context_trigger_cooldown_s
+        ):
+            return True
+        self._last_context_trigger_fingerprint = latest
+        self._last_context_trigger_ts = now
+        return False
 
     # -- Context building ----------------------------------------------------
 

@@ -64,6 +64,7 @@ Usage::
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import time
 from abc import ABC, abstractmethod
@@ -83,6 +84,15 @@ class _Turn:
     def __init__(self, role: str, text: str) -> None:
         self.role = role  # "user" | "assistant" | "supervisor"
         self.text = text
+
+
+class _BackendDecision:
+    __slots__ = ("action", "text", "reason")
+
+    def __init__(self, action: str, text: str = "", reason: str | None = None) -> None:
+        self.action = action  # "NO_ACTION" | "TRIGGER"
+        self.text = text
+        self.reason = reason
 
 
 class ConversationSupervisor(Supervisor, ABC):
@@ -122,17 +132,35 @@ class ConversationSupervisor(Supervisor, ABC):
         "6. Never invent facts, and do not guess when uncertain."
     )
 
+    #: Backend-facing policy (agnostic) for deciding whether to intervene.
+    #: Integrations may prepend this to the backend input.
+    DEFAULT_AGNOSTIC_DECISION_PREAMBLE: str = (
+        "You are a background supervisor deciding whether to intervene.\n"
+        "Return a single JSON object only:\n"
+        '{"action":"NO_ACTION"|"TRIGGER","text":"<string>","reason":"<short debug reason>"}\n'
+        "Decision rules:\n"
+        "1. If latest user content is small talk/chitchat and the fast agent can handle it: action=NO_ACTION.\n"
+        "2. Focus on the latest user request and the latest assistant reply to that request.\n"
+        "3. If the latest assistant reply is missing, incorrect, contradictory, or does not include the key answer: action=TRIGGER.\n"
+        "4. Use action=NO_ACTION only when the latest assistant reply is already correct and sufficient.\n"
+        "5. A correct answer that appears earlier in history does NOT justify NO_ACTION if the latest assistant reply is still wrong.\n"
+        "6. Never invent tool/system results you did not verify.\n"
+        "If action=NO_ACTION, keep text empty.\n"
+    )
+
     def __init__(
         self,
         *,
         quiet_s: float = 2.5,
         loop_interval_s: float = 1.5,
         max_turns: int = 40,
+        backend_input_preamble: str | None = None,
     ) -> None:
         super().__init__()
         self.quiet_s = quiet_s
         self.loop_interval_s = loop_interval_s
         self.max_turns = max_turns
+        self.backend_input_preamble = backend_input_preamble
 
         self._history: list[_Turn] = []
         self._last_turn_ts: float = 0.0
@@ -212,6 +240,45 @@ class ConversationSupervisor(Supervisor, ABC):
                 lines.append(f"--Supervisor--: {t.text}")
         return "\n".join(lines)
 
+    def format_backend_input(self, history: str) -> str:
+        """Format backend input. Defaults to raw history unless preamble is configured."""
+        if not self.backend_input_preamble:
+            return history
+        return f"{self.backend_input_preamble}\nConversation history:\n{history}"
+
+    def parse_backend_decision(self, raw: str) -> _BackendDecision:
+        """Parse structured backend output (strict JSON contract)."""
+        normalized = raw.strip() if raw else ""
+        if not normalized:
+            return _BackendDecision("NO_ACTION", "", "empty_backend_output")
+
+        if normalized.startswith("{") and normalized.endswith("}"):
+            try:
+                parsed = json.loads(normalized)
+                action = parsed.get("action")
+                text = parsed.get("text")
+                reason = parsed.get("reason")
+                if action == "NO_ACTION":
+                    return _BackendDecision(
+                        "NO_ACTION",
+                        "",
+                        reason if isinstance(reason, str) else None,
+                    )
+                if action == "TRIGGER":
+                    clean_text = text.strip() if isinstance(text, str) else ""
+                    if not clean_text:
+                        return _BackendDecision("NO_ACTION", "", "empty_trigger_text")
+                    return _BackendDecision(
+                        "TRIGGER",
+                        clean_text,
+                        reason if isinstance(reason, str) else None,
+                    )
+                return _BackendDecision("NO_ACTION", "", "invalid_action")
+            except Exception:
+                return _BackendDecision("NO_ACTION", "", "invalid_json")
+
+        return _BackendDecision("NO_ACTION", "", "non_json_output")
+
     # -- Processing loop -----------------------------------------------------
 
     async def _loop(self) -> None:
@@ -248,13 +315,17 @@ class ConversationSupervisor(Supervisor, ABC):
             len(self._history),
             history_text[:120],
         )
-        response = await self.process(history_text)
-        normalized = response.strip() if response else ""
-        if not normalized or normalized == _NO_ACTION:
-            logger.debug("Backend: no action this turn")
+        backend_input = self.format_backend_input(history_text)
+        response = await self.process(backend_input)
+        decision = self.parse_backend_decision(response)
+        if decision.action != "TRIGGER":
+            if decision.reason:
+                logger.debug("Backend: no action (%s)", decision.reason)
+            else:
+                logger.debug("Backend: no action this turn")
             return
-        logger.info("Backend response: %s", normalized[:120])
-        self._push("supervisor", normalized)
+        logger.info("Backend response: %s", decision.text[:120])
+        self._push("supervisor", decision.text)
         # Replace the voice agent's full context so the new
         # [Supervisor → assistant] turn is visible on the next LLM turn.
         await self.add_context(self.format_history(), append=False)

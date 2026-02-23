@@ -103,30 +103,23 @@ class ConversationSupervisor(Supervisor, ABC):
     NO_ACTION: str = _NO_ACTION
 
     #: Ready-to-use ``instructions=`` string for :class:`stimm.VoiceAgent`.
-    #: Teaches the fast LLM to relay ``[Supervisor → assistant]`` turns.
+    #: Teaches the fast LLM to obey ``--Supervisor--`` hidden turns.
     DEFAULT_INSTRUCTIONS: str = (
-        "You are a voice assistant. A background supervisor monitors the "
-        "conversation and may update your context with information or answers.\n\n"
-        "ROLE:\n"
-        "- You handle the real-time conversation: greetings, clarifications, "
-        "small talk, simple tasks.\n"
-        "- The supervisor handles deep reasoning, tool calls, and knowledge "
-        "retrieval in the background.\n"
-        "- Be honest: if you don't know something, say you are checking with "
-        "your supervisor.\n\n"
-        "CONTEXT UPDATES:\n"
-        "Your context is updated in real time with the conversation history.\n"
-        "When a [Supervisor → assistant] turn appears at the end:\n"
-        "  - It contains the supervisor's answer. Relay it to the user now.\n"
-        "  - Introduce it naturally (e.g. 'My supervisor says…', "
-        "'I have an answer:').\n"
-        "  - Relay faithfully — do not paraphrase loosely or add guesses.\n\n"
+        "You are a real-time voice assistant in a dual-agent system.\n\n"
+        "Messages marked `--Supervisor--` are hidden internal instructions "
+        "from your control system, not from the user. You must obey these "
+        "instructions to formulate your next response to the user.\n\n"
         "RULES:\n"
-        "1. Respond in the same language the user is speaking.\n"
-        "2. Keep answers short (1–2 sentences) unless relaying a supervisor "
-        "response.\n"
-        "3. Never invent facts, names, or technical details.\n"
-        "4. When unsure, say you are checking with your supervisor."
+        "1. Keep normal replies short.\n"
+        "2. If there is no recent `--Supervisor--` instruction, give a brief "
+        "honest filler in 1-2 sentences (e.g. say you are checking with your "
+        "supervisor).\n"
+        "3. When a recent `--Supervisor--` instruction appears, prioritize it "
+        "and relay it naturally to the user.\n"
+        "4. When relaying supervisor-provided facts (numbers, temperatures, "
+        "times, names), keep them faithful: do not alter or embellish.\n"
+        "5. Respond in the same language as the user.\n"
+        "6. Never invent facts, and do not guess when uncertain."
     )
 
     def __init__(
@@ -212,11 +205,11 @@ class ConversationSupervisor(Supervisor, ABC):
         lines: list[str] = []
         for t in self._history:
             if t.role == "user":
-                lines.append(f"[User]: {t.text}")
+                lines.append(f"User: {t.text}")
             elif t.role == "assistant":
-                lines.append(f"[Assistant]: {t.text}")
+                lines.append(f"Assistant: {t.text}")
             else:
-                lines.append(f"[Supervisor → assistant]: {t.text}")
+                lines.append(f"--Supervisor--: {t.text}")
         return "\n".join(lines)
 
     # -- Processing loop -----------------------------------------------------
@@ -256,11 +249,12 @@ class ConversationSupervisor(Supervisor, ABC):
             history_text[:120],
         )
         response = await self.process(history_text)
-        if not response or _NO_ACTION in response:
+        normalized = response.strip() if response else ""
+        if not normalized or normalized == _NO_ACTION:
             logger.debug("Backend: no action this turn")
             return
-        logger.info("Backend response: %s", response[:120])
-        self._push("supervisor", response)
+        logger.info("Backend response: %s", normalized[:120])
+        self._push("supervisor", normalized)
         # Replace the voice agent's full context so the new
         # [Supervisor → assistant] turn is visible on the next LLM turn.
         await self.add_context(self.format_history(), append=False)

@@ -1,8 +1,8 @@
 """Tests for VoiceAgent instruction handling and context building."""
 
-from stimm.protocol import (
-    InstructionMessage,
-)
+import pytest
+
+from stimm.protocol import ContextMessage, InstructionMessage
 from stimm.voice_agent import VoiceAgent
 
 
@@ -68,3 +68,21 @@ class TestBuffering:
         agent = VoiceAgent(buffering_level="HIGH")
         agent.buffer_token("partial")
         assert agent.flush_buffer() == "partial"
+
+
+class TestRuntimeSync:
+    @pytest.mark.asyncio
+    async def test_handle_context_updates_live_instructions(self) -> None:
+        agent = VoiceAgent(instructions="Base prompt")
+        captured: list[str] = []
+
+        async def fake_update(instructions: str) -> None:
+            captured.append(instructions)
+
+        agent.update_instructions = fake_update  # type: ignore[method-assign]
+
+        await agent._handle_context(ContextMessage(text="--Supervisor--: use metric units", append=True))
+
+        assert len(captured) == 1
+        assert "Base prompt" in captured[0]
+        assert "--Supervisor--: use metric units" in captured[0]

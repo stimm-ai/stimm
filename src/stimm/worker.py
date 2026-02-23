@@ -252,6 +252,17 @@ def make_entrypoint(
                 agent.publish_transcript(ev.transcript, partial=not ev.is_final)
             )
 
+        @session.on("conversation_item_added")
+        def _on_conversation_item(ev) -> None:  # type: ignore[no-untyped-def]
+            # Keep supervisor history aligned with what the fast assistant actually said.
+            item = getattr(ev, "item", None)
+            role = getattr(item, "role", None)
+            if role != "assistant":
+                return
+            text = getattr(item, "text_content", None)
+            if isinstance(text, str) and text.strip():
+                asyncio.ensure_future(agent.publish_before_speak(text))
+
         await session.start(agent=agent, room=ctx.room)
 
         # Bind the Stimm protocol after session.start() so the room is ready.
@@ -265,17 +276,23 @@ def make_entrypoint(
         api_key = os.environ.get("LIVEKIT_API_KEY", "devkey")
         api_secret = os.environ.get("LIVEKIT_API_SECRET", "secret")
 
+        from datetime import timedelta
+
         from livekit import api as lkapi
 
-        sup_token = lkapi.AccessToken(api_key, api_secret)
-        sup_token.identity = f"stimm-supervisor-{ctx.room.name}"
-        sup_token.ttl = 3600
-        sup_token.video_grant = lkapi.VideoGrants(
-            room_join=True,
-            room=ctx.room.name,
-            can_publish=False,
-            can_subscribe=True,
-            can_publish_data=True,
+        sup_token = (
+            lkapi.AccessToken(api_key, api_secret)
+            .with_identity(f"stimm-supervisor-{ctx.room.name}")
+            .with_ttl(timedelta(seconds=3600))
+            .with_grants(
+                lkapi.VideoGrants(
+                    room_join=True,
+                    room=ctx.room.name,
+                    can_publish=False,
+                    can_subscribe=True,
+                    can_publish_data=True,
+                )
+            )
         )
 
         try:

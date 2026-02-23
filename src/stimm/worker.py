@@ -37,10 +37,10 @@ Usage::
     import asyncio, aiohttp
 
     class MySupervisor(ConversationSupervisor):
-        async def process(self, history: str) -> str:
+        async def process(self, history: str, system_prompt: str | None) -> str:
             async with aiohttp.ClientSession() as http:
                 resp = await http.post("http://my-backend/supervisor",
-                                       json={"history": history})
+                                       json={"history": history, "systemPrompt": system_prompt})
                 data = await resp.json()
                 return data.get("text") or self.NO_ACTION
 

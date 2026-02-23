@@ -52,8 +52,8 @@ Usage::
     from stimm import ConversationSupervisor, VoiceAgent
 
     class MyBackendSupervisor(ConversationSupervisor):
-        async def process(self, history: str) -> str:
-            response = await my_llm.generate(history)
+        async def process(self, history: str, system_prompt: str | None) -> str:
+            response = await my_llm.generate(history, system_prompt=system_prompt)
             return response or self.NO_ACTION
 
     supervisor = MyBackendSupervisor()
@@ -184,12 +184,14 @@ class ConversationSupervisor(Supervisor, ABC):
     # -- Abstract interface --------------------------------------------------
 
     @abstractmethod
-    async def process(self, history: str) -> str:
+    async def process(self, history: str, system_prompt: str | None) -> str:
         """Send the conversation history to the reasoning backend.
 
         Args:
             history: Formatted conversation history produced by
                 :meth:`format_history`.
+            system_prompt: Optional backend system prompt that defines the
+                supervisor policy/output contract.
 
         Returns:
             The backend's response text, or :attr:`NO_ACTION` to skip
@@ -240,11 +242,10 @@ class ConversationSupervisor(Supervisor, ABC):
                 lines.append(f"--Supervisor--: {t.text}")
         return "\n".join(lines)
 
-    def format_backend_input(self, history: str) -> str:
-        """Format backend input. Defaults to raw history unless preamble is configured."""
-        if not self.backend_input_preamble:
-            return history
-        return f"{self.backend_input_preamble}\nConversation history:\n{history}"
+    def get_backend_system_prompt(self) -> str | None:
+        """Return backend system prompt when configured."""
+        preamble = (self.backend_input_preamble or "").strip()
+        return preamble or None
 
     def parse_backend_decision(self, raw: str) -> _BackendDecision:
         """Parse structured backend output (strict JSON contract)."""
@@ -315,8 +316,8 @@ class ConversationSupervisor(Supervisor, ABC):
             len(self._history),
             history_text[:120],
         )
-        backend_input = self.format_backend_input(history_text)
-        response = await self.process(backend_input)
+        system_prompt = self.get_backend_system_prompt()
+        response = await self.process(history_text, system_prompt)
         decision = self.parse_backend_decision(response)
         if decision.action != "TRIGGER":
             if decision.reason:

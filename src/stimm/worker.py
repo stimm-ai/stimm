@@ -7,7 +7,8 @@ only needs to supply a ``supervisor_factory`` to produce the
 
 Environment variables
 ─────────────────────
-STIMM_STT_PROVIDER   deepgram (default) | openai | google | azure | assemblyai | aws | speechmatics | clova | fal
+STIMM_STT_PROVIDER   deepgram (default) | openai | google | azure
+                     | assemblyai | aws | speechmatics | clova | fal
 STIMM_STT_MODEL      provider-specific model name (default: nova-3)
 STIMM_STT_API_KEY    override API key for STT provider
 STIMM_STT_LANGUAGE   language hint, e.g. "fr" (optional)
@@ -60,7 +61,8 @@ import asyncio
 import importlib
 import logging
 import os
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from livekit.agents import AgentSession, JobContext
 from livekit.plugins import silero
@@ -110,8 +112,7 @@ def _load_plugin(provider_map: dict[str, str], provider: str) -> Any:
     module_name = provider_map.get(provider)
     if not module_name:
         raise ValueError(
-            f"Unknown provider '{provider}'. "
-            f"Available: {', '.join(sorted(provider_map.keys()))}"
+            f"Unknown provider '{provider}'. Available: {', '.join(sorted(provider_map.keys()))}"
         )
     try:
         return importlib.import_module(module_name)
@@ -132,11 +133,18 @@ def _make_stt() -> Any:
     api_key = os.environ.get("STIMM_STT_API_KEY")
     language = os.environ.get("STIMM_STT_LANGUAGE")
     mod = _load_plugin(STT_PROVIDERS, provider)
+
     kwargs: dict[str, Any] = {"model": model}
+
+    if language:
+        if provider == "google":
+            kwargs["languages"] = [language]  # Google attend une liste
+        else:
+            kwargs["language"] = language
+
     if api_key:
         kwargs["api_key"] = api_key
-    if language:
-        kwargs["language"] = language
+
     return mod.STT(**kwargs)
 
 
@@ -144,27 +152,52 @@ def _make_tts() -> Any:
     provider = os.environ.get("STIMM_TTS_PROVIDER", "openai")
     model = os.environ.get("STIMM_TTS_MODEL", "gpt-4o-mini-tts")
     voice = os.environ.get("STIMM_TTS_VOICE", "ash")
+    language = os.environ.get("STIMM_TTS_LANGUAGE")
     api_key = os.environ.get("STIMM_TTS_API_KEY")
     mod = _load_plugin(TTS_PROVIDERS, provider)
-    kwargs: dict[str, Any] = {"model": model}
-    # ElevenLabs uses voice_id; most other providers use voice.
-    if provider == "elevenlabs":
-        kwargs["voice_id"] = voice
+
+    kwargs: dict[str, Any] = {}
+
+    # Mapping du modèle
+    if provider == "google" and "gemini" not in model.lower():
+        kwargs["model_name"] = model
     else:
-        kwargs["voice"] = voice
+        kwargs["model"] = model
+
+    # Mapping de la voix
+    if voice:
+        if provider == "elevenlabs":
+            kwargs["voice_id"] = voice
+        elif provider == "google":
+            kwargs["voice_name"] = voice
+        else:
+            kwargs["voice"] = voice
+
+    # Mapping de la langue (utile pour Cartesia, Google, etc.)
+    if language:
+        kwargs["language"] = language
+
     if api_key:
         kwargs["api_key"] = api_key
+
     return mod.TTS(**kwargs)
 
 
 def _make_llm() -> Any:
     provider = os.environ.get("STIMM_LLM_PROVIDER", "openai")
     model = os.environ.get("STIMM_LLM_MODEL", "gpt-4o-mini")
+    temperature = os.environ.get("STIMM_LLM_TEMPERATURE")
     api_key = os.environ.get("STIMM_LLM_API_KEY")
     mod = _load_plugin(LLM_PROVIDERS, provider)
+
     kwargs: dict[str, Any] = {"model": model}
+
+    if temperature is not None:
+        kwargs["temperature"] = float(temperature)
+
     if api_key:
         kwargs["api_key"] = api_key
+
     return mod.LLM(**kwargs)
 
 
@@ -251,6 +284,7 @@ def make_entrypoint(
         # finished its own logging setup (which runs before entrypoint is called
         # and can reset levels set in basicConfig / module-level code).
         import logging as _logging
+
         for _n in ("stimm", "openclaw"):
             _logging.getLogger(_n).setLevel(_logging.INFO)
 
@@ -275,21 +309,22 @@ def make_entrypoint(
             text: str = ev.transcript or ""
             logger.info(
                 "[TRANSCRIPT] is_final=%s text=%r agent_state=%s current_speech=%s",
-                is_final, text,
+                is_final,
+                text,
                 getattr(session, "agent_state", "?"),
                 getattr(session, "current_speech", None) is not None,
             )
             if is_final:
                 now = time.monotonic()
                 if text == _last_final[0] and now - _last_final[1] < _FINAL_DEDUP_WINDOW_S:
-                    logger.info("[TRANSCRIPT] DEDUP DROP final=%r (%.3fs ago)", text, now - _last_final[1])
+                    logger.info(
+                        "[TRANSCRIPT] DEDUP DROP final=%r (%.3fs ago)", text, now - _last_final[1]
+                    )
                     return
                 _last_final[0] = text
                 _last_final[1] = now
                 logger.info("[TRANSCRIPT] PASS final=%r → publish_transcript", text)
-            asyncio.ensure_future(
-                agent.publish_transcript(text, partial=not is_final)
-            )
+            asyncio.ensure_future(agent.publish_transcript(text, partial=not is_final))
 
         @session.on("conversation_item_added")
         def _on_conversation_item(ev) -> None:  # type: ignore[no-untyped-def]
@@ -303,6 +338,7 @@ def make_entrypoint(
                 asyncio.ensure_future(agent.publish_before_speak(text))
 
         from livekit.agents import RoomInputOptions as _RIO
+
         _opts = room_input_options if room_input_options is not None else _RIO()
         await session.start(agent=agent, room=ctx.room, room_input_options=_opts)
 
@@ -354,7 +390,7 @@ def make_entrypoint(
             supervisor.stop_loop()
             try:
                 await supervisor.disconnect()
-            except Exception:
+            except Exception:  # noqa: BLE001  # nosec B110
                 pass
             disconnect.set()
 

@@ -157,10 +157,17 @@ def _make_tts() -> Any:
     mod = _load_plugin(TTS_PROVIDERS, provider)
 
     kwargs: dict[str, Any] = {}
+    tts_ctor = mod.TTS
 
-    # Mapping du modèle
-    if provider == "google" and "gemini" not in model.lower():
-        kwargs["model_name"] = model
+    # Google has two TTS constructors:
+    # - google.TTS(model_name=..., voice_name=...)
+    # - google.beta.GeminiTTS(model=..., voice_name=...)
+    if provider == "google":
+        if "gemini" in model.lower() and hasattr(mod, "beta") and hasattr(mod.beta, "GeminiTTS"):
+            tts_ctor = mod.beta.GeminiTTS
+            kwargs["model"] = model
+        else:
+            kwargs["model_name"] = model
     else:
         kwargs["model"] = model
 
@@ -173,14 +180,14 @@ def _make_tts() -> Any:
         else:
             kwargs["voice"] = voice
 
-    # Mapping de la langue (utile pour Cartesia, Google, etc.)
-    if language:
+    # Language is accepted by several providers (Cartesia, Google standard TTS, etc.)
+    if language and not (provider == "google" and tts_ctor is not mod.TTS):
         kwargs["language"] = language
 
     if api_key:
         kwargs["api_key"] = api_key
 
-    return mod.TTS(**kwargs)
+    return tts_ctor(**kwargs)
 
 
 def _make_llm() -> Any:

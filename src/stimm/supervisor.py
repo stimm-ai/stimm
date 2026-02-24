@@ -66,6 +66,11 @@ class Supervisor:
         """Whether the supervisor is currently connected to a room."""
         return self._connected
 
+    @property
+    def room(self) -> Any | None:
+        """The underlying LiveKit ``rtc.Room`` instance, or ``None`` before connect."""
+        return self._room
+
     # -- Connection ----------------------------------------------------------
 
     async def connect(self, url: str, token: str) -> None:

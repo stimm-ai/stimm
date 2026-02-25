@@ -19,7 +19,6 @@ import asyncio
 
 from livekit.agents import AgentSession, JobContext, WorkerOptions, cli
 from livekit.plugins import deepgram, openai, silero
-
 from stimm import VoiceAgent
 
 

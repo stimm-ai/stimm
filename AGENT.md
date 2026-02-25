@@ -84,4 +84,4 @@ Persist only user choices and parameter values:
 ## References
 
 - Root overview: [README.md](README.md)
-- Wizard migration notes: [docs/EXTENSION_WIZARD_INTEGRATION.md](docs/EXTENSION_WIZARD_INTEGRATION.md)
+- Wizard migration notes: [website/docs/integrations/wizard.md](website/docs/integrations/wizard.md)

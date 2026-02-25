@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -124,11 +125,20 @@ for parameter in signature.parameters.values():
 
 print(json.dumps(out))
 """
+    env = os.environ.copy()
+    # Ensure the repository source paths are visible to the isolated Python
+    # so that local stubs (src/ and repo root) can be imported during
+    # runtime-introspection even when the venv has its own installed packages.
+    repo_paths = [str(REPO_ROOT), str(REPO_ROOT / "src")]
+    existing = env.get("PYTHONPATH")
+    env["PYTHONPATH"] = ":".join(repo_paths + ([existing] if existing else []))
+
     completed = subprocess.run(
         [python_exe, "-c", helper, entry["module"], entry["constructor"]],
         check=True,
         capture_output=True,
         text=True,
+        env=env,
     )
     return json.loads(completed.stdout)
 

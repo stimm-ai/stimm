@@ -13,7 +13,6 @@ import time
 from typing import Any
 
 from livekit.agents import Agent
-
 from stimm.buffering import BufferingLevel, TextBufferingStrategy
 from stimm.protocol import (
     AgentMode,

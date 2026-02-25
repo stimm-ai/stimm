@@ -21,6 +21,9 @@ htmlcov/
 # Node/TypeScript
 node_modules/
 packages/protocol-ts/dist/
+website/node_modules/
+website/build/
+website/.docusaurus/
 
 # OS
 .DS_Store

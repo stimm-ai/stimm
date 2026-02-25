@@ -1,66 +1,57 @@
 # stimm
 
-**Dual-agent voice orchestration built on [livekit-agents](https://github.com/livekit/agents).**
+<p align="center">
+  <img src=".github/assets/logo_stimm_h.png" alt="stimm logo" width="360" />
+</p>
 
-One agent talks fast. One agent thinks deep. They collaborate in real-time.
+Dual-agent voice orchestration built on [livekit-agents](https://github.com/livekit/agents):
+one agent talks fast, one agent thinks deep, both collaborate in real-time.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│  stimm — dual-agent voice orchestration on LiveKit          │
-│                                                             │
-│  ┌────────────────────┐   ┌─────────────────────────────┐   │
-│  │  VoiceAgent        │   │  Supervisor                 │   │
-│  │  (livekit Agent)   │◄──│  (any language/runtime)     │   │
-│  │                    │──►│                             │   │
-│  │  Talks to user     │   │  Watches transcript         │   │
-│  │  Fast LLM          │   │  Calls tools                │   │
-│  │  VAD→STT→LLM→TTS  │   │  Sends instructions         │   │
-│  │  Pre-TTS buffering │   │  Controls flow              │   │
-│  └────────────────────┘   └─────────────────────────────┘   │
-│           │                         │                       │
-│           └──── Data Channel ───────┘                       │
-│                 (stimm protocol)                            │
-└─────────────────────────────────────────────────────────────┘
-```
+## Why Stimm
+
+- Low-latency conversational voice loop (`VAD → STT → fast LLM → TTS`).
+- High-capability supervisor loop (tool use, planning, contextual steering).
+- Typed protocol for Python + TypeScript supervisors.
+- Runtime-safe provider contract + generated provider catalog from LiveKit docs.
+- Integrator-friendly onboarding flow (discover providers first, install extras second).
 
 ## Install
 
 ```bash
-# Python core only (recommended first step for onboarding/wizard UX)
+# 1) Core package only (best first step for setup wizards)
 pip install stimm
 
-# then install only selected runtime plugins
+# 2) Install only the providers selected by the user
 pip install stimm[deepgram,openai]
 
-# Python core + all runtime-supported plugins (heavier)
+# Optional: install all runtime-supported providers
 pip install stimm[all]
 
-# TypeScript (supervisor client for Node.js consumers)
+# TypeScript supervisor client
 npm install @stimm/protocol
 ```
 
 Plugin dependencies are installed in the integrator app environment. Stimm does
-not vendor plugin code inside its wheel.
+not vendor provider plugin code inside its wheel.
 
-For app onboarding flows, install `stimm` first, read the provider catalog,
-let the user choose providers/params, then install only required extras:
+## Wizard-first Provider Flow
+
+For onboarding UIs, use the catalog API to display providers/parameters, then
+derive extras from the user selection:
 
 ```python
 from stimm import extras_install_command, get_provider_catalog
 
 catalog = get_provider_catalog()  # exhaustive stt/tts/llm + parameters
-
-# example user choices from your wizard
 cmd = extras_install_command(stt="deepgram", tts="openai", llm="azure-openai")
 print(cmd)  # pip install stimm[deepgram,openai]
 ```
 
-After installing extras, restart the Python process before instantiating
+After extras installation, restart the Python process before instantiating
 LiveKit plugin classes.
 
-For extension implementers, see
-[docs/EXTENSION_WIZARD_INTEGRATION.md](docs/EXTENSION_WIZARD_INTEGRATION.md)
-for the precise integration/migration flow.
+Extension/wizard migration details are documented in
+[docs/EXTENSION_WIZARD_INTEGRATION.md](docs/EXTENSION_WIZARD_INTEGRATION.md).
 
 ## Quick Start
 
@@ -68,7 +59,7 @@ for the precise integration/migration flow.
 
 ```python
 from stimm import VoiceAgent
-from livekit.plugins import silero, deepgram, openai
+from livekit.plugins import deepgram, openai, silero
 
 agent = VoiceAgent(
     stt=deepgram.STT(),
@@ -90,15 +81,12 @@ if __name__ == "__main__":
 ```python
 from stimm import Supervisor, TranscriptMessage
 
+
 class MySupervisor(Supervisor):
     async def on_transcript(self, msg: TranscriptMessage):
         if not msg.partial:
-            # Process with your powerful LLM, call tools, etc.
             result = await my_big_llm.process(msg.text)
             await self.instruct(result.text, speak=True)
-
-supervisor = MySupervisor()
-await supervisor.connect("ws://localhost:7880", token)
 ```
 
 ### Supervisor (TypeScript)
@@ -121,90 +109,62 @@ client.on("transcript", async (msg) => {
 await client.connect();
 ```
 
-## Concepts
+## Core Concepts
 
-### Dual-Agent Architecture
+## Dual-Agent Architecture
 
-| Agent | Role | LLM | Latency |
-|-------|------|-----|---------|
-| **VoiceAgent** | Talks to the user | Fast, small (e.g. GPT-4o-mini) | ~500ms |
-| **Supervisor** | Thinks, plans, uses tools | Large, capable (e.g. Claude, GPT-4o) | Background |
+Stimm is fundamentally built around two cooperating agents:
 
-They communicate via **LiveKit data channels** using the stimm protocol — structured JSON messages flowing both directions.
+- `VoiceAgent`: optimized for low-latency spoken interaction.
+- `Supervisor`: optimized for deeper reasoning, planning, and tool orchestration.
 
-### Modes
+They exchange typed protocol messages over LiveKit data channels, allowing fast
+turn-by-turn response while retaining high-level control and context.
 
-| Mode | Behavior |
-|------|----------|
-| `autonomous` | Voice agent uses its own fast LLM independently |
-| `relay` | Voice agent speaks exactly what the supervisor sends |
-| `hybrid` (default) | Voice agent responds autonomously but incorporates supervisor instructions |
+| Component | Role |
+|---|---|
+| `VoiceAgent` | Handles live turn-by-turn speech interaction |
+| `Supervisor` | Watches transcript and steers behavior asynchronously |
+| `StimmProtocol` | Structured messages over LiveKit data channels |
 
-### Pre-TTS Buffering
+Modes:
 
-Controls how LLM tokens are batched before TTS:
+- `autonomous`: voice agent acts independently.
+- `relay`: voice agent only speaks supervisor instructions.
+- `hybrid` (default): autonomous with supervisor steering.
 
-| Level | Behavior |
-|-------|----------|
-| `NONE` | Every token immediately (lowest latency, choppiest) |
-| `LOW` | Buffer until word boundary |
-| `MEDIUM` | Buffer until 4+ words or punctuation (default) |
-| `HIGH` | Buffer until sentence boundary |
+Pre-TTS buffering levels:
 
-## Development
+- `NONE`, `LOW`, `MEDIUM` (default), `HIGH`.
+
+## Developer Workflow
 
 ```bash
-# Local LiveKit server
-docker compose up -d
-
-# Delete all LiveKit rooms/sessions (uses .env)
-python3 scripts/purge_livekit_rooms.py --yes
-
-# Install in dev mode
+# Install dev dependencies
 pip install -e ".[dev]"
 
-# Run tests
-pytest
+# Local infra
+docker compose up -d
 
-# Lint
+# Build local artifacts + sync providers + validate runtime contract
+bash scripts/dev_build.sh
+
+# Tests / lint
+pytest
 ruff check src/ tests/
 
-# Sync provider catalog from LiveKit source of truth
-python3 scripts/sync_livekit_plugins.py
-
-# CI-equivalent validation (fails if providers.json is outdated)
+# Catalog/contract checks (CI-equivalent)
 python3 scripts/sync_livekit_plugins.py --check
-
-# Validate runtime provider contract + imports (CI mode)
 python3 scripts/validate_runtime_contract.py --import-check
 ```
 
-## Local Dev
+`scripts/dev_build.sh` is the single local command to rebuild protocol artifacts
+and provider metadata from the LiveKit source of truth.
 
-Use one command from the repository root to build local dev artifacts:
+## Documentation
 
-```bash
-bash scripts/dev_build.sh
-```
-
-This command:
-- builds `@stimm/protocol` (`packages/protocol-ts/dist`)
-- rebuilds `providers.json` from LiveKit docs + runtime introspection
-  (`llms.txt` -> install plugins -> introspect constructors -> enrich from plugin `.md` pages)
-- validates runtime provider contract structure
-
-The plugin install/introspection phase runs in an isolated build virtualenv
-(`.stimm-build-venv`) to keep your system Python clean.
-
-Single source of truth for provider build/crawl: `scripts/sync_livekit_plugins.py`.
-It is used both in local build (`scripts/dev_build.sh`) and CI (`--check`).
-
-For `npm link` workflows, run this command after changing protocol code (or run
-`npm run dev` inside `packages/protocol-ts` for watch mode).
-
-## Protocol
-
-See [docs/protocol.md](docs/protocol.md) for the full message specification.
+- Docusaurus docs site source: [website](website)
+- Integration notes: [docs/EXTENSION_WIZARD_INTEGRATION.md](docs/EXTENSION_WIZARD_INTEGRATION.md)
 
 ## License
 

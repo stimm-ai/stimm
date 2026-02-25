@@ -191,6 +191,7 @@ class ConversationSupervisor(Supervisor, ABC):
         self._loop_task: asyncio.Task[None] | None = None
         self._immediate_process_task: asyncio.Task[None] | None = None
         self._last_verified_supervisor_context: str | None = None
+        self._inference_seq = 0
 
     # -- Lifecycle -----------------------------------------------------------
 
@@ -310,6 +311,16 @@ class ConversationSupervisor(Supervisor, ABC):
             excerpt = excerpt[:117] + "..."
         return excerpt
 
+    def _emit_observability_event(self, event: str, **fields: object) -> None:
+        payload: dict[str, object] = {
+            "component": "conversation_supervisor",
+            "event": event,
+            "ts_ms": _now_ms(),
+            "inference_seq": self._inference_seq,
+        }
+        payload.update(fields)
+        logger.info("OBS_JSON %s", json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+
     def _push(self, role: str, text: str) -> None:
         self._history.append(_Turn(role, text))
         if len(self._history) > self.max_turns:
@@ -401,8 +412,15 @@ class ConversationSupervisor(Supervisor, ABC):
             self._processing = False
 
     async def _process(self) -> None:
+        self._inference_seq += 1
+        started = time.monotonic()
         self._processed_up_to = len(self._history)
         history_text = self.format_history()
+        self._emit_observability_event(
+            "inference_started",
+            history_len=len(self._history),
+            processed_up_to=self._processed_up_to,
+        )
         logger.info(
             "Calling backend with %d turns: %s…",
             len(self._history),
@@ -411,11 +429,21 @@ class ConversationSupervisor(Supervisor, ABC):
         system_prompt = self.get_backend_system_prompt()
         response = await self.process(history_text, system_prompt)
         decision = self.parse_backend_decision(response)
+        self._emit_observability_event(
+            "inference_completed",
+            latency_ms=int((time.monotonic() - started) * 1000),
+            structured_json=(
+                decision.reason not in {"invalid_json", "non_json_output", "empty_backend_output"}
+            ),
+            action=decision.action,
+            reason=decision.reason or "",
+        )
         if decision.action != "TRIGGER":
             if decision.reason:
                 logger.debug("Backend: no action (%s)", decision.reason)
             else:
                 logger.debug("Backend: no action this turn")
+            self._emit_observability_event("no_action")
             return
         logger.info("Backend response: %s", decision.text[:120])
         self._last_verified_supervisor_context = decision.text
@@ -424,3 +452,12 @@ class ConversationSupervisor(Supervisor, ABC):
         # This keeps a clean separation: supervisor keeps full history,
         # fast LLM receives only the current supervisor guidance.
         await self.add_context(f"--Supervisor--: {decision.text}", append=False)
+        self._emit_observability_event(
+            "trigger_sent",
+            text_chars=len(decision.text),
+            preview=decision.text[:120],
+        )
+
+
+def _now_ms() -> int:
+    return int(time.time() * 1000)

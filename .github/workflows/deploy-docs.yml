@@ -5,9 +5,10 @@ on:
     branches:
       - main
     paths:
+      - "website/**"
       - "docs/**"
-      - "mkdocs.yml"
-      - "pyproject.toml"
+      - "README.md"
+      - "AGENT.md"
       - ".github/workflows/deploy-docs.yml"
   workflow_dispatch: # Allow manual trigger
 
@@ -19,32 +20,25 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          python-version: "3.12"
-
-      - name: Install uv
-        run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y portaudio19-dev libasound2-dev
-
-      - name: Install dependencies
-        run: uv sync --group docs
+          node-version: "20"
 
       - name: Build documentation
-        run: uv run mkdocs build --site-dir ./site
+        working-directory: website
+        run: |
+          npm ci
+          npm run build
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -52,7 +46,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "./site"
+          path: "./website/build"
 
       - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4

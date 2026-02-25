@@ -26,7 +26,10 @@ One agent talks fast. One agent thinks deep. They collaborate in real-time.
 ## Install
 
 ```bash
-# Python core + selected plugins (recommended)
+# Python core only (recommended first step for onboarding/wizard UX)
+pip install stimm
+
+# then install only selected runtime plugins
 pip install stimm[deepgram,openai]
 
 # Python core + all runtime-supported plugins (heavier)
@@ -38,6 +41,26 @@ npm install @stimm/protocol
 
 Plugin dependencies are installed in the integrator app environment. Stimm does
 not vendor plugin code inside its wheel.
+
+For app onboarding flows, install `stimm` first, read the provider catalog,
+let the user choose providers/params, then install only required extras:
+
+```python
+from stimm import extras_install_command, get_provider_catalog
+
+catalog = get_provider_catalog()  # exhaustive stt/tts/llm + parameters
+
+# example user choices from your wizard
+cmd = extras_install_command(stt="deepgram", tts="openai", llm="azure-openai")
+print(cmd)  # pip install stimm[deepgram,openai]
+```
+
+After installing extras, restart the Python process before instantiating
+LiveKit plugin classes.
+
+For extension implementers, see
+[docs/EXTENSION_WIZARD_INTEGRATION.md](docs/EXTENSION_WIZARD_INTEGRATION.md)
+for the precise integration/migration flow.
 
 ## Quick Start
 

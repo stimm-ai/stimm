@@ -32,8 +32,6 @@ Usage::
 
 from stimm.buffering import BufferingLevel, TextBufferingStrategy
 from stimm.conversation_supervisor import ConversationSupervisor
-from stimm.room_manager import RoomManager, SessionInfo
-from stimm.worker import SupervisorFactory, make_agent, make_entrypoint
 from stimm.protocol import (
     ActionResultMessage,
     AgentMode,
@@ -47,9 +45,20 @@ from stimm.protocol import (
     StimmProtocol,
     TranscriptMessage,
 )
+from stimm.providers import (
+    extras_install_command,
+    get_provider,
+    get_provider_catalog,
+    list_providers,
+    list_runtime_providers,
+    required_extra_for_provider,
+    required_extras_for_selection,
+)
 from stimm.room import StimmRoom
+from stimm.room_manager import RoomManager, SessionInfo
 from stimm.supervisor import Supervisor
 from stimm.voice_agent import VoiceAgent
+from stimm.worker import SupervisorFactory, make_agent, make_entrypoint
 
 __version__ = "0.1.0"
 
@@ -80,4 +89,12 @@ __all__ = [
     "ModeMessage",
     "OverrideMessage",
     "AgentMode",
+    # Provider catalog helpers
+    "get_provider_catalog",
+    "list_providers",
+    "get_provider",
+    "list_runtime_providers",
+    "required_extra_for_provider",
+    "required_extras_for_selection",
+    "extras_install_command",
 ]

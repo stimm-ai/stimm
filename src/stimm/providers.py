@@ -12,9 +12,13 @@ Runtime-safe provider mappings are stored separately in
 
 from __future__ import annotations
 
+import copy
 import json
 from importlib.resources import files
-from typing import Any
+from typing import Any, Literal
+
+ProviderKind = Literal["stt", "tts", "llm"]
+PROVIDER_KINDS: tuple[ProviderKind, ...] = ("stt", "tts", "llm")
 
 
 def load_catalog() -> dict[str, Any]:
@@ -46,6 +50,92 @@ def resolve_runtime_provider(kind: str, provider_id: str) -> dict[str, Any] | No
         if isinstance(entry, dict) and entry.get("id") == provider_id:
             return entry
     return None
+
+
+def get_provider_catalog() -> dict[str, Any]:
+    """Return a deep copy of the synced provider catalog.
+
+    This is intended for app-side onboarding flows (wizard / settings UI).
+    """
+    return copy.deepcopy(CATALOG)
+
+
+def list_providers(kind: ProviderKind) -> list[dict[str, Any]]:
+    """Return provider entries for one kind from the synced catalog."""
+    providers = CATALOG.get(kind, [])
+    if not isinstance(providers, list):
+        return []
+    return copy.deepcopy(providers)
+
+
+def get_provider(kind: ProviderKind, provider_id: str) -> dict[str, Any] | None:
+    """Return one provider metadata entry from the synced catalog."""
+    for provider in list_providers(kind):
+        if provider.get("id") == provider_id:
+            return provider
+    return None
+
+
+def list_runtime_providers(kind: ProviderKind) -> list[dict[str, Any]]:
+    """Return runtime-supported providers for one kind."""
+    providers = RUNTIME_CONTRACT.get(kind, [])
+    if not isinstance(providers, list):
+        return []
+    return copy.deepcopy(providers)
+
+
+def required_extra_for_provider(kind: ProviderKind, provider_id: str) -> str | None:
+    """Return the pip extra needed for one provider choice.
+
+    The extra is inferred from the runtime module namespace
+    (``livekit.plugins.<extra>``).
+    """
+    resolved = resolve_runtime_provider(kind, provider_id)
+    if not resolved:
+        return None
+
+    module = resolved.get("module")
+    if not isinstance(module, str):
+        return None
+
+    parts = module.split(".")
+    if len(parts) < 3:
+        return None
+    return parts[2]
+
+
+def required_extras_for_selection(
+    *,
+    stt: str | None = None,
+    tts: str | None = None,
+    llm: str | None = None,
+) -> list[str]:
+    """Return sorted unique extras required for a full provider selection."""
+    extras: set[str] = set()
+    selections = (("stt", stt), ("tts", tts), ("llm", llm))
+    for kind, provider_id in selections:
+        if not provider_id:
+            continue
+        extra = required_extra_for_provider(kind, provider_id)
+        if extra:
+            extras.add(extra)
+    return sorted(extras)
+
+
+def extras_install_command(
+    *,
+    stt: str | None = None,
+    tts: str | None = None,
+    llm: str | None = None,
+) -> str | None:
+    """Return a ready-to-run pip command for selected providers.
+
+    Returns ``None`` when no extra is required/derivable.
+    """
+    extras = required_extras_for_selection(stt=stt, tts=tts, llm=llm)
+    if not extras:
+        return None
+    return f"pip install stimm[{','.join(extras)}]"
 
 
 CATALOG: dict[str, Any] = load_catalog()

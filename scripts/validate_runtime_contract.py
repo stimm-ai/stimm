@@ -65,8 +65,11 @@ def main() -> int:
                 continue
             module = entry.get("module")
             provider_id = entry.get("id")
+            constructor = entry.get("constructor")
             if not isinstance(module, str) or not module:
                 errors.append(f"runtime provider '{kind}:{provider_id}' has invalid module")
+            if not isinstance(constructor, str) or not constructor:
+                errors.append(f"runtime provider '{kind}:{provider_id}' has invalid constructor")
 
     if "--import-check" in sys.argv:
         for kind in ("stt", "tts", "llm"):

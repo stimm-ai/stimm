@@ -11,37 +11,37 @@
     }
   },
   "stt": [
-    {"id": "deepgram", "module": "livekit.plugins.deepgram"},
-    {"id": "openai", "module": "livekit.plugins.openai"},
-    {"id": "google", "module": "livekit.plugins.google"},
-    {"id": "azure", "module": "livekit.plugins.azure"},
-    {"id": "azure-openai", "module": "livekit.plugins.azure"},
-    {"id": "assemblyai", "module": "livekit.plugins.assemblyai"},
-    {"id": "aws", "module": "livekit.plugins.aws"},
-    {"id": "speechmatics", "module": "livekit.plugins.speechmatics"},
-    {"id": "clova", "module": "livekit.plugins.clova"},
-    {"id": "fal", "module": "livekit.plugins.fal"}
+    {"id": "deepgram", "module": "livekit.plugins.deepgram", "constructor": "STT"},
+    {"id": "openai", "module": "livekit.plugins.openai", "constructor": "STT"},
+    {"id": "google", "module": "livekit.plugins.google", "constructor": "STT"},
+    {"id": "azure", "module": "livekit.plugins.azure", "constructor": "STT"},
+    {"id": "azure-openai", "module": "livekit.plugins.azure", "constructor": "STT"},
+    {"id": "assemblyai", "module": "livekit.plugins.assemblyai", "constructor": "STT"},
+    {"id": "aws", "module": "livekit.plugins.aws", "constructor": "STT"},
+    {"id": "speechmatics", "module": "livekit.plugins.speechmatics", "constructor": "STT"},
+    {"id": "clova", "module": "livekit.plugins.clova", "constructor": "STT"},
+    {"id": "fal", "module": "livekit.plugins.fal", "constructor": "STT"}
   ],
   "tts": [
-    {"id": "openai", "module": "livekit.plugins.openai"},
-    {"id": "elevenlabs", "module": "livekit.plugins.elevenlabs"},
-    {"id": "cartesia", "module": "livekit.plugins.cartesia"},
-    {"id": "google", "module": "livekit.plugins.google"},
-    {"id": "gemini", "module": "livekit.plugins.google"},
-    {"id": "azure", "module": "livekit.plugins.azure"},
-    {"id": "azure-openai", "module": "livekit.plugins.azure"},
-    {"id": "aws", "module": "livekit.plugins.aws"},
-    {"id": "asyncai", "module": "livekit.plugins.asyncai"},
-    {"id": "rime", "module": "livekit.plugins.rime"}
+    {"id": "openai", "module": "livekit.plugins.openai", "constructor": "TTS"},
+    {"id": "elevenlabs", "module": "livekit.plugins.elevenlabs", "constructor": "TTS"},
+    {"id": "cartesia", "module": "livekit.plugins.cartesia", "constructor": "TTS"},
+    {"id": "google", "module": "livekit.plugins.google", "constructor": "TTS"},
+    {"id": "gemini", "module": "livekit.plugins.google", "constructor": "beta.GeminiTTS"},
+    {"id": "azure", "module": "livekit.plugins.azure", "constructor": "TTS"},
+    {"id": "azure-openai", "module": "livekit.plugins.azure", "constructor": "TTS"},
+    {"id": "aws", "module": "livekit.plugins.aws", "constructor": "TTS"},
+    {"id": "asyncai", "module": "livekit.plugins.asyncai", "constructor": "TTS"},
+    {"id": "rime", "module": "livekit.plugins.rime", "constructor": "TTS"}
   ],
   "llm": [
-    {"id": "openai", "module": "livekit.plugins.openai"},
-    {"id": "anthropic", "module": "livekit.plugins.anthropic"},
-    {"id": "gemini", "module": "livekit.plugins.google"},
-    {"id": "groq", "module": "livekit.plugins.groq"},
-    {"id": "azure-openai", "module": "livekit.plugins.azure"},
-    {"id": "cerebras", "module": "livekit.plugins.cerebras"},
-    {"id": "fireworks", "module": "livekit.plugins.fireworks"},
-    {"id": "together", "module": "livekit.plugins.together"}
+    {"id": "openai", "module": "livekit.plugins.openai", "constructor": "LLM"},
+    {"id": "anthropic", "module": "livekit.plugins.anthropic", "constructor": "LLM"},
+    {"id": "gemini", "module": "livekit.plugins.google", "constructor": "LLM"},
+    {"id": "groq", "module": "livekit.plugins.groq", "constructor": "LLM"},
+    {"id": "azure-openai", "module": "livekit.plugins.openai", "constructor": "LLM"},
+    {"id": "cerebras", "module": "livekit.plugins.openai", "constructor": "LLM"},
+    {"id": "fireworks", "module": "livekit.plugins.openai", "constructor": "LLM"},
+    {"id": "together", "module": "livekit.plugins.openai", "constructor": "LLM"}
   ]
 }

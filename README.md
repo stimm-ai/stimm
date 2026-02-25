@@ -157,6 +157,9 @@ Controls how LLM tokens are batched before TTS:
 # Local LiveKit server
 docker compose up -d
 
+# Delete all LiveKit rooms/sessions (uses .env)
+python3 scripts/purge_livekit_rooms.py --yes
+
 # Install in dev mode
 pip install -e ".[dev]"
 

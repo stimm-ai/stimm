@@ -124,11 +124,13 @@ class ConversationSupervisor(Supervisor, ABC):
         "RULES:\n"
         "1. Keep normal replies short.\n"
         "2. Treat the latest `--Supervisor--` message as the only authoritative "
-        "source of facts. Do not use your own prior replies or conversation "
-        "memory as a factual source unless the supervisor repeats it.\n"
+        "source of facts. You may use recent conversation memory for dialogue "
+        "continuity, but factual claims must remain consistent with supervisor "
+        "provided context.\n"
         "3. For instant feedback, acknowledge new user requests in one or two "
         "short natural sentences while processing is ongoing. Do not answer the "
-        "request content until supervisor guidance arrives.\n"
+        "request content until supervisor guidance arrives, unless the answer is "
+        "already present in verified supervisor context.\n"
         "4. When a recent `--Supervisor--` instruction appears, prioritize it "
         "and relay it naturally to the user.\n"
         "5. When relaying supervisor-provided facts (numbers, temperatures, "
@@ -142,8 +144,12 @@ class ConversationSupervisor(Supervisor, ABC):
     #: Integrations may prepend this to the backend input.
     DEFAULT_AGNOSTIC_DECISION_PREAMBLE: str = (
         "You are a background supervisor deciding whether to intervene.\n"
-        "Return a single JSON object only:\n"
+        "Return exactly one JSON object and nothing else.\n"
         '{"action":"NO_ACTION"|"TRIGGER","text":"<string>","reason":"<short debug reason>"}\n'
+        "Output constraints:\n"
+        "- No markdown, no code fences, no commentary, no prose.\n"
+        "- `action` must be either `NO_ACTION` or `TRIGGER`.\n"
+        "- `text` must be empty when action is `NO_ACTION`.\n"
         "Decision rules:\n"
         "1. If latest user content is small talk/chitchat and the fast agent can "
         "handle it: action=NO_ACTION.\n"
@@ -171,7 +177,11 @@ class ConversationSupervisor(Supervisor, ABC):
         self.quiet_s = quiet_s
         self.loop_interval_s = loop_interval_s
         self.max_turns = max_turns
-        self.backend_input_preamble = backend_input_preamble
+        self.backend_input_preamble = (
+            backend_input_preamble
+            if backend_input_preamble is not None
+            else self.DEFAULT_AGNOSTIC_DECISION_PREAMBLE
+        )
 
         self._history: list[_Turn] = []
         self._last_turn_ts: float = 0.0
@@ -179,6 +189,11 @@ class ConversationSupervisor(Supervisor, ABC):
         self._processed_up_to: int = 0
         self._processing = False
         self._loop_task: asyncio.Task[None] | None = None
+        self._immediate_process_task: asyncio.Task[None] | None = None
+        self._last_verified_supervisor_context: str | None = None
+        self._pending_supervisor_reply = False
+        self._last_instant_feedback_ts = 0.0
+        self.instant_feedback_min_interval_s = 3.0
 
     # -- Lifecycle -----------------------------------------------------------
 
@@ -226,10 +241,16 @@ class ConversationSupervisor(Supervisor, ABC):
             "[SUPERVISOR] ACCEPT user transcript=%r (history_len=%d)", text[:80], len(self._history)
         )
         self._push("user", text)
-        try:
-            await self.add_context(self._build_instant_feedback_context(text), append=False)
-        except Exception:
-            logger.exception("Failed to inject instant-feedback supervisor context")
+        if self._should_emit_instant_feedback():
+            try:
+                await self.add_context(self._build_instant_feedback_context(text), append=False)
+                self._pending_supervisor_reply = True
+                self._last_instant_feedback_ts = time.monotonic()
+            except Exception:
+                logger.exception("Failed to inject instant-feedback supervisor context")
+        else:
+            logger.debug("Skipping instant-feedback ack (pending/cooldown active)")
+        self._schedule_immediate_process()
 
     async def on_before_speak(self, msg: BeforeSpeakMessage) -> None:
         # Capture what the voice agent is about to say for history continuity.
@@ -242,6 +263,31 @@ class ConversationSupervisor(Supervisor, ABC):
 
     # -- History helpers -----------------------------------------------------
 
+    def _schedule_immediate_process(self) -> None:
+        if self._immediate_process_task and not self._immediate_process_task.done():
+            return
+        self._immediate_process_task = asyncio.ensure_future(self._process_immediately_if_needed())
+
+    def _should_emit_instant_feedback(self) -> bool:
+        if self._pending_supervisor_reply:
+            return False
+        if time.monotonic() - self._last_instant_feedback_ts < self.instant_feedback_min_interval_s:
+            return False
+        return True
+
+    async def _process_immediately_if_needed(self) -> None:
+        await asyncio.sleep(0)
+        if self._processing:
+            return
+        unprocessed = self._history[self._processed_up_to :]
+        if not any(t.role == "user" for t in unprocessed):
+            return
+        self._processing = True
+        try:
+            await self._process()
+        finally:
+            self._processing = False
+
     def _build_instant_feedback_context(self, latest_user_text: str) -> str:
         excerpt = latest_user_text.strip().replace("\n", " ")
         if len(excerpt) > 160:
@@ -251,13 +297,21 @@ class ConversationSupervisor(Supervisor, ABC):
             "--Supervisor--: Instant feedback mode. "
             "Acknowledge receipt in one or two short natural sentences in the user's language "
             f'(latest user text: "{excerpt}"). '
-            "Do not answer request details yet. "
             "Do not invent facts. "
+            "If latest user request is a repetition/clarification that can be answered "
+            "from verified supervisor context, answer directly and concisely now. "
+            "Otherwise acknowledge and say you are checking. "
             "Stay conversational and vary wording from recent acknowledgements. "
             "Prefer a different opening than the last acknowledgement when possible."
         )
         if previous_assistant:
             context += f' Last assistant acknowledgement was: "{previous_assistant}".'
+        if self._last_verified_supervisor_context:
+            context += (
+                ' Verified context from supervisor: "'
+                f"{self._last_verified_supervisor_context}"
+                '". Use only this as factual source.'
+            )
         return context
 
     def _latest_assistant_excerpt(self) -> str | None:
@@ -296,9 +350,9 @@ class ConversationSupervisor(Supervisor, ABC):
         return "\n".join(lines)
 
     def get_backend_system_prompt(self) -> str | None:
-        """Return backend system prompt when configured."""
+        """Return backend system prompt for the supervisor reasoning backend."""
         preamble = (self.backend_input_preamble or "").strip()
-        return preamble or None
+        return preamble or self.DEFAULT_AGNOSTIC_DECISION_PREAMBLE
 
     def parse_backend_decision(self, raw: str) -> _BackendDecision:
         """Parse structured backend output (strict JSON contract)."""
@@ -306,32 +360,58 @@ class ConversationSupervisor(Supervisor, ABC):
         if not normalized:
             return _BackendDecision("NO_ACTION", "", "empty_backend_output")
 
-        if normalized.startswith("{") and normalized.endswith("}"):
-            try:
-                parsed = json.loads(normalized)
-                action = parsed.get("action")
-                text = parsed.get("text")
-                reason = parsed.get("reason")
-                if action == "NO_ACTION":
-                    return _BackendDecision(
-                        "NO_ACTION",
-                        "",
-                        reason if isinstance(reason, str) else None,
-                    )
-                if action == "TRIGGER":
-                    clean_text = text.strip() if isinstance(text, str) else ""
-                    if not clean_text:
-                        return _BackendDecision("NO_ACTION", "", "empty_trigger_text")
-                    return _BackendDecision(
-                        "TRIGGER",
-                        clean_text,
-                        reason if isinstance(reason, str) else None,
-                    )
-                return _BackendDecision("NO_ACTION", "", "invalid_action")
-            except Exception:
-                return _BackendDecision("NO_ACTION", "", "invalid_json")
+        parsed = self._parse_backend_json_object(normalized)
+        if parsed is not None:
+            action = parsed.get("action")
+            text = parsed.get("text")
+            reason = parsed.get("reason")
+            if action == "NO_ACTION":
+                return _BackendDecision(
+                    "NO_ACTION",
+                    "",
+                    reason if isinstance(reason, str) else None,
+                )
+            if action == "TRIGGER":
+                clean_text = text.strip() if isinstance(text, str) else ""
+                if not clean_text:
+                    return _BackendDecision("NO_ACTION", "", "empty_trigger_text")
+                return _BackendDecision(
+                    "TRIGGER",
+                    clean_text,
+                    reason if isinstance(reason, str) else None,
+                )
+            return _BackendDecision("NO_ACTION", "", "invalid_action")
 
-        return _BackendDecision("NO_ACTION", "", "non_json_output")
+        upper = normalized.upper()
+        if upper in {"NO_ACTION", "[NO_ACTION]"}:
+            return _BackendDecision("NO_ACTION", "", "plain_no_action")
+
+        return _BackendDecision("TRIGGER", normalized, "non_json_fallback_trigger")
+
+    def _parse_backend_json_object(self, normalized: str) -> dict[str, object] | None:
+        text = normalized.strip()
+        if text.startswith("```"):
+            lines = text.splitlines()
+            if len(lines) >= 3 and lines[-1].strip().startswith("```"):
+                text = "\n".join(lines[1:-1]).strip()
+        for candidate in (text, self._extract_first_json_object(text)):
+            if not candidate:
+                continue
+            parsed: object | None = None
+            try:
+                parsed = json.loads(candidate)
+            except (json.JSONDecodeError, TypeError, ValueError):
+                parsed = None
+            if isinstance(parsed, dict):
+                return parsed
+        return None
+
+    def _extract_first_json_object(self, text: str) -> str | None:
+        start = text.find("{")
+        end = text.rfind("}")
+        if start == -1 or end == -1 or end <= start:
+            return None
+        return text[start : end + 1]
 
     # -- Processing loop -----------------------------------------------------
 
@@ -370,17 +450,21 @@ class ConversationSupervisor(Supervisor, ABC):
             history_text[:120],
         )
         system_prompt = self.get_backend_system_prompt()
-        response = await self.process(history_text, system_prompt)
-        decision = self.parse_backend_decision(response)
-        if decision.action != "TRIGGER":
-            if decision.reason:
-                logger.debug("Backend: no action (%s)", decision.reason)
-            else:
-                logger.debug("Backend: no action this turn")
-            return
-        logger.info("Backend response: %s", decision.text[:120])
-        self._push("supervisor", decision.text)
-        # Replace voice-agent context with the latest supervisor directive only.
-        # This keeps a clean separation: supervisor keeps full history,
-        # fast LLM receives only the current supervisor guidance.
-        await self.add_context(f"--Supervisor--: {decision.text}", append=False)
+        try:
+            response = await self.process(history_text, system_prompt)
+            decision = self.parse_backend_decision(response)
+            if decision.action != "TRIGGER":
+                if decision.reason:
+                    logger.debug("Backend: no action (%s)", decision.reason)
+                else:
+                    logger.debug("Backend: no action this turn")
+                return
+            logger.info("Backend response: %s", decision.text[:120])
+            self._last_verified_supervisor_context = decision.text
+            self._push("supervisor", decision.text)
+            # Replace voice-agent context with the latest supervisor directive only.
+            # This keeps a clean separation: supervisor keeps full history,
+            # fast LLM receives only the current supervisor guidance.
+            await self.add_context(f"--Supervisor--: {decision.text}", append=False)
+        finally:
+            self._pending_supervisor_reply = False

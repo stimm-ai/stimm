@@ -1,5 +1,7 @@
 """Tests for ConversationSupervisor context injection boundaries."""
 
+import asyncio
+
 import pytest
 
 from stimm.conversation_supervisor import ConversationSupervisor
@@ -9,6 +11,42 @@ from stimm.protocol import TranscriptMessage
 class _StubConversationSupervisor(ConversationSupervisor):
     async def process(self, history: str, system_prompt: str | None) -> str:
         return '{"action":"TRIGGER","text":"Use 22°C","reason":"weather_tool"}'
+
+
+class _CountingConversationSupervisor(ConversationSupervisor):
+    def __init__(self, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        super().__init__(**kwargs)
+        self.calls = 0
+
+    async def process(self, history: str, system_prompt: str | None) -> str:
+        self.calls += 1
+        return '{"action":"NO_ACTION","text":"","reason":"noop"}'
+
+
+class TestConversationSupervisorStructuredOutputContract:
+    def test_default_backend_system_prompt_is_json_contract(self) -> None:
+        sup = _StubConversationSupervisor()
+        prompt = sup.get_backend_system_prompt()
+        assert prompt is not None
+        assert "Return exactly one JSON object and nothing else." in prompt
+        assert '"action":"NO_ACTION"|"TRIGGER"' in prompt
+
+    def test_backend_system_prompt_override_is_respected(self) -> None:
+        sup = _StubConversationSupervisor(backend_input_preamble="custom-contract")
+        assert sup.get_backend_system_prompt() == "custom-contract"
+
+    def test_parse_backend_decision_non_json_fallback_triggers(self) -> None:
+        sup = _StubConversationSupervisor()
+        decision = sup.parse_backend_decision("Réponse utile mais non JSON")
+        assert decision.action == "TRIGGER"
+        assert decision.text == "Réponse utile mais non JSON"
+
+    def test_parse_backend_decision_extracts_embedded_json(self) -> None:
+        sup = _StubConversationSupervisor()
+        raw = 'Voici: {"action":"TRIGGER","text":"Paris 20°C","reason":"ok"}'
+        decision = sup.parse_backend_decision(raw)
+        assert decision.action == "TRIGGER"
+        assert decision.text == "Paris 20°C"
 
 
 class TestConversationSupervisorContextBoundary:
@@ -32,6 +70,7 @@ class TestConversationSupervisorContextBoundary:
         assert "Do not invent facts" in captured[0][0]
         assert "Peux-tu vérifier ma commande ?" in captured[0][0]
         assert "one or two short natural sentences" in captured[0][0]
+        assert "Otherwise acknowledge and say you are checking" in captured[0][0]
 
     @pytest.mark.asyncio
     async def test_on_transcript_includes_previous_ack_hint_for_variety(self) -> None:
@@ -51,6 +90,75 @@ class TestConversationSupervisorContextBoundary:
         assert len(captured) == 1
         assert "Last assistant acknowledgement was" in captured[0]
         assert "Je m'en occupe tout de suite." in captured[0]
+
+    @pytest.mark.asyncio
+    async def test_on_transcript_includes_verified_context_when_available(self) -> None:
+        sup = _StubConversationSupervisor()
+        captured: list[str] = []
+
+        async def fake_add_context(text: str, *, append: bool = True) -> None:
+            captured.append(text)
+
+        sup.add_context = fake_add_context  # type: ignore[method-assign]
+        sup._last_verified_supervisor_context = "Mon pseudo est Stimmy."
+
+        await sup.on_transcript(
+            TranscriptMessage(partial=False, text="Quel est ton pseudo ?", timestamp=0)
+        )
+
+        assert len(captured) == 1
+        assert "Verified context from supervisor" in captured[0]
+        assert "Mon pseudo est Stimmy." in captured[0]
+
+    @pytest.mark.asyncio
+    async def test_on_transcript_triggers_immediate_backend_processing(self) -> None:
+        sup = _CountingConversationSupervisor(quiet_s=10.0, loop_interval_s=10.0)
+
+        async def fake_add_context(_text: str, *, append: bool = True) -> None:
+            return None
+
+        sup.add_context = fake_add_context  # type: ignore[method-assign]
+
+        await sup.on_transcript(TranscriptMessage(partial=False, text="hello", timestamp=0))
+        await asyncio.sleep(0.05)
+
+        assert sup.calls == 1
+
+    @pytest.mark.asyncio
+    async def test_on_transcript_skips_ack_while_reply_pending(self) -> None:
+        sup = _StubConversationSupervisor()
+        captured: list[str] = []
+
+        async def fake_add_context(text: str, *, append: bool = True) -> None:
+            captured.append(text)
+
+        sup.add_context = fake_add_context  # type: ignore[method-assign]
+        sup._schedule_immediate_process = lambda: None  # type: ignore[method-assign]
+
+        await sup.on_transcript(
+            TranscriptMessage(partial=False, text="première demande", timestamp=0)
+        )
+        await sup.on_transcript(TranscriptMessage(partial=False, text="complément", timestamp=1))
+
+        assert len(captured) == 1
+
+    @pytest.mark.asyncio
+    async def test_on_transcript_respects_ack_cooldown(self) -> None:
+        sup = _StubConversationSupervisor()
+        captured: list[str] = []
+
+        async def fake_add_context(text: str, *, append: bool = True) -> None:
+            captured.append(text)
+
+        sup.add_context = fake_add_context  # type: ignore[method-assign]
+        sup._schedule_immediate_process = lambda: None  # type: ignore[method-assign]
+        sup.instant_feedback_min_interval_s = 999.0
+
+        await sup.on_transcript(TranscriptMessage(partial=False, text="requête A", timestamp=0))
+        sup._pending_supervisor_reply = False
+        await sup.on_transcript(TranscriptMessage(partial=False, text="requête B", timestamp=1))
+
+        assert len(captured) == 1
 
     @pytest.mark.asyncio
     async def test_on_transcript_dedup_does_not_reinject_ack(self) -> None:
@@ -95,6 +203,8 @@ class TestConversationSupervisorContextBoundary:
             captured.append(text)
 
         sup.add_context = fake_add_context  # type: ignore[method-assign]
+        sup.instant_feedback_min_interval_s = 0.0
+        sup._schedule_immediate_process = lambda: None  # type: ignore[method-assign]
 
         user_turns = [
             "Tu peux vérifier ma réservation ?",
@@ -118,6 +228,7 @@ class TestConversationSupervisorContextBoundary:
         ]
 
         for idx, user_text in enumerate(user_turns):
+            sup._pending_supervisor_reply = False
             sup._push("assistant", previous_acks[idx])
             await sup.on_transcript(TranscriptMessage(partial=False, text=user_text, timestamp=idx))
 
@@ -125,7 +236,7 @@ class TestConversationSupervisorContextBoundary:
         for idx, ctx in enumerate(captured):
             assert "Instant feedback mode" in ctx
             assert "Do not invent facts" in ctx
-            assert "Do not answer request details yet" in ctx
+            assert "Otherwise acknowledge and say you are checking" in ctx
             assert user_turns[idx] in ctx
             assert "Last assistant acknowledgement was" in ctx
             assert previous_acks[idx] in ctx

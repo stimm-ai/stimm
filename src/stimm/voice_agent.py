@@ -79,10 +79,12 @@ class VoiceAgent(Agent):
         self._instructions_window = supervisor_instructions_window
         self._turn_counter = 0
         self._deferred_context_reply_trigger = False
+        self._deferred_context_retry_task: asyncio.Task[None] | None = None
         self._reply_trigger_inflight = False
         self._last_context_trigger_fingerprint = ""
         self._last_context_trigger_ts = 0.0
         self._context_trigger_cooldown_s = 8.0
+        self._deferred_context_retry_interval_s = 0.5
 
     @property
     def protocol(self) -> StimmProtocol:
@@ -118,6 +120,9 @@ class VoiceAgent(Agent):
 
     async def on_exit(self) -> None:
         """Called when the agent leaves the room."""
+        if self._deferred_context_retry_task and not self._deferred_context_retry_task.done():
+            self._deferred_context_retry_task.cancel()
+            self._deferred_context_retry_task = None
         logger.info("VoiceAgent exiting room")
 
     # -- Transcript publishing -----------------------------------------------
@@ -226,13 +231,16 @@ class VoiceAgent(Agent):
         session = self._current_session()
         if session is None:
             return
-        if self._is_context_trigger_duplicate():
+        latest = self._latest_context_trigger_fingerprint()
+        if self._is_context_trigger_duplicate(latest):
             logger.debug("Skipping duplicate supervisor context trigger")
             return
         if self._can_trigger_context_reply_now(session):
+            self._mark_context_trigger(latest)
             await self._generate_reply_from_current_context()
             return
         self._deferred_context_reply_trigger = True
+        self._ensure_deferred_context_retry()
         logger.debug(
             "Deferred supervisor context trigger (agent_state=%s user_state=%s)",
             getattr(session, "agent_state", None),
@@ -245,14 +253,28 @@ class VoiceAgent(Agent):
         session = self._current_session()
         if session is None:
             return
-        if self._is_context_trigger_duplicate():
+        latest = self._latest_context_trigger_fingerprint()
+        if self._is_context_trigger_duplicate(latest):
             self._deferred_context_reply_trigger = False
             logger.debug("Dropping deferred duplicate supervisor context trigger")
             return
         if not self._can_trigger_context_reply_now(session):
             return
         self._deferred_context_reply_trigger = False
+        self._mark_context_trigger(latest)
         await self._generate_reply_from_current_context()
+
+    def _ensure_deferred_context_retry(self) -> None:
+        if self._deferred_context_retry_task and not self._deferred_context_retry_task.done():
+            return
+        self._deferred_context_retry_task = asyncio.ensure_future(
+            self._deferred_context_retry_loop()
+        )
+
+    async def _deferred_context_retry_loop(self) -> None:
+        while self._deferred_context_reply_trigger:
+            await asyncio.sleep(self._deferred_context_retry_interval_s)
+            await self._flush_deferred_context_reply_trigger()
 
     async def _generate_reply_from_current_context(self) -> None:
         """Force a fast-LLM turn from the currently injected context (idle trigger path)."""
@@ -302,9 +324,11 @@ class VoiceAgent(Agent):
             return False
         return True
 
-    def _is_context_trigger_duplicate(self) -> bool:
+    def _latest_context_trigger_fingerprint(self) -> str:
+        return self._supervisor_context[-1].strip() if self._supervisor_context else ""
+
+    def _is_context_trigger_duplicate(self, latest: str) -> bool:
         """Prevent duplicate trigger bursts for the same latest supervisor context."""
-        latest = self._supervisor_context[-1].strip() if self._supervisor_context else ""
         if not latest:
             return False
         now = time.monotonic()
@@ -313,9 +337,14 @@ class VoiceAgent(Agent):
             and now - self._last_context_trigger_ts < self._context_trigger_cooldown_s
         ):
             return True
-        self._last_context_trigger_fingerprint = latest
-        self._last_context_trigger_ts = now
+
         return False
+
+    def _mark_context_trigger(self, latest: str) -> None:
+        if not latest:
+            return
+        self._last_context_trigger_fingerprint = latest
+        self._last_context_trigger_ts = time.monotonic()
 
     # -- Context building ----------------------------------------------------
 
@@ -340,8 +369,9 @@ class VoiceAgent(Agent):
 
         parts.append(
             "\n\nSupervisor source-of-truth policy:\n"
-            "- Use supervisor-provided content as the only factual source.\n"
-            "- Ignore your own prior assistant outputs as factual evidence.\n"
+            "- Use supervisor-provided content as the factual source of truth.\n"
+            "- You may use recent conversation history for fluency/continuity, but do not "
+            "introduce new facts not present in supervisor context.\n"
             "- If supervisor context is missing/insufficient, say you need to "
             "check with your supervisor."
         )

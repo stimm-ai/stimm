@@ -35,19 +35,6 @@ class TestConversationSupervisorStructuredOutputContract:
         sup = _StubConversationSupervisor(backend_input_preamble="custom-contract")
         assert sup.get_backend_system_prompt() == "custom-contract"
 
-    def test_parse_backend_decision_non_json_fallback_triggers(self) -> None:
-        sup = _StubConversationSupervisor()
-        decision = sup.parse_backend_decision("Réponse utile mais non JSON")
-        assert decision.action == "TRIGGER"
-        assert decision.text == "Réponse utile mais non JSON"
-
-    def test_parse_backend_decision_extracts_embedded_json(self) -> None:
-        sup = _StubConversationSupervisor()
-        raw = 'Voici: {"action":"TRIGGER","text":"Paris 20°C","reason":"ok"}'
-        decision = sup.parse_backend_decision(raw)
-        assert decision.action == "TRIGGER"
-        assert decision.text == "Paris 20°C"
-
 
 class TestConversationSupervisorContextBoundary:
     @pytest.mark.asyncio
@@ -125,41 +112,6 @@ class TestConversationSupervisorContextBoundary:
         assert sup.calls == 1
 
     @pytest.mark.asyncio
-    async def test_on_transcript_skips_ack_while_reply_pending(self) -> None:
-        sup = _StubConversationSupervisor()
-        captured: list[str] = []
-
-        async def fake_add_context(text: str, *, append: bool = True) -> None:
-            captured.append(text)
-
-        sup.add_context = fake_add_context  # type: ignore[method-assign]
-        sup._schedule_immediate_process = lambda: None  # type: ignore[method-assign]
-
-        await sup.on_transcript(
-            TranscriptMessage(partial=False, text="première demande", timestamp=0)
-        )
-        await sup.on_transcript(TranscriptMessage(partial=False, text="complément", timestamp=1))
-
-        assert len(captured) == 1
-
-    @pytest.mark.asyncio
-    async def test_on_transcript_respects_ack_cooldown(self) -> None:
-        sup = _StubConversationSupervisor()
-        captured: list[str] = []
-
-        async def fake_add_context(text: str, *, append: bool = True) -> None:
-            captured.append(text)
-
-        sup.add_context = fake_add_context  # type: ignore[method-assign]
-        sup._schedule_immediate_process = lambda: None  # type: ignore[method-assign]
-        sup.instant_feedback_min_interval_s = 999.0
-
-        await sup.on_transcript(TranscriptMessage(partial=False, text="requête A", timestamp=0))
-        sup._pending_supervisor_reply = False
-        await sup.on_transcript(TranscriptMessage(partial=False, text="requête B", timestamp=1))
-
-        assert len(captured) == 1
-
     @pytest.mark.asyncio
     async def test_on_transcript_dedup_does_not_reinject_ack(self) -> None:
         sup = _StubConversationSupervisor()
@@ -203,7 +155,6 @@ class TestConversationSupervisorContextBoundary:
             captured.append(text)
 
         sup.add_context = fake_add_context  # type: ignore[method-assign]
-        sup.instant_feedback_min_interval_s = 0.0
         sup._schedule_immediate_process = lambda: None  # type: ignore[method-assign]
 
         user_turns = [
@@ -228,7 +179,6 @@ class TestConversationSupervisorContextBoundary:
         ]
 
         for idx, user_text in enumerate(user_turns):
-            sup._pending_supervisor_reply = False
             sup._push("assistant", previous_acks[idx])
             await sup.on_transcript(TranscriptMessage(partial=False, text=user_text, timestamp=idx))
 

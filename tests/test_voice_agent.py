@@ -1,5 +1,7 @@
 """Tests for VoiceAgent instruction handling and context building."""
 
+import asyncio
+
 import pytest
 
 from stimm.protocol import ContextMessage, InstructionMessage
@@ -98,3 +100,63 @@ class TestRuntimeSync:
         assert len(captured) == 1
         assert "Base prompt" in captured[0]
         assert "--Supervisor--: use metric units" in captured[0]
+
+    @pytest.mark.asyncio
+    async def test_deferred_context_trigger_emits_when_session_becomes_idle(self) -> None:
+        agent = VoiceAgent(instructions="Base prompt")
+
+        class _FakeSession:
+            def __init__(self) -> None:
+                self.agent_state = "speaking"
+                self.user_state = "listening"
+                self.current_speech = None
+                self.calls = 0
+
+            def generate_reply(self, input_modality: str, instructions: str) -> None:
+                self.calls += 1
+
+        session = _FakeSession()
+        agent._current_session = lambda: session  # type: ignore[method-assign]
+
+        await agent._handle_context(
+            ContextMessage(text="--Supervisor--: final answer", append=False)
+        )
+        assert agent._deferred_context_reply_trigger is True
+        assert session.calls == 0
+
+        session.agent_state = "idle"
+        await agent._flush_deferred_context_reply_trigger()
+
+        assert agent._deferred_context_reply_trigger is False
+        assert session.calls == 1
+
+    @pytest.mark.asyncio
+    async def test_deferred_trigger_not_lost_after_long_wait(self) -> None:
+        agent = VoiceAgent(instructions="Base prompt")
+
+        class _FakeSession:
+            def __init__(self) -> None:
+                self.agent_state = "speaking"
+                self.user_state = "listening"
+                self.current_speech = None
+                self.calls = 0
+
+            def generate_reply(self, input_modality: str, instructions: str) -> None:
+                self.calls += 1
+
+        session = _FakeSession()
+        agent._current_session = lambda: session  # type: ignore[method-assign]
+
+        await agent._handle_context(
+            ContextMessage(text="--Supervisor--: delayed answer", append=False)
+        )
+        assert agent._deferred_context_reply_trigger is True
+
+        await asyncio.sleep(0.2)
+        assert session.calls == 0
+
+        session.agent_state = "idle"
+        await asyncio.sleep(0.7)
+
+        assert agent._deferred_context_reply_trigger is False
+        assert session.calls == 1

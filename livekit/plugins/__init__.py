@@ -1,6 +1,7 @@
 """Plugins package for repo-root livekit stub."""
 
 __all__ = [
+    "silero",
     "deepgram",
     "openai",
     "google",

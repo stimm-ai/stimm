@@ -5,6 +5,7 @@ functionality and exist only to satisfy import checks in CI.
 """
 
 __all__ = [
+    "silero",
     "deepgram",
     "openai",
     "google",

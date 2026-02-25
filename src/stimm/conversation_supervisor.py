@@ -191,9 +191,6 @@ class ConversationSupervisor(Supervisor, ABC):
         self._loop_task: asyncio.Task[None] | None = None
         self._immediate_process_task: asyncio.Task[None] | None = None
         self._last_verified_supervisor_context: str | None = None
-        self._pending_supervisor_reply = False
-        self._last_instant_feedback_ts = 0.0
-        self.instant_feedback_min_interval_s = 3.0
 
     # -- Lifecycle -----------------------------------------------------------
 
@@ -241,15 +238,10 @@ class ConversationSupervisor(Supervisor, ABC):
             "[SUPERVISOR] ACCEPT user transcript=%r (history_len=%d)", text[:80], len(self._history)
         )
         self._push("user", text)
-        if self._should_emit_instant_feedback():
-            try:
-                await self.add_context(self._build_instant_feedback_context(text), append=False)
-                self._pending_supervisor_reply = True
-                self._last_instant_feedback_ts = time.monotonic()
-            except Exception:
-                logger.exception("Failed to inject instant-feedback supervisor context")
-        else:
-            logger.debug("Skipping instant-feedback ack (pending/cooldown active)")
+        try:
+            await self.add_context(self._build_instant_feedback_context(text), append=False)
+        except Exception:
+            logger.exception("Failed to inject instant-feedback supervisor context")
         self._schedule_immediate_process()
 
     async def on_before_speak(self, msg: BeforeSpeakMessage) -> None:
@@ -267,13 +259,6 @@ class ConversationSupervisor(Supervisor, ABC):
         if self._immediate_process_task and not self._immediate_process_task.done():
             return
         self._immediate_process_task = asyncio.ensure_future(self._process_immediately_if_needed())
-
-    def _should_emit_instant_feedback(self) -> bool:
-        if self._pending_supervisor_reply:
-            return False
-        if time.monotonic() - self._last_instant_feedback_ts < self.instant_feedback_min_interval_s:
-            return False
-        return True
 
     async def _process_immediately_if_needed(self) -> None:
         await asyncio.sleep(0)
@@ -360,58 +345,32 @@ class ConversationSupervisor(Supervisor, ABC):
         if not normalized:
             return _BackendDecision("NO_ACTION", "", "empty_backend_output")
 
-        parsed = self._parse_backend_json_object(normalized)
-        if parsed is not None:
-            action = parsed.get("action")
-            text = parsed.get("text")
-            reason = parsed.get("reason")
-            if action == "NO_ACTION":
-                return _BackendDecision(
-                    "NO_ACTION",
-                    "",
-                    reason if isinstance(reason, str) else None,
-                )
-            if action == "TRIGGER":
-                clean_text = text.strip() if isinstance(text, str) else ""
-                if not clean_text:
-                    return _BackendDecision("NO_ACTION", "", "empty_trigger_text")
-                return _BackendDecision(
-                    "TRIGGER",
-                    clean_text,
-                    reason if isinstance(reason, str) else None,
-                )
-            return _BackendDecision("NO_ACTION", "", "invalid_action")
-
-        upper = normalized.upper()
-        if upper in {"NO_ACTION", "[NO_ACTION]"}:
-            return _BackendDecision("NO_ACTION", "", "plain_no_action")
-
-        return _BackendDecision("TRIGGER", normalized, "non_json_fallback_trigger")
-
-    def _parse_backend_json_object(self, normalized: str) -> dict[str, object] | None:
-        text = normalized.strip()
-        if text.startswith("```"):
-            lines = text.splitlines()
-            if len(lines) >= 3 and lines[-1].strip().startswith("```"):
-                text = "\n".join(lines[1:-1]).strip()
-        for candidate in (text, self._extract_first_json_object(text)):
-            if not candidate:
-                continue
-            parsed: object | None = None
+        if normalized.startswith("{") and normalized.endswith("}"):
             try:
-                parsed = json.loads(candidate)
-            except (json.JSONDecodeError, TypeError, ValueError):
-                parsed = None
-            if isinstance(parsed, dict):
-                return parsed
-        return None
+                parsed = json.loads(normalized)
+                action = parsed.get("action")
+                text = parsed.get("text")
+                reason = parsed.get("reason")
+                if action == "NO_ACTION":
+                    return _BackendDecision(
+                        "NO_ACTION",
+                        "",
+                        reason if isinstance(reason, str) else None,
+                    )
+                if action == "TRIGGER":
+                    clean_text = text.strip() if isinstance(text, str) else ""
+                    if not clean_text:
+                        return _BackendDecision("NO_ACTION", "", "empty_trigger_text")
+                    return _BackendDecision(
+                        "TRIGGER",
+                        clean_text,
+                        reason if isinstance(reason, str) else None,
+                    )
+                return _BackendDecision("NO_ACTION", "", "invalid_action")
+            except Exception:
+                return _BackendDecision("NO_ACTION", "", "invalid_json")
 
-    def _extract_first_json_object(self, text: str) -> str | None:
-        start = text.find("{")
-        end = text.rfind("}")
-        if start == -1 or end == -1 or end <= start:
-            return None
-        return text[start : end + 1]
+        return _BackendDecision("NO_ACTION", "", "non_json_output")
 
     # -- Processing loop -----------------------------------------------------
 
@@ -450,21 +409,18 @@ class ConversationSupervisor(Supervisor, ABC):
             history_text[:120],
         )
         system_prompt = self.get_backend_system_prompt()
-        try:
-            response = await self.process(history_text, system_prompt)
-            decision = self.parse_backend_decision(response)
-            if decision.action != "TRIGGER":
-                if decision.reason:
-                    logger.debug("Backend: no action (%s)", decision.reason)
-                else:
-                    logger.debug("Backend: no action this turn")
-                return
-            logger.info("Backend response: %s", decision.text[:120])
-            self._last_verified_supervisor_context = decision.text
-            self._push("supervisor", decision.text)
-            # Replace voice-agent context with the latest supervisor directive only.
-            # This keeps a clean separation: supervisor keeps full history,
-            # fast LLM receives only the current supervisor guidance.
-            await self.add_context(f"--Supervisor--: {decision.text}", append=False)
-        finally:
-            self._pending_supervisor_reply = False
+        response = await self.process(history_text, system_prompt)
+        decision = self.parse_backend_decision(response)
+        if decision.action != "TRIGGER":
+            if decision.reason:
+                logger.debug("Backend: no action (%s)", decision.reason)
+            else:
+                logger.debug("Backend: no action this turn")
+            return
+        logger.info("Backend response: %s", decision.text[:120])
+        self._last_verified_supervisor_context = decision.text
+        self._push("supervisor", decision.text)
+        # Replace voice-agent context with the latest supervisor directive only.
+        # This keeps a clean separation: supervisor keeps full history,
+        # fast LLM receives only the current supervisor guidance.
+        await self.add_context(f"--Supervisor--: {decision.text}", append=False)

@@ -4,7 +4,6 @@ import os
 
 from livekit.agents import WorkerOptions, cli
 from livekit.plugins import deepgram, openai, silero
-
 from stimm import VoiceAgent
 
 agent = VoiceAgent(

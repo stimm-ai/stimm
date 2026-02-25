@@ -164,7 +164,8 @@ and provider metadata from the LiveKit source of truth.
 ## Documentation
 
 - Docusaurus docs site source: [website](website)
-- Integration notes: [docs/EXTENSION_WIZARD_INTEGRATION.md](docs/EXTENSION_WIZARD_INTEGRATION.md)
+- Extension wizard integration: [website/docs/integrations/wizard.md](website/docs/integrations/wizard.md)
+- Supervisor observability integration: [website/docs/integrations/supervisor-observability.md](website/docs/integrations/supervisor-observability.md)
 
 ## License
 

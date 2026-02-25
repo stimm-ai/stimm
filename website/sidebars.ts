@@ -14,7 +14,11 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Integrations',
-      items: ['integrations/integrations-wizard', 'integrations/integrations-agent-md'],
+      items: [
+        'integrations/integrations-wizard',
+        'integrations/integrations-agent-md',
+        'integrations/integrations-supervisor-observability',
+      ],
     },
     {
       type: 'category',

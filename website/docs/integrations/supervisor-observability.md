@@ -1,4 +1,7 @@
-# Supervisor Observability Integration
+---
+id: integrations-supervisor-observability
+title: Supervisor Observability Integration
+---
 
 This document explains how to consume Stimm supervisor observability logs from an integration.
 
@@ -31,7 +34,7 @@ All events share these base fields:
 - `ts_ms` (int): Unix epoch timestamp in milliseconds
 - `inference_seq` (int): monotonically increasing sequence per supervisor instance
 
-### 1) `inference_started`
+### `inference_started`
 
 When a supervisor inference starts.
 
@@ -40,7 +43,7 @@ Additional fields:
 - `history_len` (int): number of turns currently in supervisor history
 - `processed_up_to` (int): history index snapshot used for this inference
 
-### 2) `inference_completed`
+### `inference_completed`
 
 When a supervisor inference returns and is parsed.
 
@@ -51,13 +54,13 @@ Additional fields:
 - `action` (string): parsed decision action (`TRIGGER` or `NO_ACTION`)
 - `reason` (string): parse/backend reason (empty string when absent)
 
-### 3) `no_action`
+### `no_action`
 
 Emitted when decision action is not `TRIGGER`.
 
 No extra fields.
 
-### 4) `trigger_sent`
+### `trigger_sent`
 
 Emitted after a trigger is pushed to the voice agent context.
 
@@ -65,8 +68,6 @@ Additional fields:
 
 - `text_chars` (int): trigger text length
 - `preview` (string): first 120 chars of trigger text
-
-## Integration guidance
 
 ## Correlation
 
@@ -85,7 +86,7 @@ For each `inference_seq`:
 - On `trigger_sent`: mark outcome `triggered`
 - On `no_action`: mark outcome `no_action`
 
-## Practical alerts (without metrics backend)
+## Practical alerts
 
 You can implement simple counters/windows in your app logs processor:
 

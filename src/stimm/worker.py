@@ -68,7 +68,6 @@ from typing import Any
 
 from livekit.agents import AgentSession, JobContext
 from livekit.plugins import silero
-
 from stimm.conversation_supervisor import ConversationSupervisor
 from stimm.providers import RUNTIME_CONTRACT, resolve_runtime_provider
 from stimm.voice_agent import VoiceAgent

@@ -104,13 +104,16 @@ class VoiceAgent(Agent):
         self._protocol.on_override(self._handle_override)
         session = self._current_session()
         if session is not None:
+
             @session.on("agent_state_changed")
             def _on_agent_state_changed(ev) -> None:  # type: ignore[no-untyped-def]
                 if getattr(ev, "new_state", None) in {"idle", "listening"}:
                     asyncio.ensure_future(self._flush_deferred_context_reply_trigger())
+
             @session.on("user_state_changed")
             def _on_user_state_changed(_ev) -> None:  # type: ignore[no-untyped-def]
                 asyncio.ensure_future(self._flush_deferred_context_reply_trigger())
+
         logger.info("VoiceAgent entered room, mode=%s", self._mode)
 
     async def on_exit(self) -> None:
@@ -335,9 +338,17 @@ class VoiceAgent(Agent):
 
         parts = [base]
 
+        parts.append(
+            "\n\nSupervisor source-of-truth policy:\n"
+            "- Use supervisor-provided content as the only factual source.\n"
+            "- Ignore your own prior assistant outputs as factual evidence.\n"
+            "- If supervisor context is missing/insufficient, say you need to "
+            "check with your supervisor."
+        )
+
         if self._supervisor_context:
-            ctx = "\n".join(self._supervisor_context)
-            parts.append(f"\n\nContext from supervisor:\n{ctx}")
+            latest_ctx = self._supervisor_context[-1]
+            parts.append(f"\n\nLatest context from supervisor (authoritative):\n{latest_ctx}")
 
         if self._pending_instructions:
             window = self._pending_instructions[-self._instructions_window :]

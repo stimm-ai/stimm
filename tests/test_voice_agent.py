@@ -19,6 +19,16 @@ class TestContextBuilding:
         assert "User is in France" in result
         assert "Base prompt" in result
 
+    def test_only_latest_supervisor_context_is_used(self) -> None:
+        agent = VoiceAgent(instructions="Base prompt")
+        agent._supervisor_context = [
+            "--Supervisor--: old context",
+            "--Supervisor--: latest context",
+        ]
+        result = agent.build_context_with_instructions()
+        assert "latest context" in result
+        assert "old context" not in result
+
     def test_with_pending_instructions(self) -> None:
         agent = VoiceAgent(instructions="Base prompt")
         agent._pending_instructions = [
@@ -81,7 +91,9 @@ class TestRuntimeSync:
 
         agent.update_instructions = fake_update  # type: ignore[method-assign]
 
-        await agent._handle_context(ContextMessage(text="--Supervisor--: use metric units", append=True))
+        await agent._handle_context(
+            ContextMessage(text="--Supervisor--: use metric units", append=True)
+        )
 
         assert len(captured) == 1
         assert "Base prompt" in captured[0]

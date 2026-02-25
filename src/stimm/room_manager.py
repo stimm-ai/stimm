@@ -123,9 +123,7 @@ class RoomManager:
         info = SessionInfo(room=room, origin_channel=origin_channel)
         self._sessions[room.room_name] = info
 
-        logger.info(
-            "Voice session created: %s (origin: %s)", room.room_name, origin_channel
-        )
+        logger.info("Voice session created: %s (origin: %s)", room.room_name, origin_channel)
         return room
 
     async def end_session(self, room_name: str) -> bool:

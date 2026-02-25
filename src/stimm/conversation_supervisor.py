@@ -29,17 +29,19 @@ Architecture
 How it works
 ────────────
 1. ``on_transcript`` buffers final user turns.
-2. ``on_before_speak`` buffers assistant turns (for history continuity).
-3. The background loop (started by ``start_loop()``) checks every
+2. ``on_transcript`` also injects an immediate supervisor context so the
+    fast voice agent acknowledges receipt right away (without inventing
+    content) while the backend reasoning runs.
+3. ``on_before_speak`` buffers assistant turns (for history continuity).
+4. The background loop (started by ``start_loop()``) checks every
    ``loop_interval_s`` seconds whether new turns have arrived and the
    conversation has been quiet for at least ``quiet_s`` seconds.
-4. When both conditions are met, ``process(history)`` is called with
+5. When both conditions are met, ``process(history)`` is called with
    the formatted conversation history.
-5. If the backend returns a non-empty string (not the ``NO_ACTION``
-   sentinel), it is recorded as a supervisor turn and injected into the
-   voice agent's context via ``add_context()``, replacing the previous
-   context so the ``[Supervisor → assistant]`` line is visible on the
-   next LLM turn.
+6. If the backend returns a non-empty string (not the ``NO_ACTION``
+    sentinel), it is recorded as a supervisor turn and injected into the
+    voice agent's context via ``add_context()``, replacing the previous
+    context with the latest supervisor directive only.
 
 Default voice agent instructions
 ─────────────────────────────────
@@ -121,15 +123,19 @@ class ConversationSupervisor(Supervisor, ABC):
         "instructions to formulate your next response to the user.\n\n"
         "RULES:\n"
         "1. Keep normal replies short.\n"
-        "2. If there is no recent `--Supervisor--` instruction, give a brief "
-        "honest filler in 1-2 sentences (e.g. say you are checking with your "
-        "supervisor).\n"
-        "3. When a recent `--Supervisor--` instruction appears, prioritize it "
+        "2. Treat the latest `--Supervisor--` message as the only authoritative "
+        "source of facts. Do not use your own prior replies or conversation "
+        "memory as a factual source unless the supervisor repeats it.\n"
+        "3. For instant feedback, acknowledge new user requests in one or two "
+        "short natural sentences while processing is ongoing. Do not answer the "
+        "request content until supervisor guidance arrives.\n"
+        "4. When a recent `--Supervisor--` instruction appears, prioritize it "
         "and relay it naturally to the user.\n"
-        "4. When relaying supervisor-provided facts (numbers, temperatures, "
+        "5. When relaying supervisor-provided facts (numbers, temperatures, "
         "times, names), keep them faithful: do not alter or embellish.\n"
-        "5. Respond in the same language as the user.\n"
-        "6. Never invent facts, and do not guess when uncertain."
+        "6. Respond in the same language as the user.\n"
+        "7. Avoid repetitive phrasing across consecutive acknowledgements.\n"
+        "8. Never invent facts, and do not guess when uncertain."
     )
 
     #: Backend-facing policy (agnostic) for deciding whether to intervene.
@@ -139,11 +145,16 @@ class ConversationSupervisor(Supervisor, ABC):
         "Return a single JSON object only:\n"
         '{"action":"NO_ACTION"|"TRIGGER","text":"<string>","reason":"<short debug reason>"}\n'
         "Decision rules:\n"
-        "1. If latest user content is small talk/chitchat and the fast agent can handle it: action=NO_ACTION.\n"
-        "2. Focus on the latest user request and the latest assistant reply to that request.\n"
-        "3. If the latest assistant reply is missing, incorrect, contradictory, or does not include the key answer: action=TRIGGER.\n"
-        "4. Use action=NO_ACTION only when the latest assistant reply is already correct and sufficient.\n"
-        "5. A correct answer that appears earlier in history does NOT justify NO_ACTION if the latest assistant reply is still wrong.\n"
+        "1. If latest user content is small talk/chitchat and the fast agent can "
+        "handle it: action=NO_ACTION.\n"
+        "2. Focus on the latest user request and the latest assistant reply to "
+        "that request.\n"
+        "3. If the latest assistant reply is missing, incorrect, contradictory, "
+        "or does not include the key answer: action=TRIGGER.\n"
+        "4. Use action=NO_ACTION only when the latest assistant reply is already "
+        "correct and sufficient.\n"
+        "5. A correct answer that appears earlier in history does NOT justify "
+        "NO_ACTION if the latest assistant reply is still wrong.\n"
         "6. Never invent tool/system results you did not verify.\n"
         "If action=NO_ACTION, keep text empty.\n"
     )
@@ -207,14 +218,18 @@ class ConversationSupervisor(Supervisor, ABC):
         if not text:
             return
         # Deduplicate consecutive identical final transcripts.
-        last_user = next(
-            (t for t in reversed(self._history) if t.role == "user"), None
-        )
+        last_user = next((t for t in reversed(self._history) if t.role == "user"), None)
         if last_user is not None and last_user.text.strip() == text:
             logger.info("[SUPERVISOR] DEDUP DROP user transcript=%r", text[:80])
             return
-        logger.info("[SUPERVISOR] ACCEPT user transcript=%r (history_len=%d)", text[:80], len(self._history))
+        logger.info(
+            "[SUPERVISOR] ACCEPT user transcript=%r (history_len=%d)", text[:80], len(self._history)
+        )
         self._push("user", text)
+        try:
+            await self.add_context(self._build_instant_feedback_context(text), append=False)
+        except Exception:
+            logger.exception("Failed to inject instant-feedback supervisor context")
 
     async def on_before_speak(self, msg: BeforeSpeakMessage) -> None:
         # Capture what the voice agent is about to say for history continuity.
@@ -227,11 +242,40 @@ class ConversationSupervisor(Supervisor, ABC):
 
     # -- History helpers -----------------------------------------------------
 
+    def _build_instant_feedback_context(self, latest_user_text: str) -> str:
+        excerpt = latest_user_text.strip().replace("\n", " ")
+        if len(excerpt) > 160:
+            excerpt = excerpt[:157] + "..."
+        previous_assistant = self._latest_assistant_excerpt()
+        context = (
+            "--Supervisor--: Instant feedback mode. "
+            "Acknowledge receipt in one or two short natural sentences in the user's language "
+            f'(latest user text: "{excerpt}"). '
+            "Do not answer request details yet. "
+            "Do not invent facts. "
+            "Stay conversational and vary wording from recent acknowledgements. "
+            "Prefer a different opening than the last acknowledgement when possible."
+        )
+        if previous_assistant:
+            context += f' Last assistant acknowledgement was: "{previous_assistant}".'
+        return context
+
+    def _latest_assistant_excerpt(self) -> str | None:
+        last_assistant = next((t for t in reversed(self._history) if t.role == "assistant"), None)
+        if last_assistant is None:
+            return None
+        excerpt = last_assistant.text.strip().replace("\n", " ")
+        if not excerpt:
+            return None
+        if len(excerpt) > 120:
+            excerpt = excerpt[:117] + "..."
+        return excerpt
+
     def _push(self, role: str, text: str) -> None:
         self._history.append(_Turn(role, text))
         if len(self._history) > self.max_turns:
             removed = len(self._history) - self.max_turns
-            self._history = self._history[-self.max_turns:]
+            self._history = self._history[-self.max_turns :]
             self._processed_up_to = max(0, self._processed_up_to - removed)
         if role in ("user", "assistant"):
             self._last_turn_ts = time.monotonic()
@@ -300,7 +344,7 @@ class ConversationSupervisor(Supervisor, ABC):
                 logger.error("Supervisor tick error: %s", exc, exc_info=True)
 
     async def _tick(self) -> None:
-        unprocessed = self._history[self._processed_up_to:]
+        unprocessed = self._history[self._processed_up_to :]
         if not unprocessed:
             return
         has_dialogue = any(t.role in ("user", "assistant") for t in unprocessed)
@@ -336,6 +380,7 @@ class ConversationSupervisor(Supervisor, ABC):
             return
         logger.info("Backend response: %s", decision.text[:120])
         self._push("supervisor", decision.text)
-        # Replace the voice agent's full context so the new
-        # [Supervisor → assistant] turn is visible on the next LLM turn.
-        await self.add_context(self.format_history(), append=False)
+        # Replace voice-agent context with the latest supervisor directive only.
+        # This keeps a clean separation: supervisor keeps full history,
+        # fast LLM receives only the current supervisor guidance.
+        await self.add_context(f"--Supervisor--: {decision.text}", append=False)

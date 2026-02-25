@@ -8,17 +8,19 @@ only needs to supply a ``supervisor_factory`` to produce the
 Environment variables
 ─────────────────────
 STIMM_STT_PROVIDER   deepgram (default) | openai | google | azure
-                     | assemblyai | aws | speechmatics | clova | fal
+                     | azure-openai | assemblyai | aws | speechmatics | clova | fal
 STIMM_STT_MODEL      provider-specific model name (default: nova-3)
 STIMM_STT_API_KEY    override API key for STT provider
 STIMM_STT_LANGUAGE   language hint, e.g. "fr" (optional)
 
-STIMM_TTS_PROVIDER   openai (default) | elevenlabs | cartesia | google | azure | aws | playai | rime
+STIMM_TTS_PROVIDER   openai (default) | elevenlabs | cartesia | google | gemini
+                     | azure | azure-openai | aws | asyncai | rime
 STIMM_TTS_MODEL      provider-specific model name (default: gpt-4o-mini-tts)
 STIMM_TTS_VOICE      voice name/id (default: ash)
 STIMM_TTS_API_KEY    override API key for TTS provider
 
-STIMM_LLM_PROVIDER   openai (default) | anthropic | google | groq | azure
+STIMM_LLM_PROVIDER   openai (default) | anthropic | gemini | groq | azure-openai
+                     | cerebras | fireworks | together
 STIMM_LLM_MODEL      provider-specific model name (default: gpt-4o-mini)
 STIMM_LLM_API_KEY    override API key for LLM provider
 
@@ -68,57 +70,43 @@ from livekit.agents import AgentSession, JobContext
 from livekit.plugins import silero
 
 from stimm.conversation_supervisor import ConversationSupervisor
+from stimm.providers import RUNTIME_CONTRACT, resolve_runtime_provider
 from stimm.voice_agent import VoiceAgent
 
 logger = logging.getLogger("stimm.worker")
 
-# ---------------------------------------------------------------------------
-# Provider registries
-# ---------------------------------------------------------------------------
 
-STT_PROVIDERS: dict[str, str] = {
-    "deepgram": "livekit.plugins.deepgram",
-    "openai": "livekit.plugins.openai",
-    "google": "livekit.plugins.google",
-    "azure": "livekit.plugins.azure",
-    "assemblyai": "livekit.plugins.assemblyai",
-    "aws": "livekit.plugins.aws",
-    "speechmatics": "livekit.plugins.speechmatics",
-    "clova": "livekit.plugins.clova",
-    "fal": "livekit.plugins.fal",
-}
-
-TTS_PROVIDERS: dict[str, str] = {
-    "openai": "livekit.plugins.openai",
-    "elevenlabs": "livekit.plugins.elevenlabs",
-    "cartesia": "livekit.plugins.cartesia",
-    "google": "livekit.plugins.google",
-    "azure": "livekit.plugins.azure",
-    "aws": "livekit.plugins.aws",
-    "playai": "livekit.plugins.playai",
-    "rime": "livekit.plugins.rime",
-}
-
-LLM_PROVIDERS: dict[str, str] = {
-    "openai": "livekit.plugins.openai",
-    "anthropic": "livekit.plugins.anthropic",
-    "google": "livekit.plugins.google",
-    "groq": "livekit.plugins.groq",
-    "azure": "livekit.plugins.azure",
-}
+def _runtime_ids(kind: str) -> list[str]:
+    entries = RUNTIME_CONTRACT.get(kind, [])
+    aliases = RUNTIME_CONTRACT.get("aliases", {}).get(kind, {})
+    ids: set[str] = set()
+    if isinstance(entries, list):
+        for entry in entries:
+            if isinstance(entry, dict) and isinstance(entry.get("id"), str):
+                ids.add(entry["id"])
+    if isinstance(aliases, dict):
+        for alias in aliases:
+            if isinstance(alias, str):
+                ids.add(alias)
+    return sorted(ids)
 
 
-def _load_plugin(provider_map: dict[str, str], provider: str) -> Any:
-    module_name = provider_map.get(provider)
-    if not module_name:
-        raise ValueError(
-            f"Unknown provider '{provider}'. Available: {', '.join(sorted(provider_map.keys()))}"
-        )
+def _load_plugin(kind: str, provider: str) -> Any:
+    resolved = resolve_runtime_provider(kind, provider)
+    if not resolved:
+        available = ", ".join(_runtime_ids(kind))
+        raise ValueError(f"Unknown provider '{provider}' for {kind}. Available: {available}")
+
+    module_name = resolved.get("module")
+    if not isinstance(module_name, str) or not module_name:
+        raise ValueError(f"Invalid runtime module for provider '{provider}' ({kind})")
+
     try:
         return importlib.import_module(module_name)
     except ImportError as exc:
+        package_hint = module_name.removeprefix("livekit.plugins.")
         raise ImportError(
-            f"Provider '{provider}' requires: pip install livekit-plugins-{provider}"
+            f"Provider '{provider}' requires: pip install livekit-plugins-{package_hint}"
         ) from exc
 
 
@@ -132,7 +120,7 @@ def _make_stt() -> Any:
     model = os.environ.get("STIMM_STT_MODEL", "nova-3")
     api_key = os.environ.get("STIMM_STT_API_KEY")
     language = os.environ.get("STIMM_STT_LANGUAGE")
-    mod = _load_plugin(STT_PROVIDERS, provider)
+    mod = _load_plugin("stt", provider)
 
     kwargs: dict[str, Any] = {"model": model}
 
@@ -154,7 +142,12 @@ def _make_tts() -> Any:
     voice = os.environ.get("STIMM_TTS_VOICE", "ash")
     language = os.environ.get("STIMM_TTS_LANGUAGE")
     api_key = os.environ.get("STIMM_TTS_API_KEY")
-    mod = _load_plugin(TTS_PROVIDERS, provider)
+    resolved = resolve_runtime_provider("tts", provider)
+    if not resolved:
+        available = ", ".join(_runtime_ids("tts"))
+        raise ValueError(f"Unknown provider '{provider}' for tts. Available: {available}")
+    provider_id = resolved["id"]
+    mod = _load_plugin("tts", provider)
 
     kwargs: dict[str, Any] = {}
     tts_ctor = mod.TTS
@@ -162,7 +155,7 @@ def _make_tts() -> Any:
     # Google has two TTS constructors:
     # - google.TTS(model_name=..., voice_name=...)
     # - google.beta.GeminiTTS(model=..., voice_name=...)
-    if provider == "google":
+    if provider_id in {"google", "gemini"}:
         if "gemini" in model.lower() and hasattr(mod, "beta") and hasattr(mod.beta, "GeminiTTS"):
             tts_ctor = mod.beta.GeminiTTS
             kwargs["model"] = model
@@ -173,15 +166,15 @@ def _make_tts() -> Any:
 
     # Mapping de la voix
     if voice:
-        if provider == "elevenlabs":
+        if provider_id == "elevenlabs":
             kwargs["voice_id"] = voice
-        elif provider == "google":
+        elif provider_id in {"google", "gemini"}:
             kwargs["voice_name"] = voice
         else:
             kwargs["voice"] = voice
 
     # Language is accepted by several providers (Cartesia, Google standard TTS, etc.)
-    if language and not (provider == "google" and tts_ctor is not mod.TTS):
+    if language and not (provider_id in {"google", "gemini"} and tts_ctor is not mod.TTS):
         kwargs["language"] = language
 
     if api_key:
@@ -195,7 +188,7 @@ def _make_llm() -> Any:
     model = os.environ.get("STIMM_LLM_MODEL", "gpt-4o-mini")
     temperature = os.environ.get("STIMM_LLM_TEMPERATURE")
     api_key = os.environ.get("STIMM_LLM_API_KEY")
-    mod = _load_plugin(LLM_PROVIDERS, provider)
+    mod = _load_plugin("llm", provider)
 
     kwargs: dict[str, Any] = {"model": model}
 

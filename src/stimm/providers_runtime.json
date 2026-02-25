@@ -1,0 +1,47 @@
+{
+  "_comment": "Runtime contract for stimm worker. Explicitly maps supported provider IDs to livekit plugin modules.",
+  "aliases": {
+    "stt": {},
+    "tts": {
+      "playai": "asyncai"
+    },
+    "llm": {
+      "azure": "azure-openai",
+      "google": "gemini"
+    }
+  },
+  "stt": [
+    {"id": "deepgram", "module": "livekit.plugins.deepgram"},
+    {"id": "openai", "module": "livekit.plugins.openai"},
+    {"id": "google", "module": "livekit.plugins.google"},
+    {"id": "azure", "module": "livekit.plugins.azure"},
+    {"id": "azure-openai", "module": "livekit.plugins.azure"},
+    {"id": "assemblyai", "module": "livekit.plugins.assemblyai"},
+    {"id": "aws", "module": "livekit.plugins.aws"},
+    {"id": "speechmatics", "module": "livekit.plugins.speechmatics"},
+    {"id": "clova", "module": "livekit.plugins.clova"},
+    {"id": "fal", "module": "livekit.plugins.fal"}
+  ],
+  "tts": [
+    {"id": "openai", "module": "livekit.plugins.openai"},
+    {"id": "elevenlabs", "module": "livekit.plugins.elevenlabs"},
+    {"id": "cartesia", "module": "livekit.plugins.cartesia"},
+    {"id": "google", "module": "livekit.plugins.google"},
+    {"id": "gemini", "module": "livekit.plugins.google"},
+    {"id": "azure", "module": "livekit.plugins.azure"},
+    {"id": "azure-openai", "module": "livekit.plugins.azure"},
+    {"id": "aws", "module": "livekit.plugins.aws"},
+    {"id": "asyncai", "module": "livekit.plugins.asyncai"},
+    {"id": "rime", "module": "livekit.plugins.rime"}
+  ],
+  "llm": [
+    {"id": "openai", "module": "livekit.plugins.openai"},
+    {"id": "anthropic", "module": "livekit.plugins.anthropic"},
+    {"id": "gemini", "module": "livekit.plugins.google"},
+    {"id": "groq", "module": "livekit.plugins.groq"},
+    {"id": "azure-openai", "module": "livekit.plugins.azure"},
+    {"id": "cerebras", "module": "livekit.plugins.cerebras"},
+    {"id": "fireworks", "module": "livekit.plugins.fireworks"},
+    {"id": "together", "module": "livekit.plugins.together"}
+  ]
+}

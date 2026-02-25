@@ -1,171 +1,703 @@
 {
-  "_comment": "Source of truth for stimm provider metadata. Consumed by the openclaw stimm-voice setup wizard.",
+  "_comment": "Source of truth for stimm provider metadata. Plugin list is synced from https://docs.livekit.io/llms.txt via scripts/sync_livekit_plugins.py.",
   "stt": [
+    {
+      "id": "assemblyai",
+      "label": "AssemblyAI",
+      "defaultModel": "best",
+      "presets": [
+        "best",
+        "nano"
+      ],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/plugins/assemblyai.md"
+      }
+    },
+    {
+      "id": "aws",
+      "label": "Amazon Transcribe",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/plugins/aws.md"
+      }
+    },
+    {
+      "id": "azure",
+      "label": "Azure AI Speech",
+      "defaultModel": "en-US",
+      "presets": [
+        "en-US",
+        "fr-FR",
+        "de-DE"
+      ],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/plugins/azure.md"
+      }
+    },
+    {
+      "id": "azure-openai",
+      "label": "Azure OpenAI",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/plugins/azure-openai.md"
+      }
+    },
+    {
+      "id": "baseten",
+      "label": "Baseten",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/plugins/baseten.md"
+      }
+    },
+    {
+      "id": "cartesia",
+      "label": "Cartesia",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/plugins/cartesia.md"
+      }
+    },
+    {
+      "id": "clova",
+      "label": "Clova",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/plugins/clova.md"
+      }
+    },
     {
       "id": "deepgram",
       "label": "Deepgram",
       "defaultModel": "nova-3",
-      "presets": ["nova-3", "nova-2", "base", "enhanced"],
+      "presets": [
+        "nova-3",
+        "nova-2",
+        "base",
+        "enhanced"
+      ],
       "api": {
         "kind": "deepgram",
         "probeUrl": "https://api.deepgram.com/v1/projects",
-        "authScheme": "token"
+        "authScheme": "token",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/plugins/deepgram.md"
       }
     },
     {
-      "id": "openai",
-      "label": "OpenAI",
-      "defaultModel": "gpt-4o-mini-transcribe",
-      "presets": ["gpt-4o-mini-transcribe", "gpt-4o-transcribe", "whisper-1"],
+      "id": "elevenlabs",
+      "label": "ElevenLabs",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
       "api": {
-        "kind": "openai-compat",
-        "baseUrl": "https://api.openai.com",
-        "includeFilter": "transcribe|whisper"
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/plugins/elevenlabs.md"
+      }
+    },
+    {
+      "id": "fal",
+      "label": "fal",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/plugins/fal.md"
+      }
+    },
+    {
+      "id": "gladia",
+      "label": "Gladia",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/plugins/gladia.md"
       }
     },
     {
       "id": "google",
       "label": "Google Cloud",
       "defaultModel": "latest_long",
-      "presets": ["latest_long", "latest_short", "chirp", "chirp_2"],
+      "presets": [
+        "latest_long",
+        "latest_short",
+        "chirp",
+        "chirp_2"
+      ],
       "api": {
         "kind": "google",
-        "includeFilter": "chirp|speech"
+        "includeFilter": "chirp|speech",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/plugins/google.md"
       }
     },
     {
-      "id": "azure",
-      "label": "Azure Speech",
-      "defaultModel": "en-US",
-      "presets": ["en-US", "fr-FR", "de-DE"],
-      "api": { "kind": "livekit-docs" }
-    },
-    {
-      "id": "assemblyai",
-      "label": "AssemblyAI",
-      "defaultModel": "best",
-      "presets": ["best", "nano"],
-      "api": { "kind": "livekit-docs" }
-    },
-    {
-      "id": "aws",
-      "label": "Amazon Transcribe",
+      "id": "gradium",
+      "label": "Gradium",
       "defaultModel": "default",
-      "presets": ["default"],
-      "api": { "kind": "livekit-docs" }
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/plugins/gradium.md"
+      }
+    },
+    {
+      "id": "groq",
+      "label": "Groq",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/plugins/groq.md"
+      }
+    },
+    {
+      "id": "mistralai",
+      "label": "Mistral AI",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/plugins/mistralai.md"
+      }
+    },
+    {
+      "id": "nvidia",
+      "label": "Nvidia",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/plugins/nvidia.md"
+      }
+    },
+    {
+      "id": "openai",
+      "label": "OpenAI",
+      "defaultModel": "gpt-4o-mini-transcribe",
+      "presets": [
+        "gpt-4o-mini-transcribe",
+        "gpt-4o-transcribe",
+        "whisper-1"
+      ],
+      "api": {
+        "kind": "openai-compat",
+        "baseUrl": "https://api.openai.com",
+        "includeFilter": "transcribe|whisper",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/plugins/openai.md"
+      }
+    },
+    {
+      "id": "ovhcloud",
+      "label": "OVHCloud",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/plugins/ovhcloud.md"
+      }
+    },
+    {
+      "id": "sarvam",
+      "label": "Sarvam",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/plugins/sarvam.md"
+      }
+    },
+    {
+      "id": "simplismart",
+      "label": "Simplismart",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/plugins/simplismart.md"
+      }
+    },
+    {
+      "id": "soniox",
+      "label": "Soniox",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/plugins/soniox.md"
+      }
     },
     {
       "id": "speechmatics",
       "label": "Speechmatics",
       "defaultModel": "default",
-      "presets": ["enhanced"],
-      "api": { "kind": "livekit-docs" }
+      "presets": [
+        "enhanced"
+      ],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/plugins/speechmatics.md"
+      }
     },
     {
-      "id": "clova",
-      "label": "Clova (Naver)",
+      "id": "spitch",
+      "label": "Spitch",
       "defaultModel": "default",
-      "presets": ["default"],
-      "api": { "kind": "livekit-docs" }
-    },
-    {
-      "id": "fal",
-      "label": "fal.ai",
-      "defaultModel": "default",
-      "presets": ["default"],
-      "api": { "kind": "livekit-docs" }
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/plugins/spitch.md"
+      }
     }
   ],
   "tts": [
     {
-      "id": "openai",
-      "label": "OpenAI",
-      "defaultModel": "gpt-4o-mini-tts",
-      "defaultVoice": "ash",
-      "presets": ["gpt-4o-mini-tts", "gpt-4o-audio-preview"],
+      "id": "asyncai",
+      "label": "AsyncAI",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
       "api": {
-        "kind": "openai-compat",
-        "baseUrl": "https://api.openai.com",
-        "includeFilter": "tts|audio"
-      }
-    },
-    {
-      "id": "elevenlabs",
-      "label": "ElevenLabs",
-      "defaultModel": "eleven_turbo_v2_5",
-      "defaultVoice": "rachel",
-      "presets": ["eleven_turbo_v2_5", "eleven_multilingual_v2", "eleven_flash_v2_5"],
-      "api": {
-        "kind": "elevenlabs",
-        "modelsUrl": "https://api.elevenlabs.io/v1/models",
-        "voicesUrl": "https://api.elevenlabs.io/v1/voices",
-        "authHeader": "xi-api-key"
-      }
-    },
-    {
-      "id": "cartesia",
-      "label": "Cartesia",
-      "defaultModel": "sonic-2",
-      "defaultVoice": "default",
-      "presets": ["sonic-2", "sonic-english", "sonic-multilingual"],
-      "api": { "kind": "livekit-docs" }
-    },
-    {
-      "id": "google",
-      "label": "Google Cloud",
-      "defaultModel": "Standard",
-      "defaultVoice": "en-US-Standard-A",
-      "presets": ["gemini-2.5-flash-preview-tts", "gemini-2.0-flash-exp", "Standard"],
-      "api": {
-        "kind": "google",
-        "includeFilter": "tts|speech"
-      }
-    },
-    {
-      "id": "azure",
-      "label": "Azure Speech",
-      "defaultModel": "en-US-JennyNeural",
-      "defaultVoice": "default",
-      "presets": ["en-US-JennyNeural", "fr-FR-DeniseNeural"],
-      "api": { "kind": "livekit-docs" }
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/asyncai.md"
+      },
+      "defaultVoice": "default"
     },
     {
       "id": "aws",
       "label": "Amazon Polly",
       "defaultModel": "neural",
       "defaultVoice": "Joanna",
-      "presets": ["standard", "neural", "generative"],
-      "api": { "kind": "livekit-docs" }
+      "presets": [
+        "standard",
+        "neural",
+        "generative"
+      ],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/aws.md"
+      }
     },
     {
-      "id": "playai",
-      "label": "PlayAI",
-      "defaultModel": "default",
+      "id": "azure",
+      "label": "Azure AI Speech",
+      "defaultModel": "en-US-JennyNeural",
       "defaultVoice": "default",
-      "presets": ["dialog"],
-      "api": { "kind": "livekit-docs" }
+      "presets": [
+        "en-US-JennyNeural",
+        "fr-FR-DeniseNeural"
+      ],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/azure.md"
+      }
+    },
+    {
+      "id": "azure-openai",
+      "label": "Azure OpenAI",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/azure-openai.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
+      "id": "baseten",
+      "label": "Baseten",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/baseten.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
+      "id": "cambai",
+      "label": "Camb.ai",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/cambai.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
+      "id": "cartesia",
+      "label": "Cartesia",
+      "defaultModel": "sonic-2",
+      "defaultVoice": "default",
+      "presets": [
+        "sonic-2",
+        "sonic-english",
+        "sonic-multilingual"
+      ],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/cartesia.md"
+      }
+    },
+    {
+      "id": "deepgram",
+      "label": "Deepgram",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/deepgram.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
+      "id": "elevenlabs",
+      "label": "ElevenLabs",
+      "defaultModel": "eleven_turbo_v2_5",
+      "defaultVoice": "rachel",
+      "presets": [
+        "eleven_turbo_v2_5",
+        "eleven_multilingual_v2",
+        "eleven_flash_v2_5"
+      ],
+      "api": {
+        "kind": "elevenlabs",
+        "modelsUrl": "https://api.elevenlabs.io/v1/models",
+        "voicesUrl": "https://api.elevenlabs.io/v1/voices",
+        "authHeader": "xi-api-key",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/elevenlabs.md"
+      }
+    },
+    {
+      "id": "gemini",
+      "label": "Gemini",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/gemini.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
+      "id": "google",
+      "label": "Google Cloud",
+      "defaultModel": "Standard",
+      "defaultVoice": "en-US-Standard-A",
+      "presets": [
+        "gemini-2.5-flash-preview-tts",
+        "gemini-2.0-flash-exp",
+        "Standard"
+      ],
+      "api": {
+        "kind": "google",
+        "includeFilter": "tts|speech",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/google.md"
+      }
+    },
+    {
+      "id": "gradium",
+      "label": "Gradium",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/gradium.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
+      "id": "groq",
+      "label": "Groq",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/groq.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
+      "id": "hume",
+      "label": "Hume",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/hume.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
+      "id": "inworld",
+      "label": "Inworld",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/inworld.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
+      "id": "lmnt",
+      "label": "LMNT",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/lmnt.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
+      "id": "minimax",
+      "label": "MiniMax",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/minimax.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
+      "id": "neuphonic",
+      "label": "Neuphonic",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/neuphonic.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
+      "id": "nvidia",
+      "label": "Nvidia",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/nvidia.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
+      "id": "openai",
+      "label": "OpenAI",
+      "defaultModel": "gpt-4o-mini-tts",
+      "defaultVoice": "ash",
+      "presets": [
+        "gpt-4o-mini-tts",
+        "gpt-4o-audio-preview"
+      ],
+      "api": {
+        "kind": "openai-compat",
+        "baseUrl": "https://api.openai.com",
+        "includeFilter": "tts|audio",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/openai.md"
+      }
+    },
+    {
+      "id": "resemble",
+      "label": "Resemble AI",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/resemble.md"
+      },
+      "defaultVoice": "default"
     },
     {
       "id": "rime",
       "label": "Rime",
       "defaultModel": "default",
       "defaultVoice": "default",
-      "presets": ["arcana"],
-      "api": { "kind": "livekit-docs" }
+      "presets": [
+        "arcana"
+      ],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/rime.md"
+      }
+    },
+    {
+      "id": "sarvam",
+      "label": "Sarvam",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/sarvam.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
+      "id": "simplismart",
+      "label": "Simplismart",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/simplismart.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
+      "id": "smallestai",
+      "label": "Smallest AI",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/smallestai.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
+      "id": "speechify",
+      "label": "Speechify",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/speechify.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
+      "id": "spitch",
+      "label": "Spitch",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/spitch.md"
+      },
+      "defaultVoice": "default"
     }
   ],
   "llm": [
-    {
-      "id": "openai",
-      "label": "OpenAI",
-      "defaultModel": "gpt-4o-mini",
-      "presets": ["gpt-4o-mini", "gpt-4.1-mini", "gpt-4.1", "gpt-4o"],
-      "api": {
-        "kind": "openai-compat",
-        "baseUrl": "https://api.openai.com",
-        "excludeFilter": "transcribe|whisper|tts|audio"
-      }
-    },
     {
       "id": "anthropic",
       "label": "Anthropic",
@@ -178,17 +710,87 @@
       "api": {
         "kind": "anthropic",
         "modelsUrl": "https://api.anthropic.com/v1/models",
-        "apiVersion": "2023-06-01"
+        "apiVersion": "2023-06-01",
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/plugins/anthropic.md"
       }
     },
     {
-      "id": "google",
-      "label": "Google Gemini",
-      "defaultModel": "gemini-2.0-flash",
-      "presets": ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"],
+      "id": "aws",
+      "label": "Amazon Bedrock",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
       "api": {
-        "kind": "google",
-        "excludeFilter": "tts|speech|chirp"
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/plugins/aws.md"
+      }
+    },
+    {
+      "id": "baseten",
+      "label": "Baseten",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/plugins/baseten.md"
+      }
+    },
+    {
+      "id": "cerebras",
+      "label": "Cerebras",
+      "defaultModel": "llama-3.3-70b",
+      "presets": [
+        "llama-3.3-70b"
+      ],
+      "api": {
+        "kind": "openai-compat",
+        "baseUrl": "https://api.cerebras.ai",
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/plugins/cerebras.md"
+      }
+    },
+    {
+      "id": "deepseek",
+      "label": "DeepSeek",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/plugins/deepseek.md"
+      }
+    },
+    {
+      "id": "fireworks",
+      "label": "Fireworks",
+      "defaultModel": "llama-v3p3-70b-instruct",
+      "presets": [
+        "llama-v3p3-70b-instruct",
+        "qwen3-235b-a22b"
+      ],
+      "api": {
+        "kind": "openai-compat",
+        "baseUrl": "https://api.fireworks.ai/inference",
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/plugins/fireworks.md"
+      }
+    },
+    {
+      "id": "gemini",
+      "label": "Google Gemini",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/plugins/gemini.md"
       }
     },
     {
@@ -202,34 +804,142 @@
       ],
       "api": {
         "kind": "openai-compat",
-        "baseUrl": "https://api.groq.com/openai"
+        "baseUrl": "https://api.groq.com/openai",
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/plugins/groq.md"
       }
     },
     {
-      "id": "azure",
-      "label": "Azure OpenAI",
+      "id": "langchain",
+      "label": "LangChain",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/plugins/langchain.md"
+      }
+    },
+    {
+      "id": "letta",
+      "label": "Letta",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/plugins/letta.md"
+      }
+    },
+    {
+      "id": "mistralai",
+      "label": "Mistral AI",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/plugins/mistralai.md"
+      }
+    },
+    {
+      "id": "ollama",
+      "label": "Ollama",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/plugins/ollama.md"
+      }
+    },
+    {
+      "id": "openai",
+      "label": "OpenAI",
       "defaultModel": "gpt-4o-mini",
-      "presets": ["gpt-4o-mini", "gpt-4o"],
-      "api": { "kind": "livekit-docs" }
-    },
-    {
-      "id": "cerebras",
-      "label": "Cerebras",
-      "defaultModel": "llama-3.3-70b",
-      "presets": ["llama-3.3-70b"],
+      "presets": [
+        "gpt-4o-mini",
+        "gpt-4.1-mini",
+        "gpt-4.1",
+        "gpt-4o"
+      ],
       "api": {
         "kind": "openai-compat",
-        "baseUrl": "https://api.cerebras.ai"
+        "baseUrl": "https://api.openai.com",
+        "excludeFilter": "transcribe|whisper|tts|audio",
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/plugins/openai.md"
       }
     },
     {
-      "id": "fireworks",
-      "label": "Fireworks",
-      "defaultModel": "llama-v3p3-70b-instruct",
-      "presets": ["llama-v3p3-70b-instruct", "qwen3-235b-a22b"],
+      "id": "azure-openai",
+      "label": "Azure OpenAI",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
       "api": {
-        "kind": "openai-compat",
-        "baseUrl": "https://api.fireworks.ai/inference"
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/plugins/azure-openai.md"
+      }
+    },
+    {
+      "id": "openrouter",
+      "label": "OpenRouter",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/plugins/openrouter.md"
+      }
+    },
+    {
+      "id": "ovhcloud",
+      "label": "OVHCloud",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/plugins/ovhcloud.md"
+      }
+    },
+    {
+      "id": "perplexity",
+      "label": "Perplexity",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/plugins/perplexity.md"
+      }
+    },
+    {
+      "id": "telnyx",
+      "label": "Telnyx",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/plugins/telnyx.md"
       }
     },
     {
@@ -242,18 +952,26 @@
       ],
       "api": {
         "kind": "openai-compat",
-        "baseUrl": "https://api.together.xyz"
+        "baseUrl": "https://api.together.xyz",
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/plugins/together.md"
       }
     },
     {
-      "id": "sambanova",
-      "label": "SambaNova",
-      "defaultModel": "Meta-Llama-3.3-70B-Instruct",
-      "presets": ["Meta-Llama-3.3-70B-Instruct", "DeepSeek-R1"],
+      "id": "xai",
+      "label": "xAI",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
       "api": {
-        "kind": "openai-compat",
-        "baseUrl": "https://api.sambanova.ai"
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/plugins/xai.md"
       }
     }
-  ]
+  ],
+  "_source": {
+    "livekit": "https://docs.livekit.io/llms.txt",
+    "syncedBy": "scripts/sync_livekit_plugins.py"
+  }
 }

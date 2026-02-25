@@ -136,6 +136,15 @@ pytest
 
 # Lint
 ruff check src/ tests/
+
+# Sync provider catalog from LiveKit source of truth
+python3 scripts/sync_livekit_plugins.py
+
+# CI-equivalent validation (fails if providers.json is outdated)
+python3 scripts/sync_livekit_plugins.py --check
+
+# Validate runtime provider contract + imports (CI mode)
+python3 scripts/validate_runtime_contract.py --import-check
 ```
 
 ## Protocol

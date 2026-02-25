@@ -26,12 +26,18 @@ One agent talks fast. One agent thinks deep. They collaborate in real-time.
 ## Install
 
 ```bash
-# Python (voice agent + supervisor base class)
+# Python core + selected plugins (recommended)
 pip install stimm[deepgram,openai]
+
+# Python core + all runtime-supported plugins (heavier)
+pip install stimm[all]
 
 # TypeScript (supervisor client for Node.js consumers)
 npm install @stimm/protocol
 ```
+
+Plugin dependencies are installed in the integrator app environment. Stimm does
+not vendor plugin code inside its wheel.
 
 ## Quick Start
 
@@ -146,6 +152,29 @@ python3 scripts/sync_livekit_plugins.py --check
 # Validate runtime provider contract + imports (CI mode)
 python3 scripts/validate_runtime_contract.py --import-check
 ```
+
+## Local Dev
+
+Use one command from the repository root to build local dev artifacts:
+
+```bash
+bash scripts/dev_build.sh
+```
+
+This command:
+- builds `@stimm/protocol` (`packages/protocol-ts/dist`)
+- rebuilds `providers.json` from LiveKit docs + runtime introspection
+  (`llms.txt` -> install plugins -> introspect constructors -> enrich from plugin `.md` pages)
+- validates runtime provider contract structure
+
+The plugin install/introspection phase runs in an isolated build virtualenv
+(`.stimm-build-venv`) to keep your system Python clean.
+
+Single source of truth for provider build/crawl: `scripts/sync_livekit_plugins.py`.
+It is used both in local build (`scripts/dev_build.sh`) and CI (`--check`).
+
+For `npm link` workflows, run this command after changing protocol code (or run
+`npm run dev` inside `packages/protocol-ts` for watch mode).
 
 ## Protocol
 

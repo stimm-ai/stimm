@@ -2,6 +2,7 @@
 .env
 .venv/
 venv/
+.stimm-build-venv/
 
 # Python
 __pycache__/

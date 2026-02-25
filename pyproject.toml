@@ -31,7 +31,21 @@ elevenlabs = ["livekit-plugins-elevenlabs>=1.1"]
 cartesia = ["livekit-plugins-cartesia>=1.1"]
 google = ["livekit-plugins-google>=1.1"]
 anthropic = ["livekit-plugins-anthropic>=1.1"]
-all = ["stimm[deepgram,openai,elevenlabs,cartesia,google,anthropic]"]
+azure = ["livekit-plugins-azure>=1.1"]
+assemblyai = ["livekit-plugins-assemblyai>=1.1"]
+aws = ["livekit-plugins-aws>=1.1"]
+speechmatics = ["livekit-plugins-speechmatics>=1.1"]
+clova = ["livekit-plugins-clova>=1.1"]
+fal = ["livekit-plugins-fal>=1.1"]
+asyncai = ["livekit-plugins-asyncai>=1.1"]
+rime = ["livekit-plugins-rime>=1.1"]
+groq = ["livekit-plugins-groq>=1.1"]
+cerebras = ["livekit-plugins-openai>=1.1"]
+fireworks = ["livekit-plugins-openai>=1.1"]
+together = ["livekit-plugins-openai>=1.1"]
+all = [
+    "stimm[deepgram,openai,elevenlabs,cartesia,google,anthropic,azure,assemblyai,aws,speechmatics,clova,fal,asyncai,rime,groq,cerebras,fireworks,together]"
+]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",

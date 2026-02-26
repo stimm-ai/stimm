@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.4](https://github.com/stimm-ai/stimm/compare/stimm-v0.1.3...stimm-v0.1.4) (2026-02-26)
+
+
+### Bug Fixes
+
+* remove src/livekit stubs that shadow real livekit-agents in editable installs ([f20adf0](https://github.com/stimm-ai/stimm/commit/f20adf036e43e0becb3f18261e14fba7655c2fdb))
+* update purge_livekit_rooms script to include agent dispatch deletion in documentation and functionality ([f22daaa](https://github.com/stimm-ai/stimm/commit/f22daaab22cd9022b0c4f98a5d4f5b10e5bcd4bd))
+
 ## [0.1.3](https://github.com/stimm-ai/stimm/compare/stimm-v0.1.2...stimm-v0.1.3) (2026-02-26)
 
 

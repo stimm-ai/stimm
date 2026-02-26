@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Purge all LiveKit rooms (and active participant sessions).
+"""Purge all LiveKit rooms, agent dispatches, and active participant sessions.
 
 This script loads environment variables from a ``.env`` file, then:
 1) lists every LiveKit room,
-2) removes all participants from each room,
-3) deletes the room.
+2) deletes all agent dispatches in each room,
+3) removes all participants from each room,
+4) deletes the room.
 
 Expected env vars (from .env or shell):
 - LIVEKIT_API_URL (preferred) or LIVEKIT_URL
@@ -93,10 +94,20 @@ async def _purge(*, dry_run: bool, yes: bool) -> int:
                 print("Aborted.")
                 return 0
 
+        deleted_dispatches = 0
         removed_participants = 0
         deleted_rooms = 0
 
         for room in rooms:
+            dispatches = await lk.agent_dispatch.list_dispatch(room.name)
+            for dispatch in dispatches:
+                await lk.agent_dispatch.delete_dispatch(dispatch.id, room.name)
+                deleted_dispatches += 1
+                print(
+                    f"Deleted agent dispatch '{dispatch.id}' (agent: '{dispatch.agent_name}')"
+                    f" from room '{room.name}'"
+                )
+
             participants_resp = await lk.room.list_participants(
                 lkapi.ListParticipantsRequest(room=room.name)
             )
@@ -115,7 +126,8 @@ async def _purge(*, dry_run: bool, yes: bool) -> int:
 
         print(
             "Done. "
-            f"Removed {removed_participants} participant session(s), "
+            f"Deleted {deleted_dispatches} agent dispatch(es), "
+            f"removed {removed_participants} participant session(s), "
             f"deleted {deleted_rooms} room(s)."
         )
         return 0
@@ -125,7 +137,7 @@ async def _purge(*, dry_run: bool, yes: bool) -> int:
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Delete all LiveKit rooms and active participant sessions."
+        description="Delete all LiveKit rooms, agent dispatches, and active participant sessions."
     )
     parser.add_argument(
         "--env-file",

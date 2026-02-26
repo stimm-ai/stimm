@@ -1,6 +1,6 @@
 {
   "name": "@stimm/protocol",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "TypeScript types and supervisor client for Stimm dual-agent voice orchestration",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

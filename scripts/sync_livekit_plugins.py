@@ -129,7 +129,7 @@ print(json.dumps(out))
     # Ensure the repository source paths are visible to the isolated Python
     # so that local stubs (src/ and repo root) can be imported during
     # runtime-introspection even when the venv has its own installed packages.
-    repo_paths = [str(REPO_ROOT), str(REPO_ROOT / "src")]
+    repo_paths = [str(REPO_ROOT / "src")]
     existing = env.get("PYTHONPATH")
     env["PYTHONPATH"] = ":".join(repo_paths + ([existing] if existing else []))
 
@@ -139,6 +139,7 @@ print(json.dumps(out))
         capture_output=True,
         text=True,
         env=env,
+        cwd="/tmp",
     )
     return json.loads(completed.stdout)
 

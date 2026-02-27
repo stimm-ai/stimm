@@ -121,7 +121,11 @@ def _make_stt() -> Any:
     language = os.environ.get("STIMM_STT_LANGUAGE")
     mod = _load_plugin("stt", provider)
 
-    kwargs: dict[str, Any] = {"model": model}
+    kwargs: dict[str, Any] = {}
+    if provider == "baseten":
+        kwargs["model_endpoint"] = model
+    else:
+        kwargs["model"] = model
 
     if language:
         if provider == "google":
@@ -165,12 +169,26 @@ def _make_tts() -> Any:
 
     # Mapping de la voix
     if voice:
-        if provider_id == "elevenlabs":
+        if provider_id in {"elevenlabs", "neuphonic", "smallestai", "speechify"}:
             kwargs["voice_id"] = voice
+        elif provider_id == "resemble":
+            kwargs["voice_uuid"] = voice
         elif provider_id in {"google", "gemini"}:
             kwargs["voice_name"] = voice
         else:
             kwargs["voice"] = voice
+
+    # Hume specific parameters
+    if provider_id == "hume":
+        hume_name = os.environ.get("STIMM_TTS_HUME_NAME")
+        hume_provider = os.environ.get("STIMM_TTS_HUME_PROVIDER")
+        hume_description = os.environ.get("STIMM_TTS_HUME_DESCRIPTION")
+        if hume_name:
+            kwargs["name"] = hume_name
+        if hume_provider:
+            kwargs["provider"] = hume_provider
+        if hume_description:
+            kwargs["description"] = hume_description
 
     # Language is accepted by several providers (Cartesia, Google standard TTS, etc.)
     if language and not (provider_id in {"google", "gemini"} and tts_ctor is not mod.TTS):

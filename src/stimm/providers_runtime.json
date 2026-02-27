@@ -32,7 +32,8 @@
     {"id": "azure-openai", "module": "livekit.plugins.azure", "constructor": "TTS"},
     {"id": "aws", "module": "livekit.plugins.aws", "constructor": "TTS"},
     {"id": "asyncai", "module": "livekit.plugins.asyncai", "constructor": "TTS"},
-    {"id": "rime", "module": "livekit.plugins.rime", "constructor": "TTS"}
+    {"id": "rime", "module": "livekit.plugins.rime", "constructor": "TTS"},
+    {"id": "hume", "module": "livekit.plugins.hume", "constructor": "TTS"}
   ],
   "llm": [
     {"id": "openai", "module": "livekit.plugins.openai", "constructor": "LLM"},

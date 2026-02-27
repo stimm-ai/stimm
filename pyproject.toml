@@ -39,12 +39,13 @@ clova = ["livekit-plugins-clova>=1.1"]
 fal = ["livekit-plugins-fal>=1.1"]
 asyncai = ["livekit-plugins-asyncai>=1.1"]
 rime = ["livekit-plugins-rime>=1.1"]
+hume = ["livekit-plugins-hume>=1.1"]
 groq = ["livekit-plugins-groq>=1.1"]
 cerebras = ["livekit-plugins-openai>=1.1"]
 fireworks = ["livekit-plugins-openai>=1.1"]
 together = ["livekit-plugins-openai>=1.1"]
 all = [
-    "stimm[deepgram,openai,elevenlabs,cartesia,google,anthropic,azure,assemblyai,aws,speechmatics,clova,fal,asyncai,rime,groq,cerebras,fireworks,together]"
+    "stimm[deepgram,openai,elevenlabs,cartesia,google,anthropic,azure,assemblyai,aws,speechmatics,clova,fal,asyncai,rime,hume,groq,cerebras,fireworks,together]"
 ]
 dev = [
     "pytest>=8.0",

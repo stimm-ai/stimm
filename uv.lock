@@ -1927,6 +1927,19 @@ wheels = [
 ]
 
 [[package]]
+name = "livekit-plugins-hume"
+version = "1.4.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "aiohttp" },
+    { name = "livekit-agents" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/8d/54/05f8620ef020e50c70a5466e8ee35eeab29e7e81f0d7dc8b1c3f495d104f/livekit_plugins_hume-1.4.2.tar.gz", hash = "sha256:a581e49557ee2430d1a0c8bc4bb42831595f3c66ed848be0c93abc7b71cb6b8c", size = 6329, upload-time = "2026-02-17T01:27:13.139Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/af/1d/b29a78179b9c01e33984c9efb402817f2885ef4d60e407853da56cc97b3b/livekit_plugins_hume-1.4.2-py3-none-any.whl", hash = "sha256:baee20170a59d46062b70dcfeaa01d2368f01a3a0702b54628f1a6ce8d9528f5", size = 6802, upload-time = "2026-02-17T01:27:12.333Z" },
+]
+
+[[package]]
 name = "livekit-plugins-openai"
 version = "1.4.2"
 source = { registry = "https://pypi.org/simple" }
@@ -3675,7 +3688,7 @@ wheels = [
 
 [[package]]
 name = "stimm"
-version = "0.1.3"
+version = "0.1.4"
 source = { editable = "." }
 dependencies = [
     { name = "livekit-agents" },
@@ -3697,6 +3710,7 @@ all = [
     { name = "livekit-plugins-fal" },
     { name = "livekit-plugins-google" },
     { name = "livekit-plugins-groq" },
+    { name = "livekit-plugins-hume" },
     { name = "livekit-plugins-openai" },
     { name = "livekit-plugins-rime" },
     { name = "livekit-plugins-speechmatics" },
@@ -3752,6 +3766,9 @@ google = [
 groq = [
     { name = "livekit-plugins-groq" },
 ]
+hume = [
+    { name = "livekit-plugins-hume" },
+]
 openai = [
     { name = "livekit-plugins-openai" },
 ]
@@ -3781,6 +3798,7 @@ requires-dist = [
     { name = "livekit-plugins-fal", marker = "extra == 'fal'", specifier = ">=1.1" },
     { name = "livekit-plugins-google", marker = "extra == 'google'", specifier = ">=1.1" },
     { name = "livekit-plugins-groq", marker = "extra == 'groq'", specifier = ">=1.1" },
+    { name = "livekit-plugins-hume", marker = "extra == 'hume'", specifier = ">=1.1" },
     { name = "livekit-plugins-openai", marker = "extra == 'cerebras'", specifier = ">=1.1" },
     { name = "livekit-plugins-openai", marker = "extra == 'fireworks'", specifier = ">=1.1" },
     { name = "livekit-plugins-openai", marker = "extra == 'openai'", specifier = ">=1.1" },
@@ -3795,9 +3813,9 @@ requires-dist = [
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4" },
-    { name = "stimm", extras = ["deepgram", "openai", "elevenlabs", "cartesia", "google", "anthropic", "azure", "assemblyai", "aws", "speechmatics", "clova", "fal", "asyncai", "rime", "groq", "cerebras", "fireworks", "together"], marker = "extra == 'all'" },
+    { name = "stimm", extras = ["deepgram", "openai", "elevenlabs", "cartesia", "google", "anthropic", "azure", "assemblyai", "aws", "speechmatics", "clova", "fal", "asyncai", "rime", "hume", "groq", "cerebras", "fireworks", "together"], marker = "extra == 'all'" },
 ]
-provides-extras = ["deepgram", "openai", "elevenlabs", "cartesia", "google", "anthropic", "azure", "assemblyai", "aws", "speechmatics", "clova", "fal", "asyncai", "rime", "groq", "cerebras", "fireworks", "together", "all", "dev"]
+provides-extras = ["deepgram", "openai", "elevenlabs", "cartesia", "google", "anthropic", "azure", "assemblyai", "aws", "speechmatics", "clova", "fal", "asyncai", "rime", "hume", "groq", "cerebras", "fireworks", "together", "all", "dev"]
 
 [[package]]
 name = "sympy"

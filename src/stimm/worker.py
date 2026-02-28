@@ -124,12 +124,18 @@ def _make_stt() -> Any:
     kwargs: dict[str, Any] = {}
     if provider == "baseten":
         kwargs["model_endpoint"] = model
+    elif provider == "fal":
+        # fal.STT has no model param (language + api_key only)
+        pass
     else:
         kwargs["model"] = model
 
     if language:
         if provider == "google":
-            kwargs["languages"] = [language]  # Google attend une liste
+            kwargs["languages"] = [language]  # Google expects a list
+        elif provider == "assemblyai":
+            # assemblyai.STT has no language param; language_detection is a bool
+            pass
         else:
             kwargs["language"] = language
 
@@ -164,6 +170,9 @@ def _make_tts() -> Any:
             kwargs["model"] = model
         else:
             kwargs["model_name"] = model
+    elif provider_id == "hume":
+        # Hume uses model_version (e.g. "1", "2"), not model
+        kwargs["model_version"] = model
     else:
         kwargs["model"] = model
 
@@ -175,6 +184,23 @@ def _make_tts() -> Any:
             kwargs["voice_uuid"] = voice
         elif provider_id in {"google", "gemini"}:
             kwargs["voice_name"] = voice
+        elif provider_id == "rime":
+            # rime.TTS uses speaker= not voice=
+            kwargs["speaker"] = voice
+        elif provider_id == "hume":
+            # Hume requires VoiceById (UUID) or VoiceByName, not a plain string
+            import re as _re
+
+            from livekit.plugins.hume import VoiceById, VoiceByName
+
+            if _re.match(
+                r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                voice,
+                _re.IGNORECASE,
+            ):
+                kwargs["voice"] = VoiceById(id=voice)
+            else:
+                kwargs["voice"] = VoiceByName(name=voice)
         else:
             kwargs["voice"] = voice
 
@@ -183,16 +209,24 @@ def _make_tts() -> Any:
         hume_name = os.environ.get("STIMM_TTS_HUME_NAME")
         hume_provider = os.environ.get("STIMM_TTS_HUME_PROVIDER")
         hume_description = os.environ.get("STIMM_TTS_HUME_DESCRIPTION")
-        if hume_name:
-            kwargs["name"] = hume_name
-        if hume_provider:
-            kwargs["provider"] = hume_provider
+        # If no voice was set via STIMM_TTS_VOICE, fall back to name-based selection
+        if hume_name and "voice" not in kwargs:
+            from livekit.plugins.hume import VoiceByName
+
+            voice_obj: dict[str, Any] = {"name": hume_name}
+            if hume_provider:
+                voice_obj["provider"] = hume_provider
+            kwargs["voice"] = voice_obj
         if hume_description:
             kwargs["description"] = hume_description
 
     # Language is accepted by several providers (Cartesia, Google standard TTS, etc.)
     if language and not (provider_id in {"google", "gemini"} and tts_ctor is not mod.TTS):
-        kwargs["language"] = language
+        if provider_id == "rime":
+            # rime.TTS uses lang= not language=
+            kwargs["lang"] = language
+        else:
+            kwargs["language"] = language
 
     if api_key:
         kwargs["api_key"] = api_key

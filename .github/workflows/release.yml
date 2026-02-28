@@ -2,35 +2,31 @@ name: Release
 
 on:
   push:
-    tags: ["stimm-v*"]
+    tags:
+      - "stimm-v*"
+      - "protocol-v*"
 
 jobs:
   check-versions:
+    if: startsWith(github.ref_name, 'stimm-v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Verify versions match tag
+      - name: Verify Python version matches tag
         run: |
           TAG="${GITHUB_REF_NAME#stimm-v}"   # e.g. "0.2.0"
 
           PY_VERSION=$(grep -m1 '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
-          NPM_VERSION=$(grep -m1 '"version"' packages/protocol-ts/package.json | sed 's/.*"version": "\(.*\)".*/\1/')
 
-          echo "Tag:          $TAG"
-          echo "pyproject:    $PY_VERSION"
-          echo "package.json: $NPM_VERSION"
+          echo "Tag:       $TAG"
+          echo "pyproject: $PY_VERSION"
 
           if [[ "$PY_VERSION" != "$TAG" ]]; then
             echo "::error::pyproject.toml version ($PY_VERSION) does not match tag ($TAG)"
             echo "Run: scripts/bump-version $TAG"
             exit 1
           fi
-          if [[ "$NPM_VERSION" != "$TAG" ]]; then
-            echo "::error::packages/protocol-ts/package.json version ($NPM_VERSION) does not match tag ($TAG)"
-            echo "Run: scripts/bump-version $TAG"
-            exit 1
-          fi
-          echo "All versions match $TAG ✓"
+          echo "Version matches $TAG ✓"
 
   test:
     needs: check-versions
@@ -50,30 +46,6 @@ jobs:
       - run: python -m build
       - uses: pypa/gh-action-pypi-publish@release/v1
         # No password needed when PyPI trusted publisher is configured
-
-  publish-npm:
-    needs: test
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write  # Required for npm OIDC trusted publishing
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          registry-url: "https://registry.npmjs.org"
-      - name: Upgrade npm (trusted publishing requires ≥11.5.1)
-        run: npm install -g npm@latest
-      - name: Install & Build
-        working-directory: packages/protocol-ts
-        run: |
-          npm install
-          npm run build
-      - name: Publish
-        working-directory: packages/protocol-ts
-        run: npm publish --access public
-        # No token needed — npm CLI auto-detects OIDC when trusted publisher is configured
 
   publish-docker:
     needs: [publish-pypi]  # stimm must be on PyPI before the Docker build installs it
@@ -103,3 +75,48 @@ jobs:
           tags: |
             ghcr.io/stimm-ai/stimm-agent:latest
             ghcr.io/stimm-ai/stimm-agent:${{ steps.version.outputs.version }}
+
+  check-npm-version:
+    if: startsWith(github.ref_name, 'protocol-v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify npm version matches tag
+        run: |
+          TAG="${GITHUB_REF_NAME#protocol-v}"   # e.g. "0.2.0"
+
+          NPM_VERSION=$(grep -m1 '"version"' packages/protocol-ts/package.json | sed 's/.*"version": "\(.*\)".*/\1/')
+
+          echo "Tag:          $TAG"
+          echo "package.json: $NPM_VERSION"
+
+          if [[ "$NPM_VERSION" != "$TAG" ]]; then
+            echo "::error::packages/protocol-ts/package.json version ($NPM_VERSION) does not match tag ($TAG)"
+            echo "Run: scripts/bump-version $TAG"
+            exit 1
+          fi
+          echo "Version matches $TAG ✓"
+
+  publish-npm:
+    needs: check-npm-version
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # Required for npm OIDC trusted publishing
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+      - name: Upgrade npm (trusted publishing requires ≥11.5.1)
+        run: npm install -g npm@latest
+      - name: Install & Build
+        working-directory: packages/protocol-ts
+        run: |
+          npm install
+          npm run build
+      - name: Publish
+        working-directory: packages/protocol-ts
+        run: npm publish --access public
+        # No token needed — npm CLI auto-detects OIDC when trusted publisher is configured

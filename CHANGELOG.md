@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.5](https://github.com/stimm-ai/stimm/compare/stimm-v0.1.4...stimm-v0.1.5) (2026-02-28)
+
+
+### Features
+
+* add Hume plugin to optional dependencies ([2c15264](https://github.com/stimm-ai/stimm/commit/2c152647b936eab758dca1063af131460944b006))
+* enhance STT/TTS functionality for Hume provider and add support for additional providers ([a2da5a8](https://github.com/stimm-ai/stimm/commit/a2da5a88fbae4d030cea8a10307eb8426732de23))
+* update Hume provider default model and presets configuration ([1063b0f](https://github.com/stimm-ai/stimm/commit/1063b0fba2b058c9d0a8852ceb8f2a241da65187))
+
 ## [0.1.4](https://github.com/stimm-ai/stimm/compare/stimm-v0.1.3...stimm-v0.1.4) (2026-02-26)
 
 

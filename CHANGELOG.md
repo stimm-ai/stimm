@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.8](https://github.com/stimm-ai/stimm/compare/stimm-v0.1.7...stimm-v0.1.8) (2026-02-28)
+
+
+### Bug Fixes
+
+* trigger release workflow on stimm-v* tags from release-please ([b49db08](https://github.com/stimm-ai/stimm/commit/b49db0876943138cfbb77841c3ce0889a2df154b))
+
 ## [0.1.7](https://github.com/stimm-ai/stimm/compare/stimm-v0.1.6...stimm-v0.1.7) (2026-02-28)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.9](https://github.com/stimm-ai/stimm/compare/stimm-v0.1.8...stimm-v0.1.9) (2026-02-28)
+
+
+### Bug Fixes
+
+* split release workflow by tag prefix for independent npm/PyPI releases ([4d5d53a](https://github.com/stimm-ai/stimm/commit/4d5d53aa0b29a554b7242409d6f186ae7f5bd6ac))
+
 ## [0.1.8](https://github.com/stimm-ai/stimm/compare/stimm-v0.1.7...stimm-v0.1.8) (2026-02-28)
 
 

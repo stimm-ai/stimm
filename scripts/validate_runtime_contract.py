@@ -3,8 +3,9 @@
 
 from __future__ import annotations
 
-import importlib
 import json
+import os
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -72,6 +73,17 @@ def main() -> int:
                 errors.append(f"runtime provider '{kind}:{provider_id}' has invalid constructor")
 
     if "--import-check" in sys.argv:
+        # Determine the Python executable to use for import checks.
+        # Accepts --python-exe=<path> so callers can point at an isolated venv
+        # where provider packages are installed (e.g. the build venv created by
+        # sync_livekit_plugins.py) rather than the current interpreter which may
+        # not have those packages installed.
+        python_exe = sys.executable
+        for arg in sys.argv:
+            if arg.startswith("--python-exe="):
+                python_exe = arg.split("=", 1)[1]
+                break
+
         for kind in ("stt", "tts", "llm"):
             for entry in runtime.get(kind, []):
                 if not isinstance(entry, dict):
@@ -80,7 +92,24 @@ def main() -> int:
                 provider_id = entry.get("id")
                 if isinstance(module, str):
                     try:
-                        importlib.import_module(module)
+                        clean_env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
+                        result = subprocess.run(
+                            [python_exe, "-c", f"import {module}"],
+                            capture_output=True,
+                            text=True,
+                            env=clean_env,
+                            cwd="/tmp",
+                        )
+                        if result.returncode != 0:
+                            exc_msg = (
+                                result.stderr.strip().splitlines()[-1]
+                                if result.stderr.strip()
+                                else "unknown error"
+                            )
+                            errors.append(
+                                f"cannot import module for {kind}:{provider_id}:"
+                                f" {module} ({exc_msg})"
+                            )
                     except Exception as exc:  # noqa: BLE001
                         errors.append(
                             f"cannot import module for {kind}:{provider_id}: {module} ({exc})"

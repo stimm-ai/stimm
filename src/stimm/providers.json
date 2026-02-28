@@ -2370,9 +2370,10 @@
     {
       "id": "hume",
       "label": "Hume",
-      "defaultModel": "default",
+      "defaultModel": "2",
       "presets": [
-        "default"
+        "1",
+        "2"
       ],
       "parameters": [
         {
@@ -2460,7 +2461,8 @@
         "kind": "livekit-docs",
         "docsUrl": "https://docs.livekit.io/agents/models/tts/plugins/hume.md"
       },
-      "defaultVoice": "default"
+      "defaultVoice": "default",
+      "modelParam": "model_version"
     },
     {
       "id": "inworld",

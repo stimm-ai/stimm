@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.6](https://github.com/stimm-ai/stimm/compare/stimm-v0.1.5...stimm-v0.1.6) (2026-02-28)
+
+
+### Bug Fixes
+
+* refine PYTHONPATH setup for isolated interpreter to prevent ImportError ([12b93e2](https://github.com/stimm-ai/stimm/commit/12b93e2827b5b00c248cc42e84e3353edade19fc))
+
 ## [0.1.5](https://github.com/stimm-ai/stimm/compare/stimm-v0.1.4...stimm-v0.1.5) (2026-02-28)
 
 

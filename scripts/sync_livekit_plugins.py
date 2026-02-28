@@ -126,12 +126,11 @@ for parameter in signature.parameters.values():
 print(json.dumps(out))
 """
     env = os.environ.copy()
-    # Ensure the repository source paths are visible to the isolated Python
-    # so that local stubs (src/ and repo root) can be imported during
-    # runtime-introspection even when the venv has its own installed packages.
-    repo_paths = [str(REPO_ROOT / "src")]
-    existing = env.get("PYTHONPATH")
-    env["PYTHONPATH"] = ":".join(repo_paths + ([existing] if existing else []))
+    # Only expose src/ to the isolated interpreter so local stubs are importable.
+    # Explicitly exclude the repo root from PYTHONPATH: the top-level livekit/
+    # directory would shadow installed packages (e.g. livekit.agents) and cause
+    # ImportError during introspection.
+    env["PYTHONPATH"] = str(REPO_ROOT / "src")
 
     completed = subprocess.run(
         [python_exe, "-c", helper, entry["module"], entry["constructor"]],

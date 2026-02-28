@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.7](https://github.com/stimm-ai/stimm/compare/stimm-v0.1.6...stimm-v0.1.7) (2026-02-28)
+
+
+### Bug Fixes
+
+* prevent repo livekit/ from shadowing installed packages in CI ([c7532d4](https://github.com/stimm-ai/stimm/commit/c7532d42cd2a1d4c4a5e1a14ba501f13c962115a))
+
 ## [0.1.6](https://github.com/stimm-ai/stimm/compare/stimm-v0.1.5...stimm-v0.1.6) (2026-02-28)
 
 

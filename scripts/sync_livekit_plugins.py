@@ -233,20 +233,17 @@ def _extract_plugins(content: str, section: str, next_section: str) -> list[dict
         raise ValueError(f"Section '{section}' not found in llms.txt")
 
     block = block_match.group(1)
-    plugins_match = re.search(r"##### Plugins(.*)", block, flags=re.S)
-    if not plugins_match:
-        raise ValueError(f"Plugins subsection missing under '{section}'")
 
-    plugins_block = plugins_match.group(1)
-    plugins_block = plugins_block.split("#### ", 1)[0]
-
+    # Match plugin doc URLs under this section.
+    # URL pattern: /agents/models/{section}/{slug} (e.g. /agents/models/llm/openai.md).
+    # The overview URL ends in /{section}.md (no sub-path slash) so it won't match.
     pattern = re.compile(
-        rf"\[([^\]]+)\]\((https://docs\.livekit\.io/agents/models/{section.lower()}/plugins/[^)]+)\)"
+        rf"\[([^\]]+)\]\((https://docs\.livekit\.io/agents/models/{section.lower()}/[^)]+)\)"
     )
 
     seen: set[str] = set()
     out: list[dict[str, str]] = []
-    for label, docs_url in pattern.findall(plugins_block):
+    for label, docs_url in pattern.findall(block):
         slug = docs_url.rsplit("/", 1)[-1].replace(".md", "")
         if slug in seen:
             continue

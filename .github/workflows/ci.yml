@@ -48,8 +48,9 @@ jobs:
       - run: pip install uv
       - run: uv sync --all-extras
 
-      - name: Validate LiveKit provider catalog + docs-crawled parameters
-        run: PYTHONPATH="$GITHUB_WORKSPACE/src" python3 scripts/sync_livekit_plugins.py --check --build-venv "$GITHUB_WORKSPACE/.venv"
+      # providers.json freshness is checked by the scheduled sync-providers workflow.
+      # Keeping it out of the release-critical path avoids flapping when LiveKit
+      # updates their llms.txt between a local sync and the CI run.
 
       - name: Validate runtime provider contract
         run: PYTHONPATH="$GITHUB_WORKSPACE/src" uv run python scripts/validate_runtime_contract.py --import-check

@@ -1,0 +1,58 @@
+name: Sync Provider Catalog
+
+on:
+  schedule:
+    - cron: "0 6 * * *"  # Daily at 06:00 UTC
+  workflow_dispatch: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y portaudio19-dev libasound2-dev
+
+      - run: pip install uv
+      - run: uv sync --all-extras
+
+      - name: Regenerate providers.json from live LiveKit docs
+        run: PYTHONPATH="$GITHUB_WORKSPACE/src" python3 scripts/sync_livekit_plugins.py --build-venv "$GITHUB_WORKSPACE/.venv"
+
+      - name: Check for drift
+        id: diff
+        run: |
+          if git diff --exit-code src/stimm/providers.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open PR if providers.json drifted
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="auto/sync-providers-$(date +%Y%m%d)"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add src/stimm/providers.json
+          git commit -m "chore: sync providers.json with LiveKit llms.txt"
+          git push origin "$BRANCH"
+          gh pr create \
+            --title "chore: sync providers.json with LiveKit llms.txt" \
+            --body "LiveKit's llms.txt changed. This PR was opened automatically by the daily sync workflow." \
+            --base main \
+            --head "$BRANCH" \
+            --label "automated" || true

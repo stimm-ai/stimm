@@ -46,7 +46,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y portaudio19-dev libasound2-dev
       - run: pip install uv
-      - run: uv sync --all-extras --extra dev
+      - run: uv sync --all-extras
 
       - name: Validate LiveKit provider catalog + docs-crawled parameters
         run: PYTHONPATH="$GITHUB_WORKSPACE/src" python3 scripts/sync_livekit_plugins.py --check

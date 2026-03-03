@@ -46,13 +46,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y portaudio19-dev libasound2-dev
       - run: pip install uv
-      - run: uv sync --extra dev
+      - run: uv sync --all-extras --extra dev
 
       - name: Validate LiveKit provider catalog + docs-crawled parameters
         run: PYTHONPATH="$GITHUB_WORKSPACE/src" python3 scripts/sync_livekit_plugins.py --check
 
       - name: Validate runtime provider contract
-        run: PYTHONPATH="$GITHUB_WORKSPACE/src" python3 scripts/validate_runtime_contract.py --import-check --python-exe="$GITHUB_WORKSPACE/.stimm-build-venv/bin/python"
+        run: PYTHONPATH="$GITHUB_WORKSPACE/src" uv run python scripts/validate_runtime_contract.py --import-check
 
       - name: Ruff Check
         run: |

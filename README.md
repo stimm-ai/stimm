@@ -1,8 +1,32 @@
-# stimm
+<div align="center">
+  <img src=".github/assets/logo_stimm_h.png" alt="Stimm" width="200" height="56">
+  <p>
+    <b>One agent talks fast, one agent thinks deep — both collaborate in real-time.</b>
+  </p>
 
-<p align="center">
-  <img src=".github/assets/logo_stimm_h.png" alt="stimm logo" width="360" />
-</p>
+  <a href="https://github.com/stimm-ai/stimm/actions">
+    <img src="https://img.shields.io/github/actions/workflow/status/stimm-ai/stimm/ci.yml?label=tests" alt="Tests">
+  </a>
+  <a href="https://github.com/stimm-ai/stimm/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/license-AGPL_v3-blue" alt="License">
+  </a>
+  <a href="#">
+    <img src="https://img.shields.io/badge/python-3.12-blue" alt="Python">
+  </a>
+  <a href="#">
+    <img src="https://img.shields.io/badge/livekit-compatible-purple" alt="LiveKit">
+  </a>
+  <a href="https://stimm-ai.github.io/stimm/">
+    <img src="https://img.shields.io/badge/docs-online-success" alt="Documentation">
+  </a>
+  <a href="#">
+    <img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff">
+  </a>
+  <a href="#">
+    <img src="https://img.shields.io/badge/security-bandit-yellow" alt="Bandit">
+  </a>
+</div>
+<br>
 
 Dual-agent voice orchestration built on [livekit-agents](https://github.com/livekit/agents):
 one agent talks fast, one agent thinks deep, both collaborate in real-time.

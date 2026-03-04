@@ -60,7 +60,7 @@ from stimm.supervisor import Supervisor
 from stimm.voice_agent import VoiceAgent
 from stimm.worker import SupervisorFactory, make_agent, make_entrypoint
 
-__version__ = "0.1.12"
+__version__ = "0.1.13"
 
 __all__ = [
     # Core classes

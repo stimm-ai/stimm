@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.13](https://github.com/stimm-ai/stimm/compare/stimm-v0.1.12...stimm-v0.1.13) (2026-03-04)
+
+
+### Bug Fixes
+
+* enhance README with logo, description, and badges for better visibility ([271b06b](https://github.com/stimm-ai/stimm/commit/271b06b49bf1d15a0fb9c65845f6b78cd5e3c3f5))
+
 ## [0.1.9](https://github.com/stimm-ai/stimm/compare/stimm-v0.1.8...stimm-v0.1.9) (2026-02-28)
 
 

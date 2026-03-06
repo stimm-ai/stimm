@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.14](https://github.com/stimm-ai/stimm/compare/stimm-v0.1.13...stimm-v0.1.14) (2026-03-06)
+
+
+### Bug Fixes
+
+* update README and overview documentation to clarify Optimistic VUI concept and improve descriptions ([3e48edf](https://github.com/stimm-ai/stimm/commit/3e48edf57bf1cae03299494eba01facdf7e2d057))
+
 ## [0.1.13](https://github.com/stimm-ai/stimm/compare/stimm-v0.1.12...stimm-v0.1.13) (2026-03-04)
 
 

@@ -1,11 +1,13 @@
 ---
 id: integrations-resemble-detect
-title: Resemble Detect Integration
+title: Resemble Detect and Signal Integration
 ---
 
 Resemble Detect can monitor caller audio for synthetic speech risk in the
 LiveKit voice-agent process. Stimm should use that signal as supervisor context
 or escalation input; the raw audio monitor should not run inside the supervisor.
+Resemble Signal can also score caller text or transcript excerpts for fraud and
+scam intent before the supervisor allows sensitive actions.
 
 ## Install
 
@@ -88,7 +90,7 @@ if __name__ == "__main__":
 
 ## Supervisor policy
 
-Use the detector result as a risk signal, not as proof of identity. Common
+Use Detect and Signal results as risk signals, not as proof of identity. Common
 policies are:
 
 - log only for quality review
@@ -99,3 +101,35 @@ policies are:
 Keep the policy in your Stimm supervisor or application layer. That keeps
 Stimm provider-agnostic while still letting the LiveKit worker own audio
 capture and room lifecycle.
+
+## Signal scoring in the supervisor
+
+Use Signal when the transcript or a caller-provided message affects a trust
+decision. Detect answers whether media is synthetic; Signal answers whether the
+request resembles a fraud or scam pattern.
+
+```python
+import aiohttp
+
+
+async def score_signal(text: str, api_key: str) -> dict:
+    async with aiohttp.ClientSession(
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        }
+    ) as session:
+        async with session.post(
+            "https://app.resemble.ai/api/v2/signal",
+            json={"text": text},
+        ) as response:
+            response.raise_for_status()
+            return await response.json()
+```
+
+Run this from the supervisor or application layer for requests such as reset
+codes, credential changes, wire transfers, urgent payments, or account updates.
+If Signal returns `suspicious` or `fraud`, add supervisor context, interrupt the
+voice agent if needed, and follow the same escalation policy you use for
+synthetic-voice risk.

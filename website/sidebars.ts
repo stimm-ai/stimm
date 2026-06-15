@@ -17,6 +17,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'integrations/integrations-wizard',
         'integrations/integrations-agent-md',
+        'integrations/integrations-resemble-detect',
         'integrations/integrations-supervisor-observability',
       ],
     },

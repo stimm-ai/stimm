@@ -2,6 +2,195 @@
   "_comment": "Source of truth for stimm provider metadata. Plugin list is synced from https://docs.livekit.io/llms.txt via scripts/sync_livekit_plugins.py.",
   "stt": [
     {
+      "id": "speechmatics",
+      "label": "Speechmatics",
+      "defaultModel": "default",
+      "presets": [
+        "enhanced"
+      ],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/speechmatics.md"
+      },
+      "parameters": [
+        {
+          "name": "api_key",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[str]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "base_url",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[str]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "turn_detection_mode",
+          "required": false,
+          "default": "adaptive",
+          "type": "TurnDetectionMode",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "operating_point",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[OperatingPoint]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "domain",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[str]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "language",
+          "required": false,
+          "default": "en",
+          "type": "str",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "output_locale",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[str]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "include_partials",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[bool]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "enable_diarization",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[bool]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "max_delay",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[float]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "end_of_utterance_silence_trigger",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[float]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "end_of_utterance_max_delay",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[float]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "additional_vocab",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[list[AdditionalVocabEntry]]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "punctuation_overrides",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[dict]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "speaker_sensitivity",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[float]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "max_speakers",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[int]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "speaker_active_format",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[str]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "speaker_passive_format",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[str]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "prefer_current_speaker",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[bool]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "focus_speakers",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[list[str]]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "ignore_speakers",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[list[str]]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "focus_mode",
+          "required": false,
+          "default": "retain",
+          "type": "SpeakerFocusMode",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "known_speakers",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[list[SpeakerIdentifier]]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "sample_rate",
+          "required": false,
+          "default": 16000,
+          "type": "int",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "audio_encoding",
+          "required": false,
+          "default": "pcm_s16le",
+          "type": "AudioEncoding",
+          "source": "runtime-introspection"
+        }
+      ]
+    },
+    {
       "id": "assemblyai",
       "label": "AssemblyAI",
       "defaultModel": "best",
@@ -39,7 +228,7 @@
           "name": "model",
           "required": false,
           "default": "universal-streaming-english",
-          "type": "Literal['universal-streaming-english', 'universal-streaming-multilingual', 'u3-rt-pro', 'u3-pro']",
+          "type": "Literal['universal-streaming-english', 'universal-streaming-multilingual']",
           "source": "runtime-introspection"
         },
         {
@@ -57,7 +246,7 @@
           "source": "runtime-introspection"
         },
         {
-          "name": "min_turn_silence",
+          "name": "min_end_of_turn_silence_when_confident",
           "required": false,
           "default": "NOT_GIVEN",
           "type": "NotGivenOr[int]",
@@ -85,34 +274,6 @@
           "source": "runtime-introspection"
         },
         {
-          "name": "prompt",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[str]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "vad_threshold",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[float]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "speaker_labels",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[bool]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "max_speakers",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[int]",
-          "source": "runtime-introspection"
-        },
-        {
           "name": "http_session",
           "required": false,
           "default": null,
@@ -131,13 +292,6 @@
           "required": false,
           "default": "wss://streaming.assemblyai.com",
           "type": "str",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "min_end_of_turn_silence_when_confident",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[int]",
           "source": "runtime-introspection"
         }
       ]
@@ -349,6 +503,19 @@
       "api": {
         "kind": "livekit-docs",
         "docsUrl": "https://docs.livekit.io/agents/models/stt/elevenlabs.md"
+      }
+    },
+    {
+      "id": "xai",
+      "label": "xAI",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/xai.md"
       }
     },
     {
@@ -832,6 +999,19 @@
       }
     },
     {
+      "id": "gnani",
+      "label": "Gnani",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/gnani.md"
+      }
+    },
+    {
       "id": "google",
       "label": "Google Cloud",
       "defaultModel": "latest_long",
@@ -1018,6 +1198,19 @@
       }
     },
     {
+      "id": "inworld",
+      "label": "Inworld",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/inworld.md"
+      }
+    },
+    {
       "id": "mistralai",
       "label": "Mistral AI",
       "defaultModel": "default",
@@ -1198,6 +1391,32 @@
       }
     },
     {
+      "id": "slng",
+      "label": "SLNG",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/slng.md"
+      }
+    },
+    {
+      "id": "smallestai",
+      "label": "Smallest AI",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/smallestai.md"
+      }
+    },
+    {
       "id": "soniox",
       "label": "Soniox",
       "defaultModel": "default",
@@ -1222,195 +1441,6 @@
         "kind": "livekit-docs",
         "docsUrl": "https://docs.livekit.io/agents/models/stt/soniox.md"
       }
-    },
-    {
-      "id": "speechmatics",
-      "label": "Speechmatics",
-      "defaultModel": "default",
-      "presets": [
-        "enhanced"
-      ],
-      "api": {
-        "kind": "livekit-docs",
-        "docsUrl": "https://docs.livekit.io/agents/models/stt/speechmatics.md"
-      },
-      "parameters": [
-        {
-          "name": "api_key",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[str]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "base_url",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[str]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "turn_detection_mode",
-          "required": false,
-          "default": "adaptive",
-          "type": "TurnDetectionMode",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "operating_point",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[OperatingPoint]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "domain",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[str]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "language",
-          "required": false,
-          "default": "en",
-          "type": "str",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "output_locale",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[str]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "include_partials",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[bool]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "enable_diarization",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[bool]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "max_delay",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[float]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "end_of_utterance_silence_trigger",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[float]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "end_of_utterance_max_delay",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[float]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "additional_vocab",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[list[AdditionalVocabEntry]]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "punctuation_overrides",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[dict]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "speaker_sensitivity",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[float]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "max_speakers",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[int]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "speaker_active_format",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[str]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "speaker_passive_format",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[str]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "prefer_current_speaker",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[bool]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "focus_speakers",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[list[str]]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "ignore_speakers",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[list[str]]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "focus_mode",
-          "required": false,
-          "default": "retain",
-          "type": "SpeakerFocusMode",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "known_speakers",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[list[SpeakerIdentifier]]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "sample_rate",
-          "required": false,
-          "default": 16000,
-          "type": "int",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "audio_encoding",
-          "required": false,
-          "default": "pcm_s16le",
-          "type": "AudioEncoding",
-          "source": "runtime-introspection"
-        }
-      ]
     },
     {
       "id": "spitch",
@@ -1877,6 +1907,20 @@
       ]
     },
     {
+      "id": "xai",
+      "label": "xAI",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/xai.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
       "id": "asyncai",
       "label": "AsyncAI",
       "defaultModel": "default",
@@ -1894,7 +1938,7 @@
         {
           "name": "model",
           "required": false,
-          "default": "async_flash_v1.0",
+          "default": "asyncflow_multilingual_v1.0",
           "type": "TTSModels | str",
           "source": "runtime-introspection"
         },
@@ -1943,7 +1987,7 @@
         {
           "name": "base_url",
           "required": false,
-          "default": "https://api.async.com",
+          "default": "https://api.async.ai",
           "type": "str",
           "source": "runtime-introspection"
         }
@@ -2280,6 +2324,20 @@
       "defaultVoice": "default"
     },
     {
+      "id": "fishaudio",
+      "label": "Fish Audio",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/fishaudio.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
       "id": "gemini",
       "label": "Gemini",
       "defaultModel": "default",
@@ -2340,6 +2398,20 @@
       "api": {
         "kind": "livekit-docs",
         "docsUrl": "https://docs.livekit.io/agents/models/tts/gemini.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
+      "id": "gnani",
+      "label": "Gnani",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/gnani.md"
       },
       "defaultVoice": "default"
     },
@@ -2636,6 +2708,20 @@
       "modelParam": "model_version"
     },
     {
+      "id": "kokoro",
+      "label": "Kokoro",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/kokoro.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
       "id": "lmnt",
       "label": "LMNT",
       "defaultModel": "default",
@@ -2665,6 +2751,34 @@
       "api": {
         "kind": "livekit-docs",
         "docsUrl": "https://docs.livekit.io/agents/models/tts/minimax.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
+      "id": "mistralai",
+      "label": "Mistral AI",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/mistralai.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
+      "id": "murf",
+      "label": "Murf AI",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/murf.md"
       },
       "defaultVoice": "default"
     },
@@ -2804,6 +2918,20 @@
       "defaultVoice": "default"
     },
     {
+      "id": "respeecher",
+      "label": "Respeecher",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/respeecher.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
       "id": "sarvam",
       "label": "Sarvam",
       "defaultModel": "default",
@@ -2858,6 +2986,20 @@
       "defaultVoice": "default"
     },
     {
+      "id": "slng",
+      "label": "SLNG",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/slng.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
       "id": "smallestai",
       "label": "Smallest AI",
       "defaultModel": "default",
@@ -2881,6 +3023,20 @@
       "api": {
         "kind": "livekit-docs",
         "docsUrl": "https://docs.livekit.io/agents/models/tts/smallestai.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
+      "id": "soniox",
+      "label": "Soniox",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/soniox.md"
       },
       "defaultVoice": "default"
     },
@@ -2943,9 +3099,202 @@
         "docsUrl": "https://docs.livekit.io/agents/models/tts/spitch.md"
       },
       "defaultVoice": "default"
+    },
+    {
+      "id": "custom-voices",
+      "label": "Custom voices",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/custom-voices.md"
+      },
+      "defaultVoice": "default"
     }
   ],
   "llm": [
+    {
+      "id": "livekit",
+      "label": "Hosted by LiveKit",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/livekit.md"
+      }
+    },
+    {
+      "id": "deepseek",
+      "label": "DeepSeek",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/deepseek.md"
+      }
+    },
+    {
+      "id": "gemini",
+      "label": "Gemini",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [
+        {
+          "name": "model",
+          "required": false,
+          "default": "gemini-2.5-flash",
+          "type": "ChatModels | str",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "api_key",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[str]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "vertexai",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[bool]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "project",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[str]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "location",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[str]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "temperature",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[float]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "max_output_tokens",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[int]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "top_p",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[float]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "top_k",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[float]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "presence_penalty",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[float]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "frequency_penalty",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[float]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "tool_choice",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[ToolChoice]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "thinking_config",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[types.ThinkingConfigOrDict]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "retrieval_config",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[types.RetrievalConfigOrDict]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "automatic_function_calling_config",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[types.AutomaticFunctionCallingConfigOrDict]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "http_options",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[types.HttpOptions]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "seed",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[int]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "safety_settings",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[list[types.SafetySettingOrDict]]",
+          "source": "runtime-introspection"
+        }
+      ],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/gemini.md"
+      }
+    },
+    {
+      "id": "kimi",
+      "label": "Kimi",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/kimi.md"
+      }
+    },
     {
       "id": "openai",
       "label": "OpenAI",
@@ -3141,8 +3490,8 @@
       ]
     },
     {
-      "id": "gemini",
-      "label": "Gemini",
+      "id": "xai",
+      "label": "xAI",
       "defaultModel": "default",
       "presets": [
         "default"
@@ -3150,160 +3499,12 @@
       "parameters": [
         {
           "name": "model",
-          "required": false,
-          "default": "gemini-2.5-flash",
-          "type": "ChatModels | str",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "api_key",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[str]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "vertexai",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[bool]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "project",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[str]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "location",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[str]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "temperature",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[float]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "max_output_tokens",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[int]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "top_p",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[float]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "top_k",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[float]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "presence_penalty",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[float]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "frequency_penalty",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[float]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "tool_choice",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[ToolChoice]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "thinking_config",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[types.ThinkingConfigOrDict]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "retrieval_config",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[types.RetrievalConfigOrDict]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "automatic_function_calling_config",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[types.AutomaticFunctionCallingConfigOrDict]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "http_options",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[types.HttpOptions]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "seed",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[int]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "safety_settings",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[list[types.SafetySettingOrDict]]",
-          "source": "runtime-introspection"
+          "source": "livekit-docs"
         }
       ],
       "api": {
         "kind": "livekit-docs",
-        "docsUrl": "https://docs.livekit.io/agents/models/llm/gemini.md"
-      }
-    },
-    {
-      "id": "kimi",
-      "label": "Kimi",
-      "defaultModel": "default",
-      "presets": [
-        "default"
-      ],
-      "parameters": [],
-      "api": {
-        "kind": "livekit-docs",
-        "docsUrl": "https://docs.livekit.io/agents/models/llm/kimi.md"
-      }
-    },
-    {
-      "id": "deepseek",
-      "label": "DeepSeek",
-      "defaultModel": "default",
-      "presets": [
-        "default"
-      ],
-      "parameters": [],
-      "api": {
-        "kind": "livekit-docs",
-        "docsUrl": "https://docs.livekit.io/agents/models/llm/deepseek.md"
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/xai.md"
       }
     },
     {
@@ -4244,6 +4445,19 @@
       }
     },
     {
+      "id": "sarvam",
+      "label": "Sarvam",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/sarvam.md"
+      }
+    },
+    {
       "id": "telnyx",
       "label": "Telnyx",
       "defaultModel": "default",
@@ -4448,21 +4662,16 @@
       ]
     },
     {
-      "id": "xai",
-      "label": "xAI",
+      "id": "openai-compatible-llms",
+      "label": "OpenAI-compatible LLMs",
       "defaultModel": "default",
       "presets": [
         "default"
       ],
-      "parameters": [
-        {
-          "name": "model",
-          "source": "livekit-docs"
-        }
-      ],
+      "parameters": [],
       "api": {
         "kind": "livekit-docs",
-        "docsUrl": "https://docs.livekit.io/agents/models/llm/xai.md"
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/openai-compatible-llms.md"
       }
     }
   ],

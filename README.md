@@ -16,7 +16,7 @@
   <a href="#">
     <img src="https://img.shields.io/badge/livekit-compatible-purple" alt="LiveKit">
   </a>
-  <a href="https://stimm-ai.github.io/stimm/">
+  <a href="https://stimm.ai/">
     <img src="https://img.shields.io/badge/docs-online-success" alt="Documentation">
   </a>
   <a href="#">

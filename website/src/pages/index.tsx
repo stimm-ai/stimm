@@ -148,12 +148,6 @@ export default function Home(): ReactNode {
         <meta property="og:title" content={`stimm — ${TAGLINE}`} />
         <meta property="og:description" content={DESCRIPTION} />
         <meta name="twitter:card" content="summary_large_image" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
-        />
         {/* Paints the canvas (incl. overscroll) dark, whatever the docs colour mode is. */}
         <html className="stimm-landing" />
       </Head>
@@ -212,7 +206,7 @@ export default function Home(): ReactNode {
               </Link>
             </div>
             <div className={styles.heroMeta}>
-              <span>AGPL-3.0 · open source</span>
+              <span>MIT · open source</span>
               <span>Python + TypeScript supervisors</span>
               <span>WebRTC via LiveKit</span>
             </div>

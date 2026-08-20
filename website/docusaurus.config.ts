@@ -4,12 +4,24 @@ import type * as Preset from '@docusaurus/preset-classic';
 const config: Config = {
   title: 'stimm',
   tagline: 'Dual-agent voice orchestration on LiveKit',
-  favicon: 'img/logo_stimm_h.png',
+  favicon: 'img/favicon.png',
   url: 'https://stimm.ai',
   baseUrl: '/',
   organizationName: 'stimm-ai',
   projectName: 'stimm',
   onBrokenLinks: 'throw',
+
+  // Loaded globally: the docs theme uses the same type as the landing page.
+  headTags: [
+    {tagName: 'link', attributes: {rel: 'preconnect', href: 'https://fonts.googleapis.com'}},
+    {
+      tagName: 'link',
+      attributes: {rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: 'anonymous'},
+    },
+  ],
+  stylesheets: [
+    'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap',
+  ],
   markdown: {
     hooks: {
       onBrokenMarkdownLinks: 'warn',
@@ -35,12 +47,16 @@ const config: Config = {
     ],
   ],
   themeConfig: {
-    image: 'img/logo_stimm_h.png',
+    image: 'img/og-cover.png',
+    colorMode: {
+      defaultMode: 'dark',
+      respectPrefersColorScheme: false,
+    },
     navbar: {
       title: 'stimm',
       logo: {
-        alt: 'stimm logo',
-        src: 'img/logo_stimm_h.png',
+        alt: 'stimm',
+        src: 'img/stimm-mark.svg',
       },
       items: [
         {

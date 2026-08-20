@@ -1,5 +1,5 @@
 <div align="center">
-  <img src=".github/assets/logo_stimm_h.png" alt="Stimm" width="200" height="56">
+  <img src=".github/assets/logo_stimm_h.png" alt="stimm" width="200" height="77">
   <p>
     <b>Optimistic VUI. One agent talks fast, one agent thinks deep, both collaborate in real-time.</b>
   </p>

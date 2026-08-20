@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="stimm">
+  <rect width="64" height="64" rx="17" fill="#C8F135"/>
+  <g fill="#07090A">
+    <rect x="19.5" y="21" width="5" height="22" rx="2.5"/>
+    <rect x="29.5" y="15" width="5" height="34" rx="2.5"/>
+    <rect x="39.5" y="21" width="5" height="22" rx="2.5"/>
+  </g>
+</svg>

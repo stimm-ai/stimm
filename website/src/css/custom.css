@@ -1,21 +1,417 @@
+/*
+ * stimm design system — "Signal"
+ *
+ * Two layers, on purpose:
+ *
+ *   --sg-*     Brand constants. Fixed Signal palette, identical in every colour
+ *              mode. The landing page is always dark and reads these directly.
+ *   --stimm-*  Semantic tokens. Flip between the dark (Signal) and light
+ *              (paper) themes. The docs read these, and they in turn drive the
+ *              Infima variables so the whole Docusaurus theme follows.
+ *
+ * Accent colours are calibrated per mode: #C8F135 sits at 15.3:1 on the dark
+ * ground, but only 1.25:1 on paper — so light mode uses a darkened lime at
+ * 4.7:1 rather than the brand value.
+ */
+
+/* ------------------------------------------------ brand constants (Signal) */
+
 :root {
-  --ifm-color-primary: #5b6cff;
-  --ifm-color-primary-dark: #4f60ea;
-  --ifm-color-primary-darker: #4858dd;
-  --ifm-color-primary-darkest: #3c4bc0;
-  --ifm-color-primary-light: #6d7cff;
-  --ifm-color-primary-lighter: #7f8bff;
-  --ifm-color-primary-lightest: #aab2ff;
-  --ifm-code-font-size: 95%;
+  --sg-black: #07090a;
+  --sg-panel: #0d1113;
+  --sg-panel-deep: #0a0d0e;
+  --sg-lime: #c8f135;
+  --sg-lime-bright: #dcff5e;
+  --sg-cyan: #4dd8e6;
+  --sg-cyan-soft: #7fd8e2;
+  --sg-white: #e8edec;
+  --sg-white-dim: #b9c4c2;
+  --sg-grey: #98a5a3;
+  --sg-grey-2: #8d9a98;
+  --sg-grey-3: #7f8c8b;
+  --sg-grey-4: #66716f;
+  --sg-grey-5: #5c6a68;
+
+  --sg-sans: 'Space Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --sg-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-.hero__title {
-  letter-spacing: 0.2px;
+/* ------------------------------------------- semantic tokens · light (paper) */
+
+:root {
+  --stimm-bg: #fafaf7;
+  --stimm-surface: #ffffff;
+  --stimm-surface-deep: #f2f2ed;
+  --stimm-ink: #141712;
+  --stimm-ink-2: #2a2e28;
+  --stimm-muted: #4a524c;
+  --stimm-faint: #6b736c;
+  --stimm-accent: #5e7a00;
+  --stimm-accent-hover: #4f6b00;
+  --stimm-accent-wash: rgba(94, 122, 0, 0.08);
+  --stimm-cyan: #166d77;
+  --stimm-hairline: rgba(20, 23, 18, 0.12);
+  --stimm-hairline-soft: rgba(20, 23, 18, 0.07);
+
+  /* Infima mapping */
+  --ifm-color-primary: #5e7a00;
+  --ifm-color-primary-dark: #556e00;
+  --ifm-color-primary-darker: #4f6b00;
+  --ifm-color-primary-darkest: #455c00;
+  --ifm-color-primary-light: #6a8a00;
+  --ifm-color-primary-lighter: #74960a;
+  --ifm-color-primary-lightest: #8aad1f;
+
+  --ifm-background-color: var(--stimm-bg);
+  --ifm-background-surface-color: var(--stimm-surface);
+  --ifm-font-color-base: var(--stimm-ink-2);
+  --ifm-font-color-secondary: var(--stimm-muted);
+  --ifm-heading-color: var(--stimm-ink);
+  --ifm-code-background: var(--stimm-surface-deep);
+  --ifm-pre-background: var(--sg-black);
+
+  --ifm-navbar-background-color: rgba(250, 250, 247, 0.86);
+  --ifm-navbar-link-color: var(--stimm-muted);
+  --ifm-navbar-link-hover-color: var(--stimm-ink);
+
+  --ifm-footer-background-color: var(--sg-black);
+  --ifm-footer-color: var(--sg-grey);
+  --ifm-footer-link-color: var(--sg-grey-2);
+  --ifm-footer-title-color: var(--sg-white);
+
+  --ifm-menu-color: var(--stimm-muted);
+  --ifm-menu-color-active: var(--stimm-accent);
+  --ifm-menu-color-background-active: var(--stimm-accent-wash);
+  --ifm-menu-color-background-hover: var(--stimm-surface-deep);
+
+  --ifm-toc-border-color: var(--stimm-hairline);
+  --ifm-table-border-color: var(--stimm-hairline);
+  --ifm-hr-border-color: var(--stimm-hairline);
+  --ifm-blockquote-color: var(--stimm-muted);
+  --ifm-blockquote-border-color: var(--stimm-accent);
+  --docusaurus-highlighted-code-line-bg: rgba(200, 241, 53, 0.14);
 }
 
-/* The landing page ("Signal") is dark whatever the docs colour mode is; paint the
-   canvas so overscroll does not flash the Infima background. */
+/* -------------------------------------------- semantic tokens · dark (Signal) */
+
+:root[data-theme='dark'] {
+  --stimm-bg: var(--sg-black);
+  --stimm-surface: var(--sg-panel);
+  --stimm-surface-deep: var(--sg-panel-deep);
+  --stimm-ink: var(--sg-white);
+  --stimm-ink-2: var(--sg-white-dim);
+  --stimm-muted: var(--sg-grey);
+  --stimm-faint: var(--sg-grey-4);
+  --stimm-accent: var(--sg-lime);
+  --stimm-accent-hover: var(--sg-lime-bright);
+  --stimm-accent-wash: rgba(200, 241, 53, 0.08);
+  --stimm-cyan: var(--sg-cyan);
+  --stimm-hairline: rgba(255, 255, 255, 0.09);
+  --stimm-hairline-soft: rgba(255, 255, 255, 0.06);
+
+  --ifm-color-primary: #c8f135;
+  --ifm-color-primary-dark: #bce62a;
+  --ifm-color-primary-darker: #a9d024;
+  --ifm-color-primary-darkest: #8aab1a;
+  --ifm-color-primary-light: #d3f556;
+  --ifm-color-primary-lighter: #dcff5e;
+  --ifm-color-primary-lightest: #e8ff96;
+
+  /*
+   * Infima's own dark block targets html[data-theme='dark'] (0,1,1), so this
+   * selector is :root[data-theme='dark'] (0,2,0) to outrank it, and every
+   * mode-dependent variable is restated rather than left to resolve through
+   * --stimm-*. A plain [data-theme='dark'] silently loses to Infima here.
+   */
+  --ifm-background-color: var(--sg-black);
+  --ifm-background-surface-color: var(--sg-panel);
+  --ifm-font-color-base: var(--sg-white-dim);
+  --ifm-font-color-secondary: var(--sg-grey);
+  --ifm-heading-color: var(--sg-white);
+  --ifm-code-background: rgba(255, 255, 255, 0.08);
+  --ifm-pre-background: var(--sg-panel-deep);
+
+  --ifm-navbar-background-color: rgba(7, 9, 10, 0.82);
+  --ifm-navbar-link-color: var(--sg-grey-2);
+  --ifm-navbar-link-hover-color: var(--sg-white);
+
+  --ifm-footer-background-color: var(--sg-panel-deep);
+
+  --ifm-menu-color: var(--sg-grey-2);
+  --ifm-menu-color-active: var(--sg-lime);
+  --ifm-menu-color-background-active: rgba(200, 241, 53, 0.08);
+  --ifm-menu-color-background-hover: rgba(255, 255, 255, 0.05);
+
+  --ifm-toc-border-color: var(--stimm-hairline);
+  --ifm-table-border-color: var(--stimm-hairline);
+  --ifm-hr-border-color: var(--stimm-hairline);
+  --ifm-blockquote-color: var(--sg-grey);
+  --ifm-blockquote-border-color: var(--sg-lime);
+}
+
+/* ------------------------------------------------------------- typography */
+
+:root {
+  --ifm-font-family-base: var(--sg-sans);
+  --ifm-font-family-monospace: var(--sg-mono);
+  --ifm-heading-font-family: var(--sg-sans);
+  --ifm-heading-font-weight: 600;
+  --ifm-font-weight-semibold: 600;
+  --ifm-code-font-size: 88%;
+  --ifm-global-radius: 10px;
+  --ifm-link-hover-decoration: none;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+}
+
+.markdown h1,
+h1.hero__title {
+  font-size: clamp(32px, 4vw, 46px);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+}
+
+.markdown h2 {
+  font-size: clamp(23px, 2.4vw, 30px);
+  line-height: 1.15;
+  letter-spacing: -0.022em;
+  margin-top: 2.4rem;
+}
+
+.markdown h3 {
+  font-size: 18.5px;
+  letter-spacing: -0.012em;
+}
+
+.markdown > p,
+.markdown li {
+  line-height: 1.68;
+  text-wrap: pretty;
+}
+
+/* Section headings get the mono eyebrow tick from the landing page. */
+.markdown h2::before {
+  content: '';
+  display: inline-block;
+  width: 14px;
+  height: 1px;
+  margin-right: 10px;
+  vertical-align: middle;
+  background: var(--stimm-accent);
+}
+
+/* ---------------------------------------------------------------- navbar */
+
+.navbar {
+  border-bottom: 1px solid var(--stimm-hairline-soft);
+  box-shadow: none;
+  backdrop-filter: saturate(150%) blur(12px);
+}
+
+.navbar__title {
+  font-family: var(--sg-mono);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
+
+.navbar__logo {
+  height: 24px;
+}
+
+.navbar__link {
+  font-size: 14.5px;
+}
+
+.navbar__link--active {
+  color: var(--stimm-accent);
+}
+
+/* ------------------------------------------------------- sidebar & menu */
+
+.theme-doc-sidebar-container {
+  border-right: 1px solid var(--stimm-hairline-soft) !important;
+}
+
+.menu {
+  font-size: 14.5px;
+  padding: 1rem 0.75rem !important;
+}
+
+.menu__list-item-collapsible > .menu__link,
+.menu__link--sublist {
+  font-family: var(--sg-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--stimm-faint);
+}
+
+.menu__link {
+  border-radius: 8px;
+  transition: color 0.14s ease, background-color 0.14s ease;
+}
+
+.menu__link--active:not(.menu__link--sublist) {
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------ code & callouts */
+
+.theme-code-block {
+  border: 1px solid var(--stimm-hairline);
+  border-radius: 12px;
+  box-shadow: none !important;
+  overflow: hidden;
+}
+
+/* Code is always on the dark ground — a terminal does not have a light mode. */
+.theme-code-block pre {
+  background: var(--sg-panel-deep) !important;
+  color: var(--sg-white-dim);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.theme-code-block .theme-code-block-highlighted-line {
+  background: rgba(200, 241, 53, 0.14);
+  border-left: 2px solid var(--sg-lime);
+}
+
+div[class^='codeBlockTitle'] {
+  font-family: var(--sg-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  color: var(--sg-grey-5);
+  background: var(--sg-black) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07) !important;
+}
+
+.markdown code:not([class*='codeBlock'] code) {
+  font-family: var(--sg-mono);
+  border: 1px solid var(--stimm-hairline-soft);
+  border-radius: 5px;
+  padding: 0.15em 0.4em;
+}
+
+.alert {
+  border: 1px solid var(--stimm-hairline);
+  border-left-width: 2px;
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.theme-admonition code {
+  background: rgba(0, 0, 0, 0.16);
+}
+
+/* ------------------------------------------------- tables, toc, footer */
+
+.markdown table {
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14.5px;
+}
+
+.markdown table thead tr {
+  border-bottom: 1px solid var(--stimm-hairline);
+  background: none;
+}
+
+.markdown table th {
+  font-family: var(--sg-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--stimm-faint);
+  text-align: left;
+}
+
+.markdown table tr {
+  border-top: 1px solid var(--stimm-hairline-soft);
+  background: none !important;
+}
+
+.table-of-contents {
+  font-size: 13.5px;
+  border-left: 1px solid var(--stimm-hairline-soft);
+}
+
+.table-of-contents__link:hover,
+.table-of-contents__link--active {
+  color: var(--stimm-accent);
+}
+
+.pagination-nav__link {
+  border: 1px solid var(--stimm-hairline);
+  border-radius: 12px;
+  transition: border-color 0.16s ease;
+}
+
+.pagination-nav__link:hover {
+  border-color: var(--stimm-accent);
+}
+
+.pagination-nav__sublabel {
+  font-family: var(--sg-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--stimm-faint);
+}
+
+.breadcrumbs__item--active .breadcrumbs__link {
+  background: var(--stimm-accent-wash);
+  color: var(--stimm-accent);
+}
+
+/* The footer stays on the Signal ground in both modes, like the landing.
+   .footer--dark redefines --ifm-footer-background-color on the element itself,
+   so it has to be overridden there rather than at :root. */
+.footer,
+.footer--dark {
+  --ifm-footer-background-color: var(--sg-panel-deep);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.footer__title {
+  font-family: var(--sg-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sg-grey-4);
+}
+
+.footer__link-item {
+  font-size: 14px;
+}
+
+.footer__link-item:hover {
+  color: var(--sg-lime);
+}
+
+.footer__copyright {
+  font-family: var(--sg-mono);
+  font-size: 12px;
+  color: var(--sg-grey-5);
+}
+
+/* --------------------------------------------------------- landing page */
+
+/* The landing page is dark whatever the docs colour mode is; paint the canvas
+   so overscroll does not flash the themed background. */
 html.stimm-landing,
 html.stimm-landing body {
-  background: #07090a;
+  background: var(--sg-black);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu__link,
+  .pagination-nav__link {
+    transition: none;
+  }
 }

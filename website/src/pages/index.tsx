@@ -1,4 +1,4 @@
-import React, {type CSSProperties, type ReactNode} from 'react';
+import React, {type CSSProperties, type ReactNode, useEffect, useState} from 'react';
 import Head from '@docusaurus/Head';
 import Link from '@docusaurus/Link';
 import clsx from 'clsx';
@@ -29,23 +29,24 @@ type Segment = {
 
 /** Illustrative time-to-first-audio trace: a single-agent pipeline. */
 const CLASSIC_TRACE: Segment[] = [
-  {flex: 12, background: 'rgba(255,255,255,.09)', duration: '.5s', delay: '0s'},
-  {flex: 48, background: 'rgba(255,255,255,.13)', label: 'STT', color: '#98A5A3', duration: '.5s', delay: '.18s'},
-  {flex: 95, background: 'rgba(255,255,255,.17)', label: 'LLM + tools', color: '#B9C4C2', duration: '.6s', delay: '.36s'},
-  {flex: 36, background: 'rgba(255,255,255,.13)', label: 'TTS', color: '#98A5A3', duration: '.5s', delay: '.62s'},
+  {flex: 12, background: 'var(--lp-seg-a)', duration: '.5s', delay: '0s'},
+  {flex: 48, background: 'var(--lp-seg-b)', label: 'STT', color: 'var(--lp-seg-label)', duration: '.5s', delay: '.18s'},
+  {flex: 95, background: 'var(--lp-seg-c)', label: 'LLM + tools', color: 'var(--lp-seg-label-strong)', duration: '.6s', delay: '.36s'},
+  {flex: 36, background: 'var(--lp-seg-b)', label: 'TTS', color: 'var(--lp-seg-label)', duration: '.5s', delay: '.62s'},
 ];
 
 /** The same turn under stimm: speech starts before the supervisor is done. */
 const STIMM_TRACE: Segment[] = [
-  {flex: 12, background: 'rgba(200,241,53,.3)', duration: '.4s', delay: '.1s'},
-  {flex: 18, background: 'rgba(200,241,53,.55)', duration: '.4s', delay: '.24s'},
-  {flex: 6, background: '#C8F135', duration: '.4s', delay: '.38s'},
+  {flex: 12, background: 'var(--lp-accent-wash)', duration: '.4s', delay: '.1s'},
+  {flex: 18, background: 'var(--lp-accent-mid)', duration: '.4s', delay: '.24s'},
+  // The moment the first word lands keeps the brand lime as a solid fill.
+  {flex: 6, background: 'var(--sg-lime)', duration: '.4s', delay: '.38s'},
   {
     flex: 155,
-    background: 'rgba(77,216,230,.07)',
-    border: '1px dashed rgba(77,216,230,.4)',
+    background: 'var(--lp-cyan-fill)',
+    border: '1px dashed var(--lp-cyan-dash)',
     label: 'supervisor keeps reasoning →',
-    color: '#7FD8E2',
+    color: 'var(--stimm-cyan)',
     duration: '.7s',
     delay: '.5s',
   },
@@ -114,6 +115,47 @@ const USE_CASES = [
   },
 ];
 
+type Theme = 'dark' | 'light';
+
+function ThemeToggle(): ReactNode {
+  const [theme, setTheme] = useState<Theme>('dark');
+
+  useEffect(() => {
+    setTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark');
+  }, []);
+
+  function flip() {
+    const next: Theme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    document.documentElement.setAttribute('data-theme', next);
+    document.documentElement.setAttribute('data-theme-choice', next);
+    try {
+      localStorage.setItem('theme', next);
+    } catch {
+      // Private mode: the choice simply does not persist.
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      className={styles.themeToggle}
+      onClick={flip}
+      aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+        {theme === 'dark' ? (
+          <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" strokeLinejoin="round" />
+        ) : (
+          <>
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4" strokeLinecap="round" />
+          </>
+        )}
+      </svg>
+    </button>
+  );
+}
+
 function Trace({segments, playhead}: {segments: Segment[]; playhead?: boolean}): ReactNode {
   return (
     <div className={styles.bars}>
@@ -148,7 +190,7 @@ export default function Home(): ReactNode {
         <meta property="og:title" content={`stimm — ${TAGLINE}`} />
         <meta property="og:description" content={DESCRIPTION} />
         <meta name="twitter:card" content="summary_large_image" />
-        {/* Paints the canvas (incl. overscroll) dark, whatever the docs colour mode is. */}
+        {/* Lets custom.css paint the canvas, incl. overscroll, for the active mode. */}
         <html className="stimm-landing" />
       </Head>
 
@@ -173,6 +215,7 @@ export default function Home(): ReactNode {
             <a href={GITHUB}>GitHub</a>
           </nav>
           <div className={styles.headerActions}>
+            <ThemeToggle />
             <Link className={styles.btnGhostSm} to={DOCS}>
               docs
             </Link>
@@ -225,8 +268,8 @@ export default function Home(): ReactNode {
             <div className={clsx(styles.traceLabel, styles.traceLabelLime)}>stimm · optimistic turn</div>
             <Trace segments={STIMM_TRACE} playhead />
             <div className={styles.traceFootSplit}>
-              <span style={{color: '#C8F135'}}>first word at 320 ms</span>
-              <span style={{color: '#5C6A68'}}>acknowledge → speak → steer</span>
+              <span style={{color: 'var(--stimm-accent)'}}>first word at 320 ms</span>
+              <span style={{color: 'var(--stimm-faint)'}}>acknowledge → speak → steer</span>
             </div>
 
             <div className={styles.stats}>

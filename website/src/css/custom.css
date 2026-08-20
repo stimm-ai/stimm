@@ -402,11 +402,11 @@ div[class^='codeBlockTitle'] {
 
 /* --------------------------------------------------------- landing page */
 
-/* The landing page is dark whatever the docs colour mode is; paint the canvas
-   so overscroll does not flash the themed background. */
+/* The landing page follows the colour mode like the docs; paint the canvas so
+   overscroll does not flash a mismatched background. */
 html.stimm-landing,
 html.stimm-landing body {
-  background: var(--sg-black);
+  background: var(--stimm-bg);
 }
 
 @media (prefers-reduced-motion: reduce) {

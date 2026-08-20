@@ -1,7 +1,6 @@
 ---
 id: getting-started-overview
 title: Overview
-slug: /
 ---
 
 # stimm

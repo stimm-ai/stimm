@@ -12,3 +12,10 @@
 .hero__title {
   letter-spacing: 0.2px;
 }
+
+/* The landing page ("Signal") is dark whatever the docs colour mode is; paint the
+   canvas so overscroll does not flash the Infima background. */
+html.stimm-landing,
+html.stimm-landing body {
+  background: #07090a;
+}

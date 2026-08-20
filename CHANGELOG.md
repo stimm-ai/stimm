@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.1.14](https://github.com/stimm-ai/stimm/compare/stimm-v0.1.13...stimm-v0.1.14) (2026-08-20)
+
+
+### Features
+
+* **website:** light variant for the landing page ([0a62fb9](https://github.com/stimm-ai/stimm/commit/0a62fb905b0e6e601d14b193889f31acefbde94d))
+* **website:** promote Signal into a design system, new mark, MIT licence ([0387aa5](https://github.com/stimm-ai/stimm/commit/0387aa56c40129fdc635280966f34ff3c5f04bc6))
+
+
+### Bug Fixes
+
+* **docs:** serve site from custom domain stimm.ai ([c9553ee](https://github.com/stimm-ai/stimm/commit/c9553eee8a75ab90cb287523895f0b0fac9cdb1f))
+* update README and overview documentation to clarify Optimistic VUI concept and improve descriptions ([3e48edf](https://github.com/stimm-ai/stimm/commit/3e48edf57bf1cae03299494eba01facdf7e2d057))
+
+
+### Documentation
+
+* **website:** add Signal landing page at the site root ([de1dfc8](https://github.com/stimm-ai/stimm/commit/de1dfc816d9d1984b4613ec7caaa5f62ecc54282))
+
 ## [0.1.13](https://github.com/stimm-ai/stimm/compare/stimm-v0.1.12...stimm-v0.1.13) (2026-03-04)
 
 

@@ -1,6 +1,6 @@
 [project]
 name = "stimm"
-version = "0.1.13"
+version = "0.1.14"
 description = "Dual-agent voice orchestration built on livekit-agents"
 readme = "README.md"
 requires-python = ">=3.10"

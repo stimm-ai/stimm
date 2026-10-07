@@ -2,6 +2,12 @@ class AccessToken:
     def __init__(self, api_key, api_secret):
         pass
 
+    def with_identity(self, identity):
+        return self
+
+    def with_ttl(self, ttl):
+        return self
+
     def with_grants(self, grants):
         return self
 

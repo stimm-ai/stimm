@@ -2,7 +2,8 @@
 """Build stimm provider catalog from LiveKit docs + runtime introspection.
 
 Single source of truth for provider catalog generation:
-1) discover official plugins from ``https://docs.livekit.io/llms.txt``
+1) discover official plugins from ``https://docs.livekit.io/llms.txt`` (or the
+   per-section index it links to that holds the model plugin lists)
 2) install runtime plugin packages declared in ``providers_runtime.json``
 3) introspect runtime constructors to generate authoritative parameters
 4) enrich parameters from plugin docs pages
@@ -33,6 +34,14 @@ DOC_PARAM_LINE_RE = re.compile(
     r"^\s*[-*]\s+`([a-zA-Z_][a-zA-Z0-9_]*)`\s*[:\-]?\s*(.*)$", flags=re.M
 )
 
+# Catalog kind -> title of the llms.txt heading that lists its plugins.
+MODEL_SECTIONS = {"llm": "LLM", "stt": "STT", "tts": "TTS"}
+# Sub-headings inside a model section that list feature guides (STT keyterms,
+# TTS custom voices...), not providers.
+NON_PROVIDER_SUBSECTIONS = {"Capabilities"}
+HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
+SECTION_INDEX_RE = re.compile(r"\((https://docs\.livekit\.io/\S+/llms\.txt)\)")
+
 
 def _fetch_text(url: str, timeout: int = 20) -> str:
     req = urllib.request.Request(url, headers={"User-Agent": "stimm-sync/1.0"})
@@ -40,8 +49,48 @@ def _fetch_text(url: str, timeout: int = 20) -> str:
         return response.read().decode("utf-8")
 
 
-def _fetch_llms_txt(url: str, timeout: int = 20) -> str:
-    return _fetch_text(url, timeout=timeout)
+def _section_lines(content: str, title: str) -> list[str] | None:
+    """Lines under the heading ``title``, whatever its level, up to the next
+    heading of the same or a higher level. ``None`` if there is no such heading."""
+    lines = content.splitlines()
+    for start, line in enumerate(lines):
+        heading = HEADING_RE.match(line)
+        if heading and heading.group(2) == title:
+            level = len(heading.group(1))
+            body: list[str] = []
+            for following in lines[start + 1 :]:
+                nested = HEADING_RE.match(following)
+                if nested and len(nested.group(1)) <= level:
+                    break
+                body.append(following)
+            return body
+    return None
+
+
+def _has_model_sections(content: str) -> bool:
+    return all(_section_lines(content, title) is not None for title in MODEL_SECTIONS.values())
+
+
+def _fetch_models_index(url: str, timeout: int = 20) -> tuple[str, str]:
+    """Return ``(url, text)`` of the llms.txt that lists the model plugins.
+
+    LiveKit's root llms.txt used to inline every docs page. Since late August 2026
+    it only links to one llms.txt per docs section, and the plugin lists live in
+    the agents one. Accept both layouts by following those links one level deep.
+    """
+    content = _fetch_text(url, timeout=timeout)
+    if _has_model_sections(content):
+        return url, content
+    for index_url in dict.fromkeys(SECTION_INDEX_RE.findall(content)):
+        index = _fetch_text(index_url, timeout=timeout)
+        if _has_model_sections(index):
+            return index_url, index
+    sections = ", ".join(f"'{title}'" for title in MODEL_SECTIONS.values())
+    raise ValueError(
+        f"No llms.txt with {sections} plugin sections found at {url} or in the section "
+        "indexes it links to. LiveKit changed its docs layout: update "
+        "_fetch_models_index / _extract_plugins in scripts/sync_livekit_plugins.py."
+    )
 
 
 def _load_runtime_contract() -> dict[str, Any]:
@@ -223,16 +272,10 @@ def build_parameters_from_runtime(
     return updated
 
 
-def _extract_plugins(content: str, section: str, next_section: str) -> list[dict[str, str]]:
-    block_match = re.search(
-        rf"#### {re.escape(section)}(.*?)(?=#### {re.escape(next_section)})",
-        content,
-        flags=re.S,
-    )
-    if not block_match:
+def _extract_plugins(content: str, section: str) -> list[dict[str, str]]:
+    lines = _section_lines(content, section)
+    if lines is None:
         raise ValueError(f"Section '{section}' not found in llms.txt")
-
-    block = block_match.group(1)
 
     # Match plugin doc URLs under this section.
     # URL pattern: /agents/models/{section}/{slug} (e.g. /agents/models/llm/openai.md).
@@ -243,12 +286,25 @@ def _extract_plugins(content: str, section: str, next_section: str) -> list[dict
 
     seen: set[str] = set()
     out: list[dict[str, str]] = []
-    for label, docs_url in pattern.findall(block):
-        slug = docs_url.rsplit("/", 1)[-1].replace(".md", "")
-        if slug in seen:
+    skipping = False
+    for line in lines:
+        heading = HEADING_RE.match(line)
+        if heading:
+            skipping = heading.group(2) in NON_PROVIDER_SUBSECTIONS
             continue
-        seen.add(slug)
-        out.append({"id": slug, "label": label, "docsUrl": docs_url})
+        if skipping:
+            continue
+        for label, docs_url in pattern.findall(line):
+            slug = docs_url.rsplit("/", 1)[-1].replace(".md", "")
+            if slug in seen:
+                continue
+            seen.add(slug)
+            out.append({"id": slug, "label": label, "docsUrl": docs_url})
+    if not out:
+        raise ValueError(
+            f"Section '{section}' lists no plugin page "
+            f"(https://docs.livekit.io/agents/models/{section.lower()}/<plugin>.md)"
+        )
     return out
 
 
@@ -294,23 +350,21 @@ def _merge_kind(
     return merged
 
 
-def build_updated_catalog(llms_txt: str, current_catalog: dict[str, Any]) -> dict[str, Any]:
-    llm = _extract_plugins(llms_txt, section="LLM", next_section="STT")
-    stt = _extract_plugins(llms_txt, section="STT", next_section="TTS")
-    tts = _extract_plugins(llms_txt, section="TTS", next_section="Realtime")
-
+def build_updated_catalog(
+    llms_txt: str, current_catalog: dict[str, Any], source_url: str = LLMS_TXT_URL
+) -> dict[str, Any]:
     updated = dict(current_catalog)
     updated["_comment"] = (
         "Source of truth for stimm provider metadata. Plugin list is synced from "
         "https://docs.livekit.io/llms.txt via scripts/sync_livekit_plugins.py."
     )
     updated["_source"] = {
-        "livekit": LLMS_TXT_URL,
+        "livekit": source_url,
         "syncedBy": "scripts/sync_livekit_plugins.py",
     }
-    updated["stt"] = _merge_kind(current_catalog.get("stt", []), stt, kind="stt")
-    updated["tts"] = _merge_kind(current_catalog.get("tts", []), tts, kind="tts")
-    updated["llm"] = _merge_kind(current_catalog.get("llm", []), llm, kind="llm")
+    for kind, section in MODEL_SECTIONS.items():
+        discovered = _extract_plugins(llms_txt, section=section)
+        updated[kind] = _merge_kind(current_catalog.get(kind, []), discovered, kind=kind)
     return updated
 
 
@@ -348,10 +402,17 @@ def main() -> int:
     current_catalog = json.loads(current_text)
     runtime_contract = _load_runtime_contract()
 
+    # Parse the docs first: a layout change should fail in seconds, not after
+    # installing every plugin.
+    try:
+        index_url, llms_txt = _fetch_models_index(args.url, timeout=args.timeout)
+        updated_catalog = build_updated_catalog(llms_txt, current_catalog, source_url=index_url)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
     build_python = _ensure_build_venv(args.python_exe, Path(args.build_venv))
     _install_runtime_plugins(runtime_contract, build_python)
-    llms_txt = _fetch_llms_txt(args.url, timeout=args.timeout)
-    updated_catalog = build_updated_catalog(llms_txt, current_catalog)
     updated_catalog = build_parameters_from_runtime(
         updated_catalog,
         runtime_contract=runtime_contract,

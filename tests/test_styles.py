@@ -373,3 +373,8 @@ async def test_a_barge_in_on_the_bridge_cuts_off_the_supervisor_call() -> None:
     await until(lambda: len(session.said) == 2)
     assert await asyncio.wait_for(supervisor.speak("Gadget generates code."), 1) is True
     assert session.said == ["Alors, ce projet…", "Ah, Gadget…", "Gadget generates code."]
+
+
+@pytest.mark.parametrize("written", ["-", " - ", "—", "…", "(rien)", "*silence*"])
+def test_a_bridge_that_says_nothing_is_silence(written: str) -> None:
+    assert clip_bridge(written) == ""

@@ -130,8 +130,9 @@ jobs:
 
       - name: Run digital-twin example tests
         # Against the installed livekit-agents: without the repo root on the path, the
-        # livekit/ stubs the unit tests use stay out of the way.
-        run: PYTHONPATH="$GITHUB_WORKSPACE/src" $HOME/.local/bin/uv run pytest examples/digital-twin/tests
+        # livekit/ stubs the unit tests use stay out of the way. The Mistral plugin is the
+        # example's default provider, for the test that builds it off the main thread.
+        run: PYTHONPATH="$GITHUB_WORKSPACE/src" $HOME/.local/bin/uv run --with livekit-plugins-mistralai==1.8.5 pytest examples/digital-twin/tests
 
       - name: Upload coverage reports
         uses: actions/upload-artifact@v7

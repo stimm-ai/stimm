@@ -12,7 +12,9 @@ from __future__ import annotations
 import asyncio
 import base64
 import binascii
+import contextlib
 import hashlib
+import importlib
 import json
 import logging
 import os
@@ -29,6 +31,13 @@ from twin import AskSupervisor, Clips, Phrases, TwinAgent
 from livekit import rtc
 from livekit.agents import AgentServer, AgentSession, JobContext, JobProcess, cli, metrics, room_io
 from livekit.plugins import silero
+
+# LiveKit registers a plugin when it is first imported, and only on the main thread: a job
+# runs in a thread in dev mode. Every installed provider loads here, so make_stt and make_tts
+# never import one inside a job; a missing one fails there, with its name.
+for _plugin in ("mistralai", "elevenlabs", "deepgram"):
+    with contextlib.suppress(ModuleNotFoundError):
+        importlib.import_module(f"livekit.plugins.{_plugin}")
 
 logger = logging.getLogger("digital-twin")
 

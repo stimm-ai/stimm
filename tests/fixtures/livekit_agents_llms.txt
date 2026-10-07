@@ -1,0 +1,67 @@
+# LiveKit docs: Build Agents
+
+> Trimmed excerpt of https://docs.livekit.io/agents/llms.txt (October 2026 layout): the root
+> llms.txt now only links to per-section indexes like this one, and model headings are level 3.
+
+## Get Started
+
+- [Introduction](https://docs.livekit.io/agents.md): Realtime framework for voice, video, and physical AI agents.
+
+## Models
+
+- [Overview](https://docs.livekit.io/agents/models.md): Choose the right AI models for your voice agent.
+
+### LLM
+
+- [Overview](https://docs.livekit.io/agents/models/llm.md): Conversational intelligence for your voice agents.
+- [Hosted by LiveKit](https://docs.livekit.io/agents/models/llm/livekit.md): A fast, open-weight LLM hosted on LiveKit Inference.
+- [OpenAI](https://docs.livekit.io/agents/models/llm/openai.md): How to use OpenAI models with LiveKit Agents.
+
+#### Additional models
+
+- [Anthropic](https://docs.livekit.io/agents/models/llm/anthropic.md): How to use the Anthropic Claude LLM plugin for LiveKit Agents.
+- [Mistral AI](https://docs.livekit.io/agents/models/llm/mistralai.md): How to integrate Mistral AI's La Plateforme inference service with LiveKit Agents.
+
+### STT
+
+- [Overview](https://docs.livekit.io/agents/models/stt.md): Models and plugins for realtime transcription in your voice agents.
+- [Deepgram](https://docs.livekit.io/agents/models/stt/deepgram.md): How to use Deepgram STT with LiveKit Agents.
+
+#### Additional models
+
+- [Mistral AI](https://docs.livekit.io/agents/models/stt/mistralai.md): How to use the Mistral STT plugin for LiveKit Agents.
+
+#### Capabilities
+
+- [Keyterm management](https://docs.livekit.io/agents/models/stt/keyterms.md): Improve STT recognition of domain-specific vocabulary across providers.
+
+### TTS
+
+- [Overview](https://docs.livekit.io/agents/models/tts.md): Voices and plugins to add realtime speech to your voice agents.
+- [Cartesia](https://docs.livekit.io/agents/models/tts/cartesia.md): How to use Cartesia TTS with LiveKit Agents.
+
+#### Additional models
+
+- [ElevenLabs](https://docs.livekit.io/agents/models/tts/elevenlabs.md): How to use the ElevenLabs TTS plugin for LiveKit Agents.
+- [Mistral AI](https://docs.livekit.io/agents/models/tts/mistralai.md): How to use the Mistral TTS plugin for LiveKit Agents.
+
+#### Capabilities
+
+- [Custom voices](https://docs.livekit.io/agents/models/tts/custom-voices.md): Create voice clones from audio samples.
+- [Expressive mode](https://docs.livekit.io/agents/models/tts/expressive.md): Add emotion, pacing, and non-verbal sounds to your agent's speech.
+
+### Realtime
+
+- [Overview](https://docs.livekit.io/agents/models/realtime.md): Guides for adding realtime model integrations to your agents.
+- [OpenAI Realtime API](https://docs.livekit.io/agents/models/realtime/plugins/openai.md): How to use the OpenAI Realtime API with LiveKit Agents.
+
+## Partner spotlight
+
+### OpenAI
+
+- [OpenAI LLM](https://docs.livekit.io/agents/models/llm/openai.md): How to use OpenAI models with LiveKit Agents.
+- [OpenAI TTS](https://docs.livekit.io/agents/models/tts/openai.md): How to use the OpenAI TTS plugin for LiveKit Agents.
+
+## Other indexes
+
+- [All LiveKit docs](https://docs.livekit.io/llms.txt): Index of every documentation section.

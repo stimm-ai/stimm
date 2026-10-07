@@ -38,21 +38,25 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
+      # One branch and one PR that follow the latest drift. The dated branch per run
+      # and a non-existent `automated` label (error hidden by `|| true`) left an
+      # orphan branch every day and never opened a PR.
       - name: Open PR if providers.json drifted
         if: steps.diff.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          BRANCH="auto/sync-providers-$(date +%Y%m%d)"
+          BRANCH="auto/sync-providers"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -b "$BRANCH"
+          git checkout -B "$BRANCH"
           git add src/stimm/providers.json
           git commit -m "chore: sync providers.json with LiveKit llms.txt"
-          git push origin "$BRANCH"
-          gh pr create \
-            --title "chore: sync providers.json with LiveKit llms.txt" \
-            --body "LiveKit's llms.txt changed. This PR was opened automatically by the daily sync workflow." \
-            --base main \
-            --head "$BRANCH" \
-            --label "automated" || true
+          git push --force origin "$BRANCH"
+          if [ -z "$(gh pr list --head "$BRANCH" --state open --json number --jq '.[].number')" ]; then
+            gh pr create \
+              --title "chore: sync providers.json with LiveKit llms.txt" \
+              --body "LiveKit's llms.txt changed. This PR was opened automatically by the daily sync workflow." \
+              --base main \
+              --head "$BRANCH"
+          fi

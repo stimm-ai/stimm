@@ -58,6 +58,16 @@ def test_settle_payload_from_session_usage() -> None:
     assert settle_payload(usage, 150) == {"sttSeconds": 61.3, "ttsChars": 500, "agentMinutes": 2.5}
 
 
+def test_settle_payload_is_clamped_to_one_session() -> None:
+    usage = AgentSessionUsage(
+        model_usage=[
+            STTModelUsage(provider="stt", model="m", audio_duration=312.0),
+            TTSModelUsage(provider="tts", model="m", characters_count=5600),
+        ]
+    )
+    assert settle_payload(usage, 306) == {"sttSeconds": 300, "ttsChars": 5000, "agentMinutes": 5}
+
+
 async def test_duration_guard_says_goodbye_then_hangs_up() -> None:
     events: list[str] = []
     agent = SimpleNamespace(close_call=lambda: events.append("goodbye"))

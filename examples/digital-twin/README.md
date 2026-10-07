@@ -48,8 +48,9 @@ answer; fillers queued in front of `speak()` can.
 - **Duration**: goodbye at 285 s with no more questions, hang-up at 300 s; the agent
   leaves a room the visitor has been gone from for 20 s.
 - **End**: `POST /voice/settle` with `{ sttSeconds, ttsChars, agentMinutes }` from
-  livekit's session usage, once. Best effort: `409` means already settled, a failure
-  leaves the reservation in place.
+  livekit's session usage, clamped to one session's worth (300 s, 5,000 characters,
+  5 min), as soon as the session closes. Best effort: `409` means already settled, a
+  failure leaves the reservation in place.
 
 ## Session credential
 
@@ -144,7 +145,7 @@ List prices, October 2026, for one 5-minute session:
 |---|---|---|
 | Voxtral realtime STT (streams all call long) | $0.006/min | ~$0.03 |
 | Voxtral TTS, ~3,000 characters | $16 per 1M characters | ~$0.05 |
-| `/ask` questions | ~$0.002–0.007 each | ~$0.01–0.05 |
+| `/ask` questions | ~$0.002–0.007 each, ~$0.015 reserved until settled | ~$0.01–0.05 |
 | LiveKit Cloud Build plan | 1,000 agent minutes a month, 5 concurrent sessions | free up to the plan |
 
 ElevenLabs costs about three times more per character (Flash), and its Scribe

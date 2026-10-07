@@ -204,12 +204,18 @@ def relay_to(room: rtc.Room) -> Callable[[str, Any], Any]:
     return relay
 
 
+# /voice/settle refuses more than one session's worth (400), which would keep the
+# whole reservation: clamp instead.
+SETTLE_LIMITS = {"sttSeconds": 300, "ttsChars": 5000, "agentMinutes": 5}
+
+
 def settle_payload(usage: metrics.AgentSessionUsage, seconds: float) -> dict[str, float | int]:
     """What the session really used, for /voice/settle."""
     used = usage.model_usage
     stt = sum(u.audio_duration for u in used if isinstance(u, metrics.STTModelUsage))
     tts = sum(u.characters_count for u in used if isinstance(u, metrics.TTSModelUsage))
-    return {"sttSeconds": round(stt, 1), "ttsChars": tts, "agentMinutes": round(seconds / 60, 2)}
+    payload = {"sttSeconds": round(stt, 1), "ttsChars": tts, "agentMinutes": round(seconds / 60, 2)}
+    return {key: min(max(value, 0), SETTLE_LIMITS[key]) for key, value in payload.items()}
 
 
 async def settle(url: str, token: str, payload: dict[str, float | int]) -> None:
@@ -326,6 +332,7 @@ async def entrypoint(ctx: JobContext) -> None:
     await closed.wait()
     for task in tasks:
         task.cancel()
+    ctx.shutdown("session closed")  # settle now: it also frees the visitor's slot
 
 
 if __name__ == "__main__":

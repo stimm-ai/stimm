@@ -5,7 +5,7 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# LiveKit Cloud runs agents as a non-root user. /app stays writable for the clip cache.
+# LiveKit Cloud runs agents as a non-root user.
 RUN useradd --create-home --uid 10001 agent && install -d -o agent /app
 WORKDIR /app
 

@@ -1,11 +1,11 @@
 """The two halves of the digital twin, in stimm's terms.
 
-- `TwinAgent`, a stimm `VoiceAgent`, is the live voice. It answers the end of every
-  turn at once with a pre-recorded acknowledgement, covers a slow answer with a
-  filler, and never states a fact of its own: it has no LLM.
+- `TwinAgent`, a stimm `VoiceAgent` in relay mode, is the live voice. At the end of
+  every turn it says a short bridge in stimm's `direct` style, written for the turn
+  by a fast LLM, and never states a fact of its own.
 - `AskSupervisor`, a stimm `Supervisor`, is the deep half. It puts each question
   to /ask, relays the evidence to the page, and has the voice say the grounded
-  answer sentence by sentence through `Supervisor.speak()`.
+  answer sentence by sentence through `Supervisor.speak()`, right after the bridge.
 
 Both run in the agent's job: `supervisor.attach(agent)` wires their protocols
 in-process.
@@ -15,19 +15,15 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import hashlib
-import itertools
 import logging
-import random
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+import time
+from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any
 
 from ask import AskClient, AskError, SentenceSplitter, history_for_ask, spoken
 
-from livekit import rtc
-from livekit.agents import llm, utils
+from livekit.agents import llm
 from stimm import Supervisor, TranscriptMessage, VoiceAgent
 
 logger = logging.getLogger("digital-twin")
@@ -39,84 +35,41 @@ Relay = Callable[[str, Any], Awaitable[None]]
 class Phrases:
     """The fixed things the twin says, in the session's language. All configuration."""
 
-    acks: list[str]
-    fillers: list[str]
     closing: str
     degraded: str
     apology: str
 
 
-@dataclass(frozen=True)
-class Clip:
-    text: str
-    path: Path | None  # None until synthesized: the text is then spoken live
+class Timeline:
+    """Logs the steps of each turn in ms from the end of the user's turn: sizes, never text."""
 
+    def __init__(self) -> None:
+        self._turn, self._start = 0, time.perf_counter()
 
-class Clips:
-    """Acknowledgements and fillers, synthesized once in the twin's voice, cached on disk.
+    def start(self) -> None:
+        self._turn += 1
+        self._start = time.perf_counter()
 
-    A file is named after the voice and the phrase, so changing either makes a new
-    one. A deployer can ship the directory instead of letting the agent fill it.
-    """
-
-    def __init__(self, tts: Any, voice_key: str, phrases: Phrases, directory: Path) -> None:
-        self._tts = tts
-        self._voice_key = voice_key
-        self._dir = directory
-        self._texts = list(dict.fromkeys(phrases.acks + phrases.fillers))
-        self._acks = _rotation(phrases.acks)
-        self._fillers = _rotation(phrases.fillers)
-
-    def path(self, text: str) -> Path:
-        digest = hashlib.sha256(f"{self._voice_key}\n{text}".encode()).hexdigest()[:16]
-        return self._dir / f"{digest}.wav"
-
-    async def prepare(self) -> None:
-        """Synthesize the clips not cached yet; a failure leaves that phrase to live TTS."""
-        missing = [text for text in self._texts if not self.path(text).exists()]
-        results = await asyncio.gather(*map(self._synthesize, missing), return_exceptions=True)
-        for text, result in zip(missing, results):
-            if isinstance(result, BaseException):
-                logger.warning("could not synthesize clip %r: %s", text, result)
-
-    async def _synthesize(self, text: str) -> None:
-        async with self._tts.synthesize(text) as stream:
-            frames = [event.frame async for event in stream]
-        path = self.path(text)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_suffix(f".{random.getrandbits(32):08x}.tmp")
-        tmp.write_bytes(rtc.combine_audio_frames(frames).to_wav_bytes())
-        tmp.replace(path)
-
-    def next_ack(self) -> Clip:
-        return self._clip(next(self._acks))
-
-    def next_filler(self) -> Clip:
-        return self._clip(next(self._fillers))
-
-    def _clip(self, text: str) -> Clip:
-        path = self.path(text)
-        return Clip(text, path if path.exists() else None)
-
-
-def _rotation(texts: list[str]) -> Iterator[str]:
-    start = random.randrange(len(texts))
-    return itertools.cycle(texts[start:] + texts[:start])
+    def mark(self, step: str, size: str = "") -> None:
+        ms = (time.perf_counter() - self._start) * 1000
+        logger.info("turn %d +%.0f ms %s%s", self._turn, ms, step, f" ({size})" if size else "")
 
 
 class TwinAgent(VoiceAgent):
-    """The live voice: acknowledges at once, covers the wait, says only what /ask said."""
+    """The live voice: bridges each turn in its own words, says only what /ask said."""
 
-    def __init__(
-        self, *, clips: Clips, closing: str, filler_delays: list[float], **components: Any
-    ) -> None:
-        # relay: this voice only says what its supervisor gives it. No fast LLM.
-        super().__init__(mode="relay", **components)
-        self._clips = clips
+    def __init__(self, *, closing: str, timeline: Timeline, **components: Any) -> None:
+        # relay: this voice says what its supervisor gives it, and its own bridges.
+        super().__init__(mode="relay", style="direct", **components)
         self._closing = closing
-        self._filler_delays = filler_delays
-        self._fillers: list[asyncio.TimerHandle] = []
+        self._timeline = timeline
+        self._bridge_speech: Any = None
+        self._answer_speech: Any = None
         self.closing = False
+
+    async def on_enter(self) -> None:
+        await super().on_enter()
+        self.session.on("agent_state_changed", self._on_agent_state_changed)
 
     async def on_user_turn_completed(
         self, turn_ctx: llm.ChatContext, new_message: llm.ChatMessage
@@ -124,51 +77,56 @@ class TwinAgent(VoiceAgent):
         question = (new_message.text_content or "").strip()
         if self.closing or not question:
             return
+        self._timeline.start()
         self.session.interrupt()  # drop what is left of the previous answer
-        self._play(self._clips.next_ack())
-        # /ask takes seconds to start; a filler at each delay keeps the silence short
-        self._cancel_fillers()
-        loop = asyncio.get_running_loop()
-        self._fillers = [loop.call_later(delay, self._fill) for delay in self._filler_delays]
+        await super().on_user_turn_completed(turn_ctx, new_message)  # the bridge
         await self.publish_transcript(question, partial=False)  # → AskSupervisor
 
+    async def on_bridge(self, text: str, handle: Any) -> None:
+        self._timeline.mark("bridge text", f"{len(text.split())} words")
+        self._bridge_speech = handle
+        if self.closing:
+            handle.interrupt()  # nothing after the goodbye
+
     async def on_supervisor_speech(self, handle: Any) -> None:
-        self._cancel_fillers()  # the answer has started: no more fillers
+        self._answer_speech = handle
         if self.closing:
             handle.interrupt()  # nothing after the goodbye
 
     def close_call(self) -> None:
         """Say goodbye, and take no more questions."""
         self.closing = True
-        self._cancel_fillers()
         self.session.interrupt()
         self.session.say(self._closing, allow_interruptions=False)
 
-    def _fill(self) -> None:
-        self._play(self._clips.next_filler())
-
-    def _cancel_fillers(self) -> None:
-        for timer in self._fillers:
-            timer.cancel()
-        self._fillers = []
-
-    def _play(self, clip: Clip) -> None:
-        if clip.path is None:
-            self.session.say(clip.text, add_to_chat_ctx=False)
-        else:
-            audio = utils.audio.audio_frames_from_file(str(clip.path))
-            self.session.say(clip.text, audio=audio, add_to_chat_ctx=False)
+    def _on_agent_state_changed(self, ev: Any) -> None:
+        if ev.new_state != "speaking":  # the first audio of an utterance is out
+            return
+        speech = self.session.current_speech
+        if speech is not None and speech is self._bridge_speech:
+            self._timeline.mark("bridge audio")
+        elif speech is not None and speech is self._answer_speech:
+            self._timeline.mark("answer audio")
 
 
 class AskSupervisor(Supervisor):
     """The deep half: /ask answers, the voice speaks, the page gets the evidence."""
 
-    def __init__(self, *, ask: AskClient, lang: str, phrases: Phrases, relay: Relay) -> None:
+    def __init__(
+        self,
+        *,
+        ask: AskClient,
+        lang: str,
+        phrases: Phrases,
+        relay: Relay,
+        timeline: Timeline | None = None,
+    ) -> None:
         super().__init__()
         self._ask = ask
         self._lang = lang
         self._phrases = phrases
         self._relay = relay
+        self._timeline = timeline or Timeline()
         self._turns: list[tuple[str, str]] = []
         self._answering: asyncio.Task[None] | None = None
 
@@ -187,6 +145,8 @@ class AskSupervisor(Supervisor):
         async def sentences() -> AsyncIterator[str]:
             async with contextlib.aclosing(self._sentences(question, history)) as source:
                 async for sentence in source:
+                    if not said:
+                        self._timeline.mark("first sentence", f"{len(sentence)} chars")
                     said.append(sentence)
                     yield sentence + " "  # the TTS and the subtitles read one text
 
@@ -207,6 +167,8 @@ class AskSupervisor(Supervisor):
                         cited = True
                         await self._relay("twin.cite", data)
                     elif event == "delta":
+                        if not text:
+                            self._timeline.mark("ask first delta")
                         text += data["text"]
                         # Answer text always comes after a cite. Text without one is
                         # no_source, a refusal or the degraded preamble: wait for done.

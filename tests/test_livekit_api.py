@@ -34,6 +34,16 @@ assert {"instructions", "input_modality"} <= set(
 from livekit.agents.voice import SpeechHandle
 assert "AsyncIterable" in str(inspect.signature(AgentSession.say).parameters["text"].annotation)
 assert callable(SpeechHandle.add_done_callback) and isinstance(SpeechHandle.interrupted, property)
+# conversation styles: a bridge is one streamed chat request to a livekit LLM
+from livekit.agents import Agent, llm
+ctx = llm.ChatContext()
+ctx.add_message(role="system", content="rules")
+ctx.add_message(role="user", content="conversation")
+assert [item.text_content for item in ctx.items] == ["rules", "conversation"]
+assert "chat_ctx" in inspect.signature(llm.LLM.chat).parameters and callable(llm.LLM.prewarm)
+assert "delta" in llm.ChatChunk.model_fields and "content" in llm.ChoiceDelta.model_fields
+assert {"turn_ctx", "new_message"} <= set(
+    inspect.signature(Agent.on_user_turn_completed).parameters)
 assert "rtc_config" in inspect.signature(JobContext.connect).parameters
 RtcConfiguration(ice_transport_type=IceTransportType.TRANSPORT_ALL)
 assert callable(silero.VAD.load)

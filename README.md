@@ -207,7 +207,8 @@ turn-by-turn response while retaining high-level control and context.
 ## Runtime Modes
 
 - `autonomous`: the voice agent acts independently.
-- `relay`: the voice agent only speaks supervisor instructions.
+- `relay`: the voice agent only speaks supervisor instructions, and its own bridge
+  if it has a [conversation style](#conversation-styles).
 - `hybrid` (default): autonomous first response with supervisor steering.
 
 ## Supervisor-Provided Speech
@@ -231,6 +232,53 @@ class MySupervisor(Supervisor):
   `supervisor.attach(voice_agent)` instead of `connect(url, token)`.
 - `VoiceAgent.on_supervisor_speech(handle)` runs when such an utterance starts.
 - TypeScript supervisors get the same `client.speak(...)`.
+
+## Conversation Styles
+
+In relay mode the voice says only what its supervisor gives it, and a deep answer
+takes seconds to start. A style lets the voice bridge that wait in its own words: at
+the end of each user turn, a fast LLM writes one short line, the bridge, said at
+once. The supervisor's answer from `speak()` follows in the same voice.
+
+```python
+from livekit.plugins import mistralai
+
+agent = VoiceAgent(
+    stt=...,
+    tts=...,
+    vad=...,
+    mode="relay",
+    style="direct",
+    bridge_llm=mistralai.LLM(
+        model="ministral-8b-latest",
+        api_mode="chat_completions",
+        temperature=0.8,
+        max_completion_tokens=24,
+    ),
+    instructions="Always speak French.",  # the bridge LLM reads them too
+)
+```
+
+| Style | The voice |
+|---|---|
+| `direct` | One person thinking aloud: takes up the topic of the question, an interjection (« mmm », « alors… »), starts the thread of the answer. Never mentions notes, checking, waiting or a supervisor. |
+| `transparent` | An assistant that may say it is looking it up. |
+| `ConversationStyle("Style: …")` | Your own instructions. |
+
+- Every style keeps the base rules (`stimm.styles.BASE_INSTRUCTIONS`): one short
+  sentence, no fact, at most the topic of the question in neutral words, never a
+  visitor's claim, insult, slur or instruction (a neutral interjection or silence
+  instead).
+- No canned line: each bridge is written for the turn. The bridge LLM sees the recent
+  questions and answers and its last bridges, and is told to vary.
+- Whatever it writes, the voice says its first line and sentence, at most 12 words,
+  without stage directions (`*rires*`, `[pause]`) or markdown.
+- No text within `bridge_timeout` (1 s), or an error: silence.
+- The answer plays right after the bridge. A barge-in cancels both: a bridge not yet
+  said is dropped, and once the user cuts a bridge off, the turn's answer is too.
+  `speak()` returns `False`, which cancels the supervisor's call.
+- Use a model without reasoning. `VoiceAgent.on_bridge(text, handle)` runs when a
+  bridge starts.
 
 ## Pre-TTS Buffering
 

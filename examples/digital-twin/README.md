@@ -37,6 +37,8 @@ answer; fillers queued in front of `speak()` can.
 
 - **Answer**: each sentence is spoken as soon as it is complete. `/ask` takes 3 to 7 s
   to send its first fragment, which the acknowledgement and fillers cover.
+- **Text to speech**: the voice drops the `[n]` markers and the light markdown of
+  `/ask`, `**bold**` and `- ` list items. Each list item is a sentence of its own.
 - **`no_source`** and the off-topic refusal: the fixed sentence, as given.
 - **`degraded`**: one configured sentence ("the sources are on screen"); the results
   go to the page on `twin.results`.
@@ -68,10 +70,10 @@ The page receives JSON on LiveKit **text streams**
 | `twin.cite` | The `/ask` `cite` event, unchanged: `{ n, id, url, title, type, fact }`. Sent before the sentence that cites it is spoken. |
 | `twin.citations` | The `/ask` `citations` event: `[{ n, id, url, title }]`. |
 | `twin.results` | Degraded mode only, `done.results`: `[{ id, url, title, type, excerpt, fact }]`. |
-| `twin.done` | `{ mode, question, answer, reason?, truncated? }`. `mode` is `answer`, `no_source`, `degraded` or `error`; `answer` is `/ask`'s text with its `[n]` markers, for the page's text history. Not sent when the visitor interrupts the answer. |
+| `twin.done` | `{ mode, question, answer, reason?, truncated? }`. `mode` is `answer`, `no_source`, `degraded` or `error`; `answer` is `/ask`'s raw text, `[n]` markers and markdown included, for the page's text history. Not sent when the visitor interrupts the answer. |
 
 Subtitles of both voices, acknowledgements and fillers included, come from livekit's
-standard transcription streams (`lk.transcription`).
+standard transcription streams (`lk.transcription`); the twin's are the spoken text.
 
 ## Configuration
 

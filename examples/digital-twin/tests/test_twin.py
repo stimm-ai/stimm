@@ -14,6 +14,7 @@ PHRASES = Phrases(
     acks=["Ack."], fillers=["Filler."], closing="Bye.", degraded="On screen.", apology="Sorry."
 )
 FIXTURE = Path(__file__).parent / "fixtures" / "ask_answer.sse"
+LIST_FIXTURE = Path(__file__).parent / "fixtures" / "ask_list.sse"
 
 
 def sse(*events: tuple[str, object]) -> list[bytes]:
@@ -51,13 +52,13 @@ async def sentences(ask: ScriptedAsk) -> tuple[list[str], list[tuple[str, object
     return said, relay.sent
 
 
-async def _fixture_lines():  # type: ignore[no-untyped-def]
-    for line in FIXTURE.read_bytes().splitlines(keepends=True):
+async def _lines(path: Path):  # type: ignore[no-untyped-def]
+    for line in path.read_bytes().splitlines(keepends=True):
         yield line
 
 
 async def test_answer_is_said_sentence_by_sentence_and_evidence_relayed() -> None:
-    events = [event async for event in sse_events(_fixture_lines())]
+    events = [event async for event in sse_events(_lines(FIXTURE))]
     said, sent = await sentences(ScriptedAsk(events))
 
     assert said == [
@@ -73,6 +74,22 @@ async def test_answer_is_said_sentence_by_sentence_and_evidence_relayed() -> Non
         "answer": "I joined Example as CTO in 2019 [1]. The team grew from 3 to 12 people"
         " in two years [1][2]. We shipped Widget 2.5 in March 2021 [2].",
     }
+
+
+async def test_bold_and_list_items_are_spoken_plain_and_relayed_raw() -> None:
+    events = [event async for event in sse_events(_lines(LIST_FIXTURE))]
+    said, sent = await sentences(ScriptedAsk(events))
+
+    assert said == [
+        "I built two tools:",
+        "Widget, a screen recorder.",
+        "Gadget, a code generator.",
+        "Both are free.",
+    ]
+    assert sent[-1][1]["answer"] == (  # type: ignore[index]
+        "I built **two tools** [1]:\n- **Widget**, a screen recorder [1]\n"
+        "- **Gadget**, a code generator [2]\n\nBoth are free [2]."
+    )
 
 
 async def test_no_source_is_said_as_given() -> None:
@@ -220,7 +237,7 @@ async def test_no_filler_once_the_answer_has_started() -> None:
     await agent.on_user_turn_completed(None, QUESTION)  # type: ignore[arg-type]
     await asyncio.sleep(0.25)
     assert session.clips == ["Ack."]
-    assert session.answers == [["Quick one."]]
+    assert session.answers == [["Quick one. "]]
 
 
 async def test_nothing_is_said_after_the_goodbye() -> None:
@@ -267,7 +284,7 @@ async def test_barge_in_stops_the_voice_and_aborts_the_ask_request() -> None:
 
     await agent.on_user_turn_completed(None, QUESTION)  # type: ignore[arg-type]
     await asyncio.sleep(0.02)
-    assert session.answers == [["First."]] and not response.closed
+    assert session.answers == [["First. "]] and not response.closed
     session.answer_handles[0].interrupt()  # the visitor speaks over the answer
     await asyncio.wait_for(agent.supervisor._answering, 1)  # type: ignore[attr-defined]
 

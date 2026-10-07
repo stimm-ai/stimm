@@ -1,8 +1,8 @@
 """Talking to /ask: the request, its server-sent events, and spoken sentences.
 
-/ask streams `meta`, `cite`, `delta` (text with [n] citation markers), `citations`,
-then `done` or `error`. Nothing here knows whose twin it is: the URL and the session
-token come from the deployment.
+/ask streams `meta`, `cite`, `delta` (text with [n] citation markers and light
+markdown: **bold**, "- " list items), `citations`, then `done` or `error`. Nothing
+here knows whose twin it is: the URL and the session token come from the deployment.
 """
 
 from __future__ import annotations
@@ -20,6 +20,8 @@ MAX_HISTORY_CHARS = 1500
 
 # Citation markers, with the space before them: [1], [1, 2], [^1], 【1】, ［1］.
 _MARKER = re.compile(r"\s*(?:\[\^?|【|［)\d+(?:\s*[,，]\s*\d+)*(?:\]|】|］)")
+# A list item's bullet: "- item" or "* item", at the start of a line.
+_LIST_ITEM = re.compile(r"^[ \t]*[-*][ \t]+", re.MULTILINE)
 # The end of a sentence: punctuation followed by whitespace, or a line break.
 _BOUNDARY = re.compile(r"(?<=[.!?…])\s+|\n+")
 # Short words a period does not end: "M. Dupont", "Dr. Smith", "e.g. this".
@@ -28,16 +30,29 @@ _ABBREVIATION = re.compile(
 )
 
 
-def strip_markers(text: str) -> str:
-    """The text without its citation markers, as it should be spoken or remembered."""
-    return " ".join(_MARKER.sub("", text).split())
+def plain(text: str) -> str:
+    """The text without citation markers or bold signs, like the site's `plain()`."""
+    return _MARKER.sub("", text).replace("**", "").strip()
+
+
+def spoken(text: str) -> str:
+    """A sentence as the voice says it: plain, on one line, without its list bullet.
+
+    A list item is a sentence of its own: without final punctuation it gets a period,
+    so the voice pauses before the next item.
+    """
+    item = _LIST_ITEM.match(text)
+    text = " ".join(plain(_LIST_ITEM.sub("", text)).split())
+    if item and text and text[-1] not in ".!?…:;":
+        text += "."
+    return text
 
 
 class SentenceSplitter:
     """Cuts streamed text into whole sentences, so each one is spoken as soon as it ends.
 
-    A sentence ends at a line break, or at ., !, ? or … once the next word has
-    started: "3." may still become "3.5". Markers are stripped from what it returns.
+    A sentence ends at a line break, so a list item is one, or at ., !, ? or … once
+    the next word has started: "3." may still become "3.5". It returns them `spoken`.
     """
 
     def __init__(self) -> None:
@@ -51,7 +66,7 @@ class SentenceSplitter:
             candidate = self._buffer[start : boundary.start()]
             if _ABBREVIATION.search(candidate):
                 continue
-            if sentence := strip_markers(candidate):
+            if sentence := spoken(candidate):
                 sentences.append(sentence)
             start = boundary.end()
         self._buffer = self._buffer[start:]
@@ -59,16 +74,16 @@ class SentenceSplitter:
 
     def flush(self) -> str:
         """Whatever is left once the stream is over."""
-        rest, self._buffer = strip_markers(self._buffer), ""
+        rest, self._buffer = spoken(self._buffer), ""
         return rest
 
 
 def history_for_ask(turns: list[tuple[str, str]]) -> list[dict[str, str]]:
     """The last turns in /ask's shape: at most 6 messages of at most 1500 characters."""
     messages = [
-        {"role": role, "content": strip_markers(text)[:MAX_HISTORY_CHARS]}
+        {"role": role, "content": plain(text)[:MAX_HISTORY_CHARS]}
         for role, text in turns
-        if strip_markers(text)
+        if plain(text)
     ]
     return messages[-MAX_HISTORY_MESSAGES:]
 

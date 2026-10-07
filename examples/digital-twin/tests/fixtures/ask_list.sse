@@ -1,0 +1,21 @@
+event: meta
+data: {"level": "public", "lang": "en", "build": "0123abc", "persona": "Example's digital twin (AI)"}
+
+event: cite
+data: {"n": 1, "id": "project:widget", "url": "https://twin.example/f/project/widget", "title": "Widget", "type": "project", "fact": {"id": "project:widget", "title": "Widget", "metadata": {"type": "project"}}}
+
+event: delta
+data: {"text": "I built **two tools** [1]:\n- **Widget**, a screen recorder [1]\n"}
+
+event: cite
+data: {"n": 2, "id": "project:gadget", "url": "https://twin.example/f/project/gadget", "title": "Gadget", "type": "project", "fact": {"id": "project:gadget", "title": "Gadget", "metadata": {"type": "project"}}}
+
+event: delta
+data: {"text": "- **Gadget**, a code generator [2]\n\nBoth are free [2]."}
+
+event: citations
+data: [{"n": 1, "id": "project:widget", "url": "https://twin.example/f/project/widget", "title": "Widget"}, {"n": 2, "id": "project:gadget", "url": "https://twin.example/f/project/gadget", "title": "Gadget"}]
+
+event: done
+data: {"mode": "answer"}
+

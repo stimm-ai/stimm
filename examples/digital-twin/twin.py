@@ -24,7 +24,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from ask import AskClient, AskError, SentenceSplitter, history_for_ask, strip_markers
+from ask import AskClient, AskError, SentenceSplitter, history_for_ask, spoken
 
 from livekit import rtc
 from livekit.agents import llm, utils
@@ -188,7 +188,7 @@ class AskSupervisor(Supervisor):
             async with contextlib.aclosing(self._sentences(question, history)) as source:
                 async for sentence in source:
                     said.append(sentence)
-                    yield sentence
+                    yield sentence + " "  # the TTS and the subtitles read one text
 
         try:
             await self.speak(sentences())
@@ -227,7 +227,7 @@ class AskSupervisor(Supervisor):
                         elif cited:
                             rest = splitter.flush()
                         else:  # no_source or the off-topic refusal: said as given
-                            rest = strip_markers(text)
+                            rest = spoken(text)
                         if rest:
                             yield rest
                         return

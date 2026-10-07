@@ -5,10 +5,14 @@ on:
     tags:
       - "stimm-v*"
       - "protocol-v*"
+  # release-please tags with GITHUB_TOKEN, and a tag pushed that way triggers no
+  # workflow. Run this on the tag instead: gh workflow run release.yml --ref stimm-vX.Y.Z
+  workflow_dispatch:
 
 jobs:
   check-versions:
-    if: startsWith(github.ref_name, 'stimm-v')
+    # On github.ref, not ref_name: a dispatch on a branch named stimm-v* must not publish.
+    if: startsWith(github.ref, 'refs/tags/stimm-v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -77,7 +81,7 @@ jobs:
             ghcr.io/stimm-ai/stimm-agent:${{ steps.version.outputs.version }}
 
   check-npm-version:
-    if: startsWith(github.ref_name, 'protocol-v')
+    if: startsWith(github.ref, 'refs/tags/protocol-v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

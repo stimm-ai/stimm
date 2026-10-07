@@ -13,6 +13,7 @@ import asyncio
 import base64
 import binascii
 import hashlib
+import importlib
 import json
 import logging
 import os
@@ -29,6 +30,14 @@ from twin import AskSupervisor, Clips, Phrases, TwinAgent
 from livekit import rtc
 from livekit.agents import AgentServer, AgentSession, JobContext, JobProcess, cli, metrics, room_io
 from livekit.plugins import silero
+
+# LiveKit registers a plugin when it is first imported, and only on the main thread: a job
+# runs in a thread in dev mode, so the providers the deployment selects load here, not
+# lazily in make_stt and make_tts.
+PLUGINS = {"mistral": "mistralai", "elevenlabs": "elevenlabs", "deepgram": "deepgram"}
+for _provider in {os.environ.get(f"{kind}_PROVIDER", "mistral") for kind in ("STT", "TTS")}:
+    if _provider in PLUGINS:
+        importlib.import_module(f"livekit.plugins.{PLUGINS[_provider]}")
 
 logger = logging.getLogger("digital-twin")
 

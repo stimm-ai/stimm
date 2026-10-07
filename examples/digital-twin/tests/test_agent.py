@@ -4,11 +4,21 @@ import asyncio
 import base64
 import json
 import logging
+import threading
 from types import SimpleNamespace
 
 import aiohttp
 import pytest
-from agent import Config, leave_when_alone, limit_duration, session_info, settle, settle_payload
+from agent import (
+    Config,
+    leave_when_alone,
+    limit_duration,
+    make_stt,
+    make_tts,
+    session_info,
+    settle,
+    settle_payload,
+)
 from ask import AskClient
 from livekit.agents.metrics import AgentSessionUsage, STTModelUsage, TTSModelUsage
 from twin import AskSupervisor, Phrases
@@ -182,3 +192,23 @@ async def test_the_session_token_is_never_logged(
     assert "/voice/settle answered HTTP 401" in caplog.text
     assert "ClientConnectionError" in caplog.text
     assert TOKEN not in caplog.text and TOKEN not in repr(ask)
+
+
+def test_selected_providers_build_off_the_main_thread(tmp_path) -> None:
+    """A job runs in a thread in dev mode: the plugins must already be registered."""
+    sample = tmp_path / "ref.wav"
+    sample.write_bytes(b"RIFF....WAVE")
+    cfg = Config.from_env({"MISTRAL_API_KEY": "k", "TTS_REF_AUDIO_FR": str(sample)})
+    errors: list[BaseException] = []
+
+    def build() -> None:
+        try:
+            make_tts(cfg, "fr")
+            make_stt(cfg, "fr", vad=None)
+        except BaseException as e:  # noqa: BLE001 - surfaced by the assert below
+            errors.append(e)
+
+    thread = threading.Thread(target=build)
+    thread.start()
+    thread.join()
+    assert errors == []

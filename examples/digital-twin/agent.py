@@ -206,7 +206,17 @@ def make_bridge_llm(cfg: Config) -> Any:
             extra_body={"thinking": {"type": "disabled"}},  # a bridge never reasons
             **options,
         )
-    raise ValueError(f"BRIDGE_PROVIDER must be mistral or openai-compatible: {cfg.bridge_provider}")
+    if cfg.bridge_provider == "livekit":
+        from livekit.agents import inference
+
+        # LiveKit Inference, with the LiveKit Cloud project's LIVEKIT_INFERENCE_API_KEY and
+        # LIVEKIT_INFERENCE_API_SECRET (or LIVEKIT_API_KEY / LIVEKIT_API_SECRET). EU-only models
+        # are the project's "Inference region restriction" setting, not a parameter here.
+        model = cfg.bridge_model or "google/gemma-4-31b-it"
+        return inference.LLM(model=model, extra_kwargs=options)
+    raise ValueError(
+        f"BRIDGE_PROVIDER must be mistral, openai-compatible or livekit: {cfg.bridge_provider}"
+    )
 
 
 def relay_to(room: rtc.Room) -> Callable[[str, Any], Any]:

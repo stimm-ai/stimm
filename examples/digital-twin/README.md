@@ -92,6 +92,7 @@ transcription streams (`lk.transcription`); the twin's are the spoken text.
 | `TTS_MODEL` | `voxtral-mini-tts-latest`, `eleven_flash_v2_5` | |
 | `TTS_VOICE`, `TTS_VOICE_FR`, `TTS_VOICE_EN` | | The cloned voice: a Mistral voice id or an ElevenLabs `voice_id`. |
 | `TTS_REF_AUDIO`, `…_FR`, `…_EN` | | Mistral only: path to a 3–25 s sample for zero-shot cloning. |
+| `INTERRUPTION_MODE`, `INTERRUPTION_MIN_S` | `vad`, `0.4` | How the visitor cuts the twin off: livekit's `vad` (as soon as they speak this long) or `adaptive` (an ML model that ignores backchannels, slower to react). |
 | `BRIDGE_PROVIDER` | `mistral` | The bridge LLM: `mistral`, `openai-compatible` or `livekit` (LiveKit Inference, default model `google/gemma-4-31b-it`, credentials `LIVEKIT_INFERENCE_API_KEY`/`LIVEKIT_INFERENCE_API_SECRET` of a LiveKit Cloud project; EU-only models through the project's *Inference region restriction*). Temperature 0.8, 24 tokens at most. |
 | `BRIDGE_MODEL` | `ministral-8b-latest` | Required with `openai-compatible`. `mistral-medium-latest` keeps to the bridge rules more reliably, at about the same latency. |
 | `BRIDGE_BASE_URL`, `BRIDGE_API_KEY` | | `openai-compatible` only, e.g. `https://api.deepseek.com/v1` with `deepseek-flash`. Sent with `thinking: {"type": "disabled"}`. |

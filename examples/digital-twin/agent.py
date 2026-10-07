@@ -77,6 +77,8 @@ class Config:
     max_session: float
     closing_lead: float
     visitor_gone: float
+    interruption_mode: str
+    interruption_min: float
     env: Mapping[str, str]
 
     @classmethod
@@ -96,6 +98,8 @@ class Config:
             max_session=float(env.get("MAX_SESSION_S", "300")),
             closing_lead=float(env.get("CLOSING_LEAD_S", "15")),
             visitor_gone=float(env.get("VISITOR_GONE_S", "20")),
+            interruption_mode=env.get("INTERRUPTION_MODE", "vad"),
+            interruption_min=float(env.get("INTERRUPTION_MIN_S", "0.4")),
             env=env,
         )
 
@@ -330,7 +334,10 @@ async def entrypoint(ctx: JobContext) -> None:
     )
     supervisor.attach(agent)
 
-    session = AgentSession(vad=vad)
+    # VAD interruptions: the visitor cuts the twin off as soon as they speak; livekit's
+    # adaptive mode filters short sounds and made barge-in feel sluggish (07/10/2026).
+    interruption = {"mode": cfg.interruption_mode, "min_duration": cfg.interruption_min}
+    session = AgentSession(vad=vad, turn_handling={"interruption": interruption})
     closed = asyncio.Event()
     session.on("close", lambda _: closed.set())
 

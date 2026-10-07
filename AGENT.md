@@ -34,6 +34,7 @@ python -m pip install stimm
 
 ```python
 from stimm import get_provider_catalog
+
 catalog = get_provider_catalog()
 ```
 
@@ -52,6 +53,7 @@ catalog = get_provider_catalog()
 
 ```python
 from stimm import extras_install_command
+
 cmd = extras_install_command(stt=chosen_stt, tts=chosen_tts, llm=chosen_llm)
 ```
 

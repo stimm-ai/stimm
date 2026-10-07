@@ -35,6 +35,7 @@ LIVEKIT_API_SECRET   secret (default)
 
 Usage::
 
+    from livekit.agents import AgentServer, cli
     from stimm.worker import make_entrypoint
     from stimm import ConversationSupervisor
     import asyncio, aiohttp
@@ -50,11 +51,11 @@ Usage::
     def my_supervisor_factory(room_name: str, channel: str) -> MySupervisor:
         return MySupervisor()
 
-    entrypoint = make_entrypoint(my_supervisor_factory)
+    server = AgentServer()
+    server.rtc_session(make_entrypoint(my_supervisor_factory))
 
     if __name__ == "__main__":
-        from livekit.agents import WorkerOptions, cli
-        cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint))
+        cli.run_app(server)  # or: python -m livekit.agents start this_file.py
 """
 
 from __future__ import annotations
@@ -293,6 +294,7 @@ def make_agent(instructions: str | None = None) -> VoiceAgent:
 def make_entrypoint(
     supervisor_factory: SupervisorFactory,
     *,
+    room_options: Any = None,
     room_input_options: Any = None,
 ) -> Callable[[JobContext], Any]:
     """Return a livekit-agents entrypoint function wired to *supervisor_factory*.
@@ -309,15 +311,17 @@ def make_entrypoint(
         supervisor_factory: ``(room_name, channel) -> ConversationSupervisor``
             callable. ``channel`` comes from the ``STIMM_CHANNEL`` env var
             (default ``"default"``).
-        room_input_options: Optional ``RoomInputOptions`` passed to
+        room_options: Optional ``livekit.agents.room_io.RoomOptions`` passed to
             ``session.start()``. Use this to bind audio input to a specific
             participant identity (e.g. ``participant_identity="user"`` for
             browser clients).
+        room_input_options: Deprecated by livekit-agents in favor of
+            ``room_options``; still forwarded when given.
 
     Example::
 
-        entrypoint = make_entrypoint(my_supervisor_factory)
-        cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint))
+        server = AgentServer()
+        server.rtc_session(make_entrypoint(my_supervisor_factory))
     """
 
     async def entrypoint(ctx: JobContext) -> None:
@@ -388,10 +392,12 @@ def make_entrypoint(
             if isinstance(text, str) and text.strip():
                 asyncio.ensure_future(agent.publish_before_speak(text))
 
-        from livekit.agents import RoomInputOptions as _RIO
-
-        _opts = room_input_options if room_input_options is not None else _RIO()
-        await session.start(agent=agent, room=ctx.room, room_input_options=_opts)
+        start_options: dict[str, Any] = {}
+        if room_options is not None:
+            start_options["room_options"] = room_options
+        if room_input_options is not None:
+            start_options["room_input_options"] = room_input_options
+        await session.start(agent=agent, room=ctx.room, **start_options)
 
         # Bind the Stimm protocol after session.start() so the room is ready.
         agent.protocol.bind(ctx.room)

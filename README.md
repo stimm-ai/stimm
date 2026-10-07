@@ -113,23 +113,30 @@ not vendor provider plugin code inside its wheel.
 ### Voice Agent (Python)
 
 ```python
-from stimm import VoiceAgent
+from livekit.agents import AgentServer, AgentSession, JobContext, cli
 from livekit.plugins import deepgram, openai, silero
+from stimm import VoiceAgent
 
-agent = VoiceAgent(
-    stt=deepgram.STT(),
-    tts=openai.TTS(),
-    vad=silero.VAD.load(),
-    fast_llm=openai.LLM(model="gpt-4o-mini"),
-    buffering_level="MEDIUM",
-    mode="hybrid",
-    instructions="You are a helpful voice assistant.",
-)
+server = AgentServer()
+
+
+@server.rtc_session()
+async def entrypoint(ctx: JobContext) -> None:
+    agent = VoiceAgent(
+        stt=deepgram.STT(),
+        tts=openai.TTS(),
+        vad=silero.VAD.load(),
+        fast_llm=openai.LLM(model="gpt-4o-mini"),
+        buffering_level="MEDIUM",
+        mode="hybrid",
+        instructions="You are a helpful voice assistant.",
+    )
+    await ctx.connect()
+    await AgentSession().start(agent=agent, room=ctx.room)
+
 
 if __name__ == "__main__":
-    from livekit.agents import WorkerOptions, cli
-
-    cli.run_app(WorkerOptions(entrypoint_fnc=agent.entrypoint))
+    cli.run_app(server)
 ```
 
 ### Supervisor (Python)

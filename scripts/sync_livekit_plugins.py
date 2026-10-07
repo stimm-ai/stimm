@@ -161,7 +161,7 @@ def _install_runtime_plugins(contract: dict[str, Any], python_exe: str) -> None:
                 raise ValueError(f"unsupported runtime module namespace: {module}")
             modules.add(module.removeprefix("livekit.plugins."))
 
-    packages = [f"livekit-plugins-{name}>=1.1" for name in sorted(modules)]
+    packages = [f"livekit-plugins-{name}>=1.8" for name in sorted(modules)]
     if not packages:
         return
 

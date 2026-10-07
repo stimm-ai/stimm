@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.1.14](https://github.com/stimm-ai/stimm/compare/stimm-v0.1.13...stimm-v0.1.14) (2026-10-07)
+
+
+### Features
+
+* **examples:** digital twin voice agent on /ask ([#30](https://github.com/stimm-ai/stimm/issues/30)) ([101e542](https://github.com/stimm-ai/stimm/commit/101e5427dc624799e7bf3f89b8f14fe20dd7a500))
+* supervisor-provided speech ([#29](https://github.com/stimm-ai/stimm/issues/29)) ([d6834c4](https://github.com/stimm-ai/stimm/commit/d6834c4dba647b0b4c4414fddc0603e985634916))
+* **website:** light variant for the landing page ([0a62fb9](https://github.com/stimm-ai/stimm/commit/0a62fb905b0e6e601d14b193889f31acefbde94d))
+* **website:** promote Signal into a design system, new mark, MIT licence ([0387aa5](https://github.com/stimm-ai/stimm/commit/0387aa56c40129fdc635280966f34ff3c5f04bc6))
+
+
+### Bug Fixes
+
+* **docs:** serve site from custom domain stimm.ai ([c9553ee](https://github.com/stimm-ai/stimm/commit/c9553eee8a75ab90cb287523895f0b0fac9cdb1f))
+* repair the daily provider catalog sync after LiveKit's llms.txt restructure ([#24](https://github.com/stimm-ai/stimm/issues/24)) ([359342b](https://github.com/stimm-ai/stimm/commit/359342b688ab01801ecf6154c6e7cddaae908de6))
+* **room:** put the room grant into the tokens StimmRoom mints ([#27](https://github.com/stimm-ai/stimm/issues/27)) ([b8666ed](https://github.com/stimm-ai/stimm/commit/b8666edce011e28572cc36afb71428f147a5cc6a))
+* update README and overview documentation to clarify Optimistic VUI concept and improve descriptions ([3e48edf](https://github.com/stimm-ai/stimm/commit/3e48edf57bf1cae03299494eba01facdf7e2d057))
+* **worker:** pass a provider plugin only the arguments it takes ([#28](https://github.com/stimm-ai/stimm/issues/28)) ([bf234f0](https://github.com/stimm-ai/stimm/commit/bf234f0d13da870ace34759c7146e816e1f30678))
+
+
+### Dependencies
+
+* bump livekit-agents and plugins to 1.8, refresh the lock and CI actions ([#25](https://github.com/stimm-ai/stimm/issues/25)) ([c45f435](https://github.com/stimm-ai/stimm/commit/c45f43572b7e5f6e7dc082a7974e20d601ffa46c))
+
+
+### Documentation
+
+* **website:** add Signal landing page at the site root ([de1dfc8](https://github.com/stimm-ai/stimm/commit/de1dfc816d9d1984b4613ec7caaa5f62ecc54282))
+
 ## [0.1.13](https://github.com/stimm-ai/stimm/compare/stimm-v0.1.12...stimm-v0.1.13) (2026-03-04)
 
 

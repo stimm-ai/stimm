@@ -10,9 +10,11 @@ from types import SimpleNamespace
 import aiohttp
 import pytest
 from agent import (
+    DEFAULT_PHRASES,
     Config,
     leave_when_alone,
     limit_duration,
+    make_bridge_llm,
     make_stt,
     make_tts,
     session_info,
@@ -43,18 +45,58 @@ def test_session_info_reads_the_token_from_the_dispatch_metadata() -> None:
 
 
 def test_phrases_come_from_the_environment_with_defaults() -> None:
-    cfg = Config.from_env(
-        {
-            "ACK_PHRASES_EN": "Hmm… | Right…",
-            "APOLOGY_PHRASE": "Oops.",
-            "CLOSING_PHRASE_FR": "Salut.",
-        }
-    )
+    cfg = Config.from_env({"APOLOGY_PHRASE": "Oops.", "CLOSING_PHRASE_FR": "Salut."})
     en, fr = cfg.phrases("en"), cfg.phrases("fr")
-    assert en.acks == ["Hmm…", "Right…"]
     assert en.apology == fr.apology == "Oops."  # no _EN/_FR: the generic one
     assert fr.closing == "Salut."
-    assert fr.acks and fr.fillers  # defaults
+    assert en.closing == DEFAULT_PHRASES["en"]["CLOSING_PHRASE"]
+    assert all(
+        set(phrases) == {"CLOSING_PHRASE", "DEGRADED_PHRASE", "APOLOGY_PHRASE"}
+        for phrases in DEFAULT_PHRASES.values()
+    )  # no acknowledgement, no filler
+
+
+FAST = {"temperature": 0.8, "max_completion_tokens": 24}
+
+
+@pytest.mark.parametrize(
+    ("env", "plugin", "built"),
+    [
+        (
+            {},
+            "mistralai",
+            {"model": "ministral-8b-latest", "api_mode": "chat_completions", **FAST},
+        ),
+        (
+            {
+                "BRIDGE_PROVIDER": "openai-compatible",
+                "BRIDGE_BASE_URL": "https://api.deepseek.com/v1",
+                "BRIDGE_MODEL": "deepseek-flash",
+                "BRIDGE_API_KEY": "k",
+            },
+            "openai",
+            {
+                "model": "deepseek-flash",
+                "base_url": "https://api.deepseek.com/v1",
+                "api_key": "k",
+                "extra_body": {"thinking": {"type": "disabled"}},
+                **FAST,
+            },
+        ),
+    ],
+)
+def test_the_bridge_llm_is_fast_short_and_never_reasons(
+    monkeypatch: pytest.MonkeyPatch, env: dict, plugin: str, built: dict
+) -> None:
+    module = pytest.importorskip(f"livekit.plugins.{plugin}")
+    monkeypatch.setattr(module, "LLM", lambda **kwargs: kwargs)
+    assert make_bridge_llm(Config.from_env(env)) == built
+
+
+def test_an_openai_compatible_bridge_needs_its_url_model_and_key() -> None:
+    env = {"BRIDGE_PROVIDER": "openai-compatible", "BRIDGE_MODEL": "m", "BRIDGE_API_KEY": "k"}
+    with pytest.raises(ValueError, match="BRIDGE_BASE_URL"):
+        make_bridge_llm(Config.from_env(env))
 
 
 def test_settle_payload_from_session_usage() -> None:
@@ -175,7 +217,7 @@ async def test_the_session_token_is_never_logged(
     caplog.set_level(logging.DEBUG)
     http = SimpleNamespace(post=lambda *args, **kwargs: Answer(401))
     ask = AskClient(http, "https://twin.example/ask", TOKEN)  # type: ignore[arg-type]
-    phrases = Phrases(acks=["a"], fillers=["f"], closing="c", degraded="d", apology="Sorry.")
+    phrases = Phrases(closing="c", degraded="d", apology="Sorry.")
 
     async def relay(topic: str, payload: object) -> None:
         pass
@@ -207,6 +249,7 @@ def test_selected_providers_build_off_the_main_thread(tmp_path, monkeypatch) -> 
         try:
             make_tts(cfg, "fr")
             make_stt(cfg, "fr", vad=None)
+            make_bridge_llm(cfg)
         except BaseException as e:  # noqa: BLE001 - surfaced by the assert below
             errors.append(e)
 

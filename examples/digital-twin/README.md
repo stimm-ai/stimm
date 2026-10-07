@@ -2,7 +2,7 @@
 
 A visitor talks hands-free with a person's digital twin, in the person's cloned
 voice. **Every answer comes from a grounded `/ask` endpoint**; the voice agent only
-acknowledges, covers the wait, and reads out what `/ask` said. It was written for
+bridges the wait in its own words, then reads out what `/ask` said. It was written for
 [etiennelescot.fr](https://etiennelescot.fr): the default URLs point there, and
 everything else about the person (voice, phrases, proper nouns) is configuration.
 
@@ -10,16 +10,16 @@ everything else about the person (voice, phrases, proper nouns) is configuration
 
 | stimm role | Here | Does |
 |---|---|---|
-| `VoiceAgent` (live, fast) | `TwinAgent` in [twin.py](twin.py) | At the end of a turn, plays a pre-recorded acknowledgement at once, then fillers at 2.5 s and 6 s while the answer has not started. No LLM: it never states a fact. |
+| `VoiceAgent` (live, fast) | `TwinAgent` in [twin.py](twin.py) | At the end of a turn, says a bridge in stimm's [`direct` style](../../README.md#conversation-styles): one short line a fast LLM writes for the turn, in the twin's voice. It never states a fact. |
 | `Supervisor` (deep) | `AskSupervisor` in [twin.py](twin.py) | Puts the question to `/ask`, relays the evidence to the page, and streams the answer into the voice with `Supervisor.speak()`, sentence by sentence, citation markers removed. |
 
 ```text
-visitor ─ end of turn ─► TwinAgent ─ ack clip (0 s) · filler (2.5 s, 6 s) …
+visitor ─ end of turn ─► TwinAgent ─ bridge LLM ─► "Mmm, ton parcours…"
                             │ TranscriptMessage
                             ▼
                        AskSupervisor ─ POST /ask, Authorization: Voice <token> ─► SSE
                             │ cite · citations · done ──► page (twin.* topics)
-                            └ speak(sentences) ──► TwinAgent says them, one utterance
+                            └ speak(sentences) ──► TwinAgent says them after the bridge
 visitor speaks over it ─► utterance interrupted ─► speak() → False ─► /ask request aborted
 ```
 
@@ -29,22 +29,24 @@ another service would `connect()` and send the same messages over the data chann
 
 **Why not a custom `llm_node` streaming `/ask`?** The answer is not the voice agent's
 own reply, it is the supervisor's, and `speak()` says it as one utterance whose
-interruption cancels the `/ask` request. A reply generated in `llm_node` is queued as
-soon as the turn ends, so nothing can be slotted between the acknowledgement and the
-answer; fillers queued in front of `speak()` can.
+interruption cancels the `/ask` request.
 
 ## Turn flow
 
-- **Answer**: each sentence is spoken as soon as it is complete. `/ask` takes 3 to 7 s
-  to send its first fragment, which the acknowledgement and fillers cover.
+- **Bridge**: one short line, written each turn by a fast LLM without reasoning, never
+  a canned phrase: an interjection, the subject of the question, or both, trailing
+  off into the answer. It never mentions notes, checking or waiting. No text within
+  1 s, or an error: silence.
+- **Answer**: right after the bridge, each sentence spoken as soon as it is complete.
+  `/ask` takes 3 to 7 s to send its first fragment.
 - **Text to speech**: the voice drops the `[n]` markers and the light markdown of
   `/ask`, `**bold**` and `- ` list items. Each list item is a sentence of its own.
 - **`no_source`** and the off-topic refusal: the fixed sentence, as given.
 - **`degraded`**: one configured sentence ("the sources are on screen"); the results
   go to the page on `twin.results`.
 - **Stream `error`** or HTTP failure: the half sentence is dropped, then a short apology.
-- **Barge-in**: stops the voice and aborts the `/ask` request. A new question replaces
-  the one in flight.
+- **Barge-in**: on the bridge or the answer, stops the voice and aborts the `/ask`
+  request. A new question replaces the one in flight.
 - **Duration**: goodbye at 285 s with no more questions, hang-up at 300 s; the agent
   leaves a room the visitor has been gone from for 20 s.
 - **End**: `POST /voice/settle` with `{ sttSeconds, ttsChars, agentMinutes }` from
@@ -73,8 +75,8 @@ The page receives JSON on LiveKit **text streams**
 | `twin.results` | Degraded mode only, `done.results`: `[{ id, url, title, type, excerpt, fact }]`. |
 | `twin.done` | `{ mode, question, answer, reason?, truncated? }`. `mode` is `answer`, `no_source`, `degraded` or `error`; `answer` is `/ask`'s raw text, `[n]` markers and markdown included, for the page's text history. Not sent when the visitor interrupts the answer. |
 
-Subtitles of both voices, acknowledgements and fillers included, come from livekit's
-standard transcription streams (`lk.transcription`); the twin's are the spoken text.
+Subtitles of both voices, bridges included, come from livekit's standard
+transcription streams (`lk.transcription`); the twin's are the spoken text.
 
 ## Configuration
 
@@ -90,17 +92,18 @@ standard transcription streams (`lk.transcription`); the twin's are the spoken t
 | `TTS_MODEL` | `voxtral-mini-tts-latest`, `eleven_flash_v2_5` | |
 | `TTS_VOICE`, `TTS_VOICE_FR`, `TTS_VOICE_EN` | | The cloned voice: a Mistral voice id or an ElevenLabs `voice_id`. |
 | `TTS_REF_AUDIO`, `…_FR`, `…_EN` | | Mistral only: path to a 3–25 s sample for zero-shot cloning. |
+| `BRIDGE_PROVIDER` | `mistral` | The bridge LLM: `mistral` or `openai-compatible`. Temperature 0.8, 24 tokens at most. |
+| `BRIDGE_MODEL` | `ministral-8b-latest` | Required with `openai-compatible`. `mistral-medium-latest` keeps to the bridge rules more reliably, at about the same latency. |
+| `BRIDGE_BASE_URL`, `BRIDGE_API_KEY` | | `openai-compatible` only, e.g. `https://api.deepseek.com/v1` with `deepseek-flash`. Sent with `thinking: {"type": "disabled"}`. |
 | `MISTRAL_API_KEY`, `ELEVEN_API_KEY`, `DEEPGRAM_API_KEY` | | Read by the plugins in use. |
-| `ACK_PHRASES`, `FILLER_PHRASES` (`_FR`, `_EN`) | built in | `\|`-separated, rotated. |
 | `CLOSING_PHRASE`, `DEGRADED_PHRASE`, `APOLOGY_PHRASE` (`_FR`, `_EN`) | built in | |
-| `FILLER_DELAYS_S` | `2.5,6` | Seconds after the acknowledgement. |
 | `MAX_SESSION_S`, `CLOSING_LEAD_S`, `VISITOR_GONE_S` | `300`, `15`, `20` | |
-| `CLIPS_DIR` | `./clips` | Cache of the synthesized clips. |
 
-A `_FR` / `_EN` variable wins over the plain one. The acknowledgement and filler clips
-are synthesized once per voice and phrase, at the first session, then read from
-`CLIPS_DIR`; until a clip exists, its phrase is spoken with live TTS. Ship the
-directory in the image to skip that first synthesis.
+A `_FR` / `_EN` variable wins over the plain one.
+
+Each turn logs its timeline at INFO, in ms from the end of the user's turn: `bridge
+text` (its word count), `bridge audio`, `ask first delta`, `first sentence` (its
+length), `answer audio`. Sizes only, never what was said.
 
 ## Run locally
 
@@ -139,7 +142,8 @@ installs stimm from a pinned commit; bump it with the example.
 
 ## Cost notes
 
-List prices, October 2026, for one 5-minute session:
+List prices, October 2026, for one 5-minute session, before the bridge LLM (under
+1,000 tokens in and 24 out a turn):
 
 | Item | Price | Per session |
 |---|---|---|
@@ -149,4 +153,4 @@ List prices, October 2026, for one 5-minute session:
 | LiveKit Cloud Build plan | 1,000 agent minutes a month, 5 concurrent sessions | free up to the plan |
 
 ElevenLabs costs about three times more per character (Flash), and its Scribe
-realtime STT about $0.39/h. Clips cost their characters once per voice.
+realtime STT about $0.39/h.

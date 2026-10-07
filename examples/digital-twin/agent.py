@@ -13,7 +13,6 @@ import asyncio
 import base64
 import binascii
 import contextlib
-import hashlib
 import importlib
 import json
 import logging
@@ -26,28 +25,23 @@ from typing import Any
 
 import aiohttp
 from ask import AskClient
-from twin import AskSupervisor, Clips, Phrases, TwinAgent
+from twin import AskSupervisor, Phrases, Timeline, TwinAgent
 
 from livekit import rtc
 from livekit.agents import AgentServer, AgentSession, JobContext, JobProcess, cli, metrics, room_io
 from livekit.plugins import silero
 
 # LiveKit registers a plugin when it is first imported, and only on the main thread: a job
-# runs in a thread in dev mode. Every installed provider loads here, so make_stt and make_tts
-# never import one inside a job; a missing one fails there, with its name.
-for _plugin in ("mistralai", "elevenlabs", "deepgram"):
+# runs in a thread in dev mode. Every installed provider loads here, so make_stt, make_tts
+# and make_bridge_llm never import one inside a job; a missing one fails there, with its name.
+for _plugin in ("mistralai", "elevenlabs", "deepgram", "openai"):
     with contextlib.suppress(ModuleNotFoundError):
         importlib.import_module(f"livekit.plugins.{_plugin}")
 
 logger = logging.getLogger("digital-twin")
 
-DEFAULT_PHRASES: dict[str, dict[str, Any]] = {
+DEFAULT_PHRASES: dict[str, dict[str, str]] = {
     "fr": {
-        "ACK_PHRASES": ["Je regarde…", "Bonne question…", "Voyons voir…"],
-        "FILLER_PHRASES": [
-            "Un instant, je rassemble mes sources…",
-            "Je vérifie dans mes notes, une seconde…",
-        ],
         "CLOSING_PHRASE": (
             "Nous arrivons au bout du temps prévu pour cet appel. "
             "Merci de votre visite, vous pouvez continuer par écrit."
@@ -56,11 +50,6 @@ DEFAULT_PHRASES: dict[str, dict[str, Any]] = {
         "APOLOGY_PHRASE": "Désolé, je n'ai pas pu terminer ma réponse.",
     },
     "en": {
-        "ACK_PHRASES": ["Let me check…", "Good question…", "Let's see…"],
-        "FILLER_PHRASES": [
-            "One moment, I'm pulling up my sources…",
-            "Let me look through my notes, just a second…",
-        ],
         "CLOSING_PHRASE": (
             "We're almost out of time for this call. "
             "Thanks for stopping by, you can carry on in writing."
@@ -69,6 +58,7 @@ DEFAULT_PHRASES: dict[str, dict[str, Any]] = {
         "APOLOGY_PHRASE": "Sorry, I couldn't finish my answer.",
     },
 }
+LANGUAGES = {"fr": "French", "en": "English"}
 
 
 @dataclass(frozen=True)
@@ -81,11 +71,12 @@ class Config:
     keyterms: list[str]
     tts_provider: str
     tts_model: str
-    filler_delays: list[float]
+    bridge_provider: str
+    bridge_model: str
+    bridge_base_url: str
     max_session: float
     closing_lead: float
     visitor_gone: float
-    clips_dir: Path
     env: Mapping[str, str]
 
     @classmethod
@@ -99,11 +90,12 @@ class Config:
             keyterms=[t.strip() for t in env.get("STT_KEYTERMS", "").split(",") if t.strip()],
             tts_provider=env.get("TTS_PROVIDER", "mistral"),
             tts_model=env.get("TTS_MODEL", ""),
-            filler_delays=[float(d) for d in env.get("FILLER_DELAYS_S", "2.5,6").split(",") if d],
+            bridge_provider=env.get("BRIDGE_PROVIDER", "mistral"),
+            bridge_model=env.get("BRIDGE_MODEL", ""),
+            bridge_base_url=env.get("BRIDGE_BASE_URL", ""),
             max_session=float(env.get("MAX_SESSION_S", "300")),
             closing_lead=float(env.get("CLOSING_LEAD_S", "15")),
             visitor_gone=float(env.get("VISITOR_GONE_S", "20")),
-            clips_dir=Path(env.get("CLIPS_DIR", Path(__file__).parent / "clips")),
             env=env,
         )
 
@@ -113,14 +105,7 @@ class Config:
 
     def phrases(self, lang: str) -> Phrases:
         defaults = DEFAULT_PHRASES[lang]
-
-        def listed(name: str) -> list[str]:
-            items = [p.strip() for p in self.per_lang(name, lang).split("|") if p.strip()]
-            return items or defaults[name]
-
         return Phrases(
-            acks=listed("ACK_PHRASES"),
-            fillers=listed("FILLER_PHRASES"),
             closing=self.per_lang("CLOSING_PHRASE", lang) or defaults["CLOSING_PHRASE"],
             degraded=self.per_lang("DEGRADED_PHRASE", lang) or defaults["DEGRADED_PHRASE"],
             apology=self.per_lang("APOLOGY_PHRASE", lang) or defaults["APOLOGY_PHRASE"],
@@ -172,8 +157,8 @@ def make_stt(cfg: Config, lang: str, vad: Any) -> Any:
     raise ValueError(f"STT_PROVIDER must be mistral, elevenlabs or deepgram: {cfg.stt_provider}")
 
 
-def make_tts(cfg: Config, lang: str) -> tuple[Any, str]:
-    """The cloned voice. Returns the TTS and a key naming that voice."""
+def make_tts(cfg: Config, lang: str) -> Any:
+    """The cloned voice."""
     voice = cfg.per_lang("TTS_VOICE", lang)
     if cfg.tts_provider == "mistral":
         from livekit.plugins import mistralai
@@ -184,19 +169,44 @@ def make_tts(cfg: Config, lang: str) -> tuple[Any, str]:
             "response_format": "pcm",
         }
         if ref := cfg.per_lang("TTS_REF_AUDIO", lang):  # 3-25 s sample: zero-shot clone
-            sample = Path(ref).read_bytes()
-            kwargs["ref_audio"] = base64.b64encode(sample).decode()
-            voice = "ref:" + hashlib.sha256(sample).hexdigest()[:16]
+            kwargs["ref_audio"] = base64.b64encode(Path(ref).read_bytes()).decode()
         elif voice:
             kwargs["voice"] = voice
-        return mistralai.TTS(**kwargs), f"mistral/{kwargs['model']}/{voice}"
+        return mistralai.TTS(**kwargs)
     if cfg.tts_provider == "elevenlabs":
         from livekit.plugins import elevenlabs
 
-        model = cfg.tts_model or "eleven_flash_v2_5"
         kwargs = {"voice_id": voice} if voice else {}
-        return elevenlabs.TTS(model=model, language=lang, **kwargs), f"elevenlabs/{model}/{voice}"
+        return elevenlabs.TTS(model=cfg.tts_model or "eleven_flash_v2_5", language=lang, **kwargs)
     raise ValueError(f"TTS_PROVIDER must be mistral or elevenlabs: {cfg.tts_provider}")
+
+
+def make_bridge_llm(cfg: Config) -> Any:
+    """The fast LLM that writes each turn's bridge: no reasoning, a little random, short."""
+    options: dict[str, Any] = {"temperature": 0.8, "max_completion_tokens": 24}
+    if cfg.bridge_provider == "mistral":
+        from livekit.plugins import mistralai
+
+        # Chat completions: lower latency than the plugin's default Conversations API.
+        model = cfg.bridge_model or "ministral-8b-latest"
+        return mistralai.LLM(model=model, api_mode="chat_completions", **options)
+    if cfg.bridge_provider == "openai-compatible":
+        from livekit.plugins import openai
+
+        key = cfg.env.get("BRIDGE_API_KEY", "")
+        if not (cfg.bridge_base_url and cfg.bridge_model and key):
+            raise ValueError(
+                "BRIDGE_PROVIDER=openai-compatible needs BRIDGE_BASE_URL, BRIDGE_MODEL "
+                "and BRIDGE_API_KEY"
+            )
+        return openai.LLM(
+            model=cfg.bridge_model,
+            base_url=cfg.bridge_base_url,
+            api_key=key,
+            extra_body={"thinking": {"type": "disabled"}},  # a bridge never reasons
+            **options,
+        )
+    raise ValueError(f"BRIDGE_PROVIDER must be mistral or openai-compatible: {cfg.bridge_provider}")
 
 
 def relay_to(room: rtc.Room) -> Callable[[str, Any], Any]:
@@ -289,16 +299,16 @@ async def entrypoint(ctx: JobContext) -> None:
     token, lang = session_info(ctx.job.metadata, cfg.default_lang)
     phrases = cfg.phrases(lang)
     vad = ctx.proc.userdata["vad"]
-    tts, voice_key = make_tts(cfg, lang)
-    clips = Clips(tts, voice_key, phrases, cfg.clips_dir)
+    timeline = Timeline()
 
     agent = TwinAgent(
         stt=make_stt(cfg, lang, vad),
-        tts=tts,
+        tts=make_tts(cfg, lang),
         vad=vad,
-        clips=clips,
+        bridge_llm=make_bridge_llm(cfg),
+        instructions=f"Always speak {LANGUAGES[lang]}.",
         closing=phrases.closing,
-        filler_delays=cfg.filler_delays,
+        timeline=timeline,
     )
     http = aiohttp.ClientSession()
     supervisor = AskSupervisor(
@@ -306,6 +316,7 @@ async def entrypoint(ctx: JobContext) -> None:
         lang=lang,
         phrases=phrases,
         relay=relay_to(ctx.room),
+        timeline=timeline,
     )
     supervisor.attach(agent)
 
@@ -330,7 +341,6 @@ async def entrypoint(ctx: JobContext) -> None:
         room_options=room_io.RoomOptions(delete_room_on_close=True),
     )
     tasks = [
-        asyncio.create_task(clips.prepare()),
         asyncio.create_task(
             limit_duration(agent, session, total=cfg.max_session, lead=cfg.closing_lead)
         ),

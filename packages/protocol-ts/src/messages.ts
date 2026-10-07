@@ -46,6 +46,16 @@ export interface MetricsMessage {
   total_ms: number;
 }
 
+/**
+ * A supervisor utterance (see `SpeechMessage`) is over. `interrupted` is true
+ * when it did not play to the end: cut off, replaced by a new turn, or no session.
+ */
+export interface SpeechEndedMessage {
+  type: "speech_ended";
+  speech_id: string;
+  interrupted: boolean;
+}
+
 // ---------------------------------------------------------------------------
 // Supervisor → Voice Agent
 // ---------------------------------------------------------------------------
@@ -89,6 +99,18 @@ export interface OverrideMessage {
   replacement: string;
 }
 
+/**
+ * Text for the voice agent to say verbatim, without going through its LLM.
+ * Chunks that share a `speech_id` form one utterance, spoken as they arrive and
+ * interrupted as a whole. `final` closes the utterance.
+ */
+export interface SpeechMessage {
+  type: "speech";
+  speech_id: string;
+  text: string;
+  final: boolean;
+}
+
 // ---------------------------------------------------------------------------
 // Union types
 // ---------------------------------------------------------------------------
@@ -98,7 +120,8 @@ export type VoiceAgentMessage =
   | TranscriptMessage
   | StateMessage
   | BeforeSpeakMessage
-  | MetricsMessage;
+  | MetricsMessage
+  | SpeechEndedMessage;
 
 /** Any message sent by the supervisor. */
 export type SupervisorMessage =
@@ -106,7 +129,8 @@ export type SupervisorMessage =
   | ContextMessage
   | ActionResultMessage
   | ModeMessage
-  | OverrideMessage;
+  | OverrideMessage
+  | SpeechMessage;
 
 /** Any stimm protocol message. */
 export type StimmMessage = VoiceAgentMessage | SupervisorMessage;

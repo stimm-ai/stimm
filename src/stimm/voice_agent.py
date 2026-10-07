@@ -21,6 +21,8 @@ from stimm.protocol import (
     InstructionMessage,
     ModeMessage,
     OverrideMessage,
+    SpeechEndedMessage,
+    SpeechMessage,
     StateMessage,
     StimmProtocol,
     TranscriptMessage,
@@ -35,6 +37,7 @@ class VoiceAgent(Agent):
     Extends the standard livekit-agents ``Agent`` with:
     - Publishing transcripts and state to the supervisor via data channel
     - Accepting instructions from the supervisor and merging them into context
+    - Saying supervisor-provided text verbatim, streamed, as one utterance
     - Pre-TTS text buffering for smoother speech delivery
     - Three operating modes: autonomous, relay, and hybrid
 
@@ -84,6 +87,8 @@ class VoiceAgent(Agent):
         self._last_context_trigger_ts = 0.0
         self._context_trigger_cooldown_s = 8.0
         self._deferred_context_retry_interval_s = 0.5
+        self._speeches: dict[str, _SpeechStream] = {}
+        self._ended_speeches: set[str] = set()
 
     @property
     def protocol(self) -> StimmProtocol:
@@ -103,6 +108,7 @@ class VoiceAgent(Agent):
         self._protocol.on_context(self._handle_context)
         self._protocol.on_mode(self._handle_mode_change)
         self._protocol.on_override(self._handle_override)
+        self._protocol.on_speech(self._handle_speech)
         session = self._current_session()
         if session is not None:
 
@@ -212,6 +218,53 @@ class VoiceAgent(Agent):
         if session is not None:
             await session.interrupt()
             await session.say(msg.replacement)
+
+    # -- Supervisor-provided speech ------------------------------------------
+
+    async def _handle_speech(self, msg: SpeechMessage) -> None:
+        """Say supervisor-provided text verbatim: one utterance per ``speech_id``."""
+        stream = self._speeches.get(msg.speech_id)
+        session = self._current_session()
+        new = stream is None
+        if new:
+            if msg.speech_id in self._ended_speeches:
+                return  # the tail of an utterance that was already cut off
+            if session is None or (msg.final and not msg.text):
+                await self._end_speech(msg.speech_id, interrupted=session is None)
+                return
+            stream = self._speeches[msg.speech_id] = _SpeechStream()
+        if msg.text:
+            stream.push(msg.text)
+        if msg.final:
+            stream.close()
+        if not new:
+            return
+        try:
+            handle = session.say(stream)
+        except RuntimeError:  # e.g. the session is closing and schedules no new speech
+            logger.warning("Cannot say supervisor speech %s", msg.speech_id, exc_info=True)
+            await self._end_speech(msg.speech_id, interrupted=True)
+            return
+        handle.add_done_callback(
+            lambda h: asyncio.ensure_future(self._end_speech(msg.speech_id, h.interrupted))
+        )
+        await self.on_supervisor_speech(handle)
+
+    async def _end_speech(self, speech_id: str, interrupted: bool) -> None:
+        stream = self._speeches.pop(speech_id, None)
+        if stream is not None:
+            stream.close()
+        self._ended_speeches.add(speech_id)
+        await self._protocol.send_speech_ended(
+            SpeechEndedMessage(speech_id=speech_id, interrupted=interrupted)
+        )
+
+    async def on_supervisor_speech(self, handle: Any) -> None:
+        """Called when the voice agent starts saying supervisor-provided text.
+
+        ``handle`` is the livekit ``SpeechHandle`` of the utterance. Override to
+        react, e.g. to drop a filler that was covering the supervisor's latency.
+        """
 
     async def _sync_instructions(self) -> None:
         """Push merged supervisor context/instructions into the active LLM prompt."""
@@ -402,6 +455,28 @@ class VoiceAgent(Agent):
     def flush_buffer(self) -> str | None:
         """Flush any remaining buffered text (call at end of LLM stream)."""
         return self._buffering.flush()
+
+
+class _SpeechStream:
+    """The chunks of one supervisor utterance, as ``session.say()`` reads them."""
+
+    def __init__(self) -> None:
+        self._chunks: asyncio.Queue[str | None] = asyncio.Queue()
+
+    def push(self, text: str) -> None:
+        self._chunks.put_nowait(text)
+
+    def close(self) -> None:
+        self._chunks.put_nowait(None)
+
+    def __aiter__(self) -> _SpeechStream:
+        return self
+
+    async def __anext__(self) -> str:
+        text = await self._chunks.get()
+        if text is None:
+            raise StopAsyncIteration
+        return text
 
 
 def _now_ms() -> int:

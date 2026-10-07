@@ -210,6 +210,28 @@ turn-by-turn response while retaining high-level control and context.
 - `relay`: the voice agent only speaks supervisor instructions.
 - `hybrid` (default): autonomous first response with supervisor steering.
 
+## Supervisor-Provided Speech
+
+`instruct()` hands text to the voice agent's LLM (hybrid mode) or says it one
+message at a time (relay mode). When the supervisor already has the exact words,
+`speak()` streams them into the voice, in any mode:
+
+```python
+class MySupervisor(Supervisor):
+    async def on_transcript(self, msg: TranscriptMessage):
+        if not msg.partial:
+            played = await self.speak(my_backend.stream_sentences(msg.text))
+```
+
+- Chunks are spoken as they arrive, as one utterance: a barge-in stops all of it.
+- `speak()` returns `False` when the user cut it off. The rest of the stream is
+  then never read, and an async generator is closed, which cancels the backend
+  call it wraps.
+- A supervisor that runs in the agent's own job skips the data channel:
+  `supervisor.attach(voice_agent)` instead of `connect(url, token)`.
+- `VoiceAgent.on_supervisor_speech(handle)` runs when such an utterance starts.
+- TypeScript supervisors get the same `client.speak(...)`.
+
 ## Pre-TTS Buffering
 
 - `NONE`: send tokens immediately.

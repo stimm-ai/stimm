@@ -41,6 +41,8 @@ from stimm.protocol import (
     MetricsMessage,
     ModeMessage,
     OverrideMessage,
+    SpeechEndedMessage,
+    SpeechMessage,
     StateMessage,
     StimmProtocol,
     TranscriptMessage,
@@ -88,6 +90,8 @@ __all__ = [
     "ActionResultMessage",
     "ModeMessage",
     "OverrideMessage",
+    "SpeechMessage",
+    "SpeechEndedMessage",
     "AgentMode",
     # Provider catalog helpers
     "get_provider_catalog",

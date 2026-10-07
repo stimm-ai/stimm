@@ -16,6 +16,8 @@ export type {
   ActionResultMessage,
   ModeMessage,
   OverrideMessage,
+  SpeechMessage,
+  SpeechEndedMessage,
   AgentMode,
   VoiceAgentMessage,
   SupervisorMessage,

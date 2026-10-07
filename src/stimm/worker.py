@@ -62,6 +62,7 @@ from __future__ import annotations
 
 import asyncio
 import importlib
+import inspect
 import logging
 import os
 from collections.abc import Callable
@@ -110,6 +111,21 @@ def _load_plugin(kind: str, provider: str) -> Any:
         ) from exc
 
 
+def _construct(ctor: Any, kwargs: dict[str, Any]) -> Any:
+    """Call a plugin constructor with only the keyword arguments it takes.
+
+    ``model`` is always set (STIMM_*_MODEL has a default), yet some plugins take no
+    model (Azure, AWS, Clova and fal STT; Azure and AWS TTS) or no ``api_key``.
+    """
+    params = inspect.signature(ctor).parameters
+    if not any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values()):
+        ignored = sorted(set(kwargs) - set(params))
+        if ignored:
+            logger.warning("%s takes no %s, ignoring it", ctor.__qualname__, ", ".join(ignored))
+            kwargs = {k: v for k, v in kwargs.items() if k in params}
+    return ctor(**kwargs)
+
+
 # ---------------------------------------------------------------------------
 # Component factories — read STIMM_* env vars
 # ---------------------------------------------------------------------------
@@ -125,9 +141,6 @@ def _make_stt() -> Any:
     kwargs: dict[str, Any] = {}
     if provider == "baseten":
         kwargs["model_endpoint"] = model
-    elif provider == "fal":
-        # fal.STT has no model param (language + api_key only)
-        pass
     else:
         kwargs["model"] = model
 
@@ -143,7 +156,7 @@ def _make_stt() -> Any:
     if api_key:
         kwargs["api_key"] = api_key
 
-    return mod.STT(**kwargs)
+    return _construct(mod.STT, kwargs)
 
 
 def _make_tts() -> Any:
@@ -232,7 +245,7 @@ def _make_tts() -> Any:
     if api_key:
         kwargs["api_key"] = api_key
 
-    return tts_ctor(**kwargs)
+    return _construct(tts_ctor, kwargs)
 
 
 def _make_llm() -> Any:
@@ -250,7 +263,7 @@ def _make_llm() -> Any:
     if api_key:
         kwargs["api_key"] = api_key
 
-    return mod.LLM(**kwargs)
+    return _construct(mod.LLM, kwargs)
 
 
 # ---------------------------------------------------------------------------

@@ -93,6 +93,19 @@ def test_the_bridge_llm_is_fast_short_and_never_reasons(
     assert make_bridge_llm(Config.from_env(env)) == built
 
 
+def test_a_livekit_inference_bridge_defaults_to_gemma(monkeypatch: pytest.MonkeyPatch) -> None:
+    from livekit.agents import inference
+
+    calls: list[tuple] = []
+    monkeypatch.setattr(inference, "LLM", lambda model, **kwargs: calls.append((model, kwargs)))
+    make_bridge_llm(Config.from_env({"BRIDGE_PROVIDER": "livekit"}))
+    make_bridge_llm(Config.from_env({"BRIDGE_PROVIDER": "livekit", "BRIDGE_MODEL": "x/y"}))
+    assert calls == [
+        ("google/gemma-4-31b-it", {"extra_kwargs": FAST}),
+        ("x/y", {"extra_kwargs": FAST}),
+    ]
+
+
 def test_an_openai_compatible_bridge_needs_its_url_model_and_key() -> None:
     env = {"BRIDGE_PROVIDER": "openai-compatible", "BRIDGE_MODEL": "m", "BRIDGE_API_KEY": "k"}
     with pytest.raises(ValueError, match="BRIDGE_BASE_URL"):

@@ -6,7 +6,7 @@ import pytest
 
 from stimm.protocol import SpeechMessage
 from stimm.supervisor import Supervisor
-from stimm.voice_agent import VoiceAgent
+from stimm.voice_agent import VoiceAgent, _SpeechStream
 
 
 class _FakeHandle:
@@ -123,6 +123,18 @@ async def test_late_chunks_of_an_ended_utterance_are_dropped() -> None:
     await agent._handle_speech(SpeechMessage(speech_id="s_1", text="Late."))
 
     assert len(session.handles) == 1
+
+
+@pytest.mark.asyncio
+async def test_an_utterance_stays_ended_for_every_reader() -> None:
+    stream = _SpeechStream()
+    stream.push("Hello. ")
+    stream.close()
+
+    assert [chunk async for chunk in stream] == ["Hello. "]
+    # livekit tees it between the TTS and the transcript: the second reader asks again
+    with pytest.raises(StopAsyncIteration):
+        await asyncio.wait_for(stream.__anext__(), 1)
 
 
 @pytest.mark.asyncio

@@ -183,6 +183,9 @@ class AskSupervisor(Supervisor):
                             await self._relay("twin.results", data.get("results", []))
                         extra = {key: data[key] for key in ("reason", "truncated") if key in data}
                         done = {"mode": mode, "question": question, "answer": text, **extra}
+                        self._timeline.mark(
+                            "ask done", " ".join(str(v) for v in (mode, extra.get("reason")) if v)
+                        )
                         await self._relay("twin.done", done)
                         if mode == "degraded":  # the sources are on screen, not read out
                             rest = self._phrases.degraded

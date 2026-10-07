@@ -58,6 +58,7 @@ from stimm.providers import (
 )
 from stimm.room import StimmRoom
 from stimm.room_manager import RoomManager, SessionInfo
+from stimm.styles import CONVERSATION_STYLES, ConversationStyle
 from stimm.supervisor import Supervisor
 from stimm.voice_agent import VoiceAgent
 from stimm.worker import SupervisorFactory, make_agent, make_entrypoint
@@ -80,6 +81,9 @@ __all__ = [
     # Buffering
     "BufferingLevel",
     "TextBufferingStrategy",
+    # Conversation styles
+    "ConversationStyle",
+    "CONVERSATION_STYLES",
     # Message types
     "TranscriptMessage",
     "StateMessage",

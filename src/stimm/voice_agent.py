@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
+from collections import deque
 from typing import Any
 
 from livekit.agents import Agent
@@ -27,6 +28,13 @@ from stimm.protocol import (
     StimmProtocol,
     TranscriptMessage,
 )
+from stimm.styles import (
+    ConversationStyle,
+    StyleName,
+    bridge_messages,
+    resolve_style,
+    write_bridge,
+)
 
 logger = logging.getLogger("stimm.voice_agent")
 
@@ -38,6 +46,7 @@ class VoiceAgent(Agent):
     - Publishing transcripts and state to the supervisor via data channel
     - Accepting instructions from the supervisor and merging them into context
     - Saying supervisor-provided text verbatim, streamed, as one utterance
+    - Bridging the wait for the supervisor's answer in a conversation style (relay mode)
     - Pre-TTS text buffering for smoother speech delivery
     - Three operating modes: autonomous, relay, and hybrid
 
@@ -46,11 +55,19 @@ class VoiceAgent(Agent):
         tts: Text-to-speech plugin instance.
         vad: Voice activity detection plugin instance.
         fast_llm: The fast LLM for voice responses.
-        instructions: Base system instructions for the voice agent.
+        instructions: Base system instructions for the voice agent. With a
+            ``style``, the bridge LLM reads them too, e.g. which language to speak.
         buffering_level: Pre-TTS buffering aggressiveness.
         mode: Initial operating mode.
         supervisor_instructions_window: How many recent supervisor instructions
             to keep in the LLM context window.
+        style: In relay mode, how the voice bridges the wait for the supervisor's
+            answer: ``"direct"``, ``"transparent"``, or a
+            :class:`~stimm.ConversationStyle`. ``None`` (default): in silence.
+        bridge_llm: The livekit LLM that writes each bridge: fast, no reasoning,
+            temperature around 0.8, about 24 output tokens. Required with ``style``.
+        bridge_timeout: Seconds the bridge LLM has to start a bridge, and as long
+            again to finish it; past that, the voice says nothing.
     """
 
     def __init__(
@@ -64,7 +81,12 @@ class VoiceAgent(Agent):
         buffering_level: BufferingLevel = "MEDIUM",
         mode: AgentMode = "hybrid",
         supervisor_instructions_window: int = 5,
+        style: StyleName | ConversationStyle | None = None,
+        bridge_llm: Any = None,
+        bridge_timeout: float = 1.0,
     ) -> None:
+        if (style is None) != (bridge_llm is None):
+            raise ValueError("style and bridge_llm go together: the LLM writes the bridges")
         super().__init__(
             stt=stt,
             tts=tts,
@@ -89,6 +111,14 @@ class VoiceAgent(Agent):
         self._deferred_context_retry_interval_s = 0.5
         self._speeches: dict[str, _SpeechStream] = {}
         self._ended_speeches: set[str] = set()
+        self._style = resolve_style(style) if style is not None else None
+        self._bridge_llm = bridge_llm
+        self._bridge_timeout = bridge_timeout
+        self._bridge: asyncio.Task[None] | None = None  # writes and says the turn's bridge
+        self._bridge_handle: Any = None  # the turn's bridge, once said
+        self._bridges: deque[str] = deque(maxlen=5)  # the last ones said, to vary from
+        # What was said, for the bridge LLM. An answer is its _SpeechStream: it grows.
+        self._conversation: deque[tuple[str, str | _SpeechStream]] = deque(maxlen=6)
 
     @property
     def protocol(self) -> StimmProtocol:
@@ -118,9 +148,13 @@ class VoiceAgent(Agent):
                     asyncio.ensure_future(self._flush_deferred_context_reply_trigger())
 
             @session.on("user_state_changed")
-            def _on_user_state_changed(_ev) -> None:  # type: ignore[no-untyped-def]
+            def _on_user_state_changed(ev) -> None:  # type: ignore[no-untyped-def]
                 asyncio.ensure_future(self._flush_deferred_context_reply_trigger())
+                if getattr(ev, "new_state", None) == "speaking":
+                    self._drop_unsaid_bridge()  # the user goes on: too late for it
 
+        if self._bridge_llm is not None:
+            self._bridge_llm.prewarm()
         logger.info("VoiceAgent entered room, mode=%s", self._mode)
 
     async def on_exit(self) -> None:
@@ -128,6 +162,7 @@ class VoiceAgent(Agent):
         if self._deferred_context_retry_task and not self._deferred_context_retry_task.done():
             self._deferred_context_retry_task.cancel()
             self._deferred_context_retry_task = None
+        self._drop_unsaid_bridge()
         logger.info("VoiceAgent exiting room")
 
     # -- Transcript publishing -----------------------------------------------
@@ -180,6 +215,7 @@ class VoiceAgent(Agent):
             # In relay mode, speak exactly what the supervisor says.
             session = self._current_session()
             if session is not None:
+                self._drop_unsaid_bridge()  # the answer is first: never a bridge after it
                 await session.say(msg.text)
         elif self._mode == "hybrid":
             # In hybrid mode, incorporate into next LLM context.
@@ -239,12 +275,16 @@ class VoiceAgent(Agent):
             stream.close()
         if not new:
             return
+        if await self._bridge_cut_off():  # the user cut the turn off: its answer too
+            await self._end_speech(msg.speech_id, interrupted=True)
+            return
         try:
             handle = session.say(stream)
         except RuntimeError:  # e.g. the session is closing and schedules no new speech
             logger.warning("Cannot say supervisor speech %s", msg.speech_id, exc_info=True)
             await self._end_speech(msg.speech_id, interrupted=True)
             return
+        self._conversation.append(("You", stream))
         handle.add_done_callback(
             lambda h: asyncio.ensure_future(self._end_speech(msg.speech_id, h.interrupted))
         )
@@ -265,6 +305,68 @@ class VoiceAgent(Agent):
         ``handle`` is the livekit ``SpeechHandle`` of the utterance. Override to
         react, e.g. to drop a filler that was covering the supervisor's latency.
         """
+
+    # -- Bridging the wait for the answer (relay mode with a style) ---------
+
+    async def on_user_turn_completed(self, turn_ctx: Any, new_message: Any) -> None:
+        """Called by livekit when a user turn ends: in relay mode with a style, bridge it.
+
+        The bridge LLM writes one line in the style, said as soon as it is written.
+        A subclass that overrides this calls ``super()`` to keep the bridge.
+        """
+        question = (new_message.text_content or "").strip()
+        self._drop_unsaid_bridge()
+        self._bridge_handle = None
+        if self._style is None or not question:
+            return
+        self._conversation.append(("User", question))
+        if self._mode != "relay":
+            return
+        system, user = bridge_messages(
+            self._style,
+            instructions=self._base_instructions,
+            conversation=[(speaker, str(said)) for speaker, said in self._conversation],
+            recent=self._bridges,
+        )
+        self._bridge = asyncio.ensure_future(self._say_bridge(system, user))
+
+    async def on_bridge(self, text: str, handle: Any) -> None:
+        """Called when the voice starts saying a bridge, *text*, it wrote in its style.
+
+        ``handle`` is the livekit ``SpeechHandle`` of the bridge. The supervisor's
+        answer is said once it has played, or not at all if the user cut it off.
+        """
+
+    async def _say_bridge(self, system: str, user: str) -> None:
+        text = await write_bridge(self._bridge_llm, system, user, timeout=self._bridge_timeout)
+        session = self._current_session()
+        if not text or session is None:
+            return  # silence, never a canned line
+        try:
+            handle = session.say(text)
+        except RuntimeError:  # e.g. the session is closing and schedules no new speech
+            return
+        self._bridge_handle = handle
+        self._bridges.append(text)
+        self._conversation.append(("You", text))
+        await self.on_bridge(text, handle)
+
+    def _drop_unsaid_bridge(self) -> None:
+        """Cancel the turn's bridge if it is still being written; one being said plays on."""
+        if self._bridge is not None and self._bridge_handle is None:
+            self._bridge.cancel()
+
+    async def _bridge_cut_off(self) -> bool:
+        """Let the turn's bridge play before the answer. True if the user cut it off.
+
+        A bridge still being written is dropped: the answer is first.
+        """
+        handle = self._bridge_handle
+        if handle is None:
+            self._drop_unsaid_bridge()
+            return False
+        await handle
+        return handle.interrupted
 
     async def _sync_instructions(self) -> None:
         """Push merged supervisor context/instructions into the active LLM prompt."""
@@ -462,8 +564,14 @@ class _SpeechStream:
 
     def __init__(self) -> None:
         self._chunks: asyncio.Queue[str | None] = asyncio.Queue()
+        self._text = ""
+
+    def __str__(self) -> str:
+        """The text pushed so far."""
+        return self._text
 
     def push(self, text: str) -> None:
+        self._text += text
         self._chunks.put_nowait(text)
 
     def close(self) -> None:

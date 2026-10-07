@@ -18,6 +18,28 @@ class Agent:
         pass
 
 
+class llm:
+    """Stub of the livekit.agents.llm module: the chat context of a bridge request."""
+
+    class ChatMessage:
+        def __init__(self, role, content):
+            self.role = role
+            self.content = [content]
+
+        @property
+        def text_content(self):
+            return "\n".join(self.content)
+
+    class ChatContext:
+        def __init__(self):
+            self.items = []
+
+        def add_message(self, *, role, content):
+            message = llm.ChatMessage(role, content)
+            self.items.append(message)
+            return message
+
+
 class WorkerOptions:
     def __init__(self, **kwargs):
         pass

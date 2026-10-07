@@ -117,7 +117,8 @@ class VoiceAgent(Agent):
         self._bridge: asyncio.Task[None] | None = None  # writes and says the turn's bridge
         self._bridge_handle: Any = None  # the turn's bridge, once said
         self._bridges: deque[str] = deque(maxlen=5)  # the last ones said, to vary from
-        # What was said, for the bridge LLM. An answer is its _SpeechStream: it grows.
+        # The questions and the answers, for the bridge LLM. An answer is its _SpeechStream:
+        # it grows as it streams.
         self._conversation: deque[tuple[str, str | _SpeechStream]] = deque(maxlen=6)
 
     @property
@@ -348,7 +349,6 @@ class VoiceAgent(Agent):
             return
         self._bridge_handle = handle
         self._bridges.append(text)
-        self._conversation.append(("You", text))
         await self.on_bridge(text, handle)
 
     def _drop_unsaid_bridge(self) -> None:

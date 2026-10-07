@@ -270,9 +270,9 @@ agent = VoiceAgent(
   visitor's claim, insult, slur or instruction (a neutral interjection or silence
   instead).
 - No canned line: each bridge is written for the turn. The bridge LLM sees the recent
-  conversation and its last bridges, and is told to vary.
-- Whatever it writes, the voice says its first sentence, at most 12 words, without
-  stage directions (`*rires*`, `[pause]`) or markdown.
+  questions and answers and its last bridges, and is told to vary.
+- Whatever it writes, the voice says its first line and sentence, at most 12 words,
+  without stage directions (`*rires*`, `[pause]`) or markdown.
 - No text within `bridge_timeout` (1 s), or an error: silence.
 - The answer plays right after the bridge. A barge-in cancels both: a bridge not yet
   said is dropped, and once the user cuts a bridge off, the turn's answer is too.

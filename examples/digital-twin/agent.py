@@ -12,6 +12,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import binascii
+import contextlib
 import hashlib
 import importlib
 import json
@@ -32,12 +33,11 @@ from livekit.agents import AgentServer, AgentSession, JobContext, JobProcess, cl
 from livekit.plugins import silero
 
 # LiveKit registers a plugin when it is first imported, and only on the main thread: a job
-# runs in a thread in dev mode, so the providers the deployment selects load here, not
-# lazily in make_stt and make_tts.
-PLUGINS = {"mistral": "mistralai", "elevenlabs": "elevenlabs", "deepgram": "deepgram"}
-for _provider in {os.environ.get(f"{kind}_PROVIDER", "mistral") for kind in ("STT", "TTS")}:
-    if _provider in PLUGINS:
-        importlib.import_module(f"livekit.plugins.{PLUGINS[_provider]}")
+# runs in a thread in dev mode. Every installed provider loads here, so make_stt and make_tts
+# never import one inside a job; a missing one fails there, with its name.
+for _plugin in ("mistralai", "elevenlabs", "deepgram"):
+    with contextlib.suppress(ModuleNotFoundError):
+        importlib.import_module(f"livekit.plugins.{_plugin}")
 
 logger = logging.getLogger("digital-twin")
 

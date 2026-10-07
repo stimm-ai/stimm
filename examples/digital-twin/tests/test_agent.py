@@ -194,8 +194,10 @@ async def test_the_session_token_is_never_logged(
     assert TOKEN not in caplog.text and TOKEN not in repr(ask)
 
 
-def test_selected_providers_build_off_the_main_thread(tmp_path) -> None:
+def test_selected_providers_build_off_the_main_thread(tmp_path, monkeypatch) -> None:
     """A job runs in a thread in dev mode: the plugins must already be registered."""
+    pytest.importorskip("livekit.plugins.mistralai")
+    monkeypatch.setenv("MISTRAL_API_KEY", "test")
     sample = tmp_path / "ref.wav"
     sample.write_bytes(b"RIFF....WAVE")
     cfg = Config.from_env({"MISTRAL_API_KEY": "k", "TTS_REF_AUDIO_FR": str(sample)})

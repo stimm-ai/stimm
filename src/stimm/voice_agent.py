@@ -583,6 +583,9 @@ class _SpeechStream:
     async def __anext__(self) -> str:
         text = await self._chunks.get()
         if text is None:
+            # Ended for every reader, not just the first: livekit tees the text between
+            # the TTS and the transcript, and the second reader asks again.
+            self._chunks.put_nowait(None)
             raise StopAsyncIteration
         return text
 

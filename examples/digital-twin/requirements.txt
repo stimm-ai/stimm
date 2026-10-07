@@ -1,0 +1,7 @@
+# stimm with Supervisor.speak() (PR #29), until a release ships it. Bump with the example.
+stimm @ https://github.com/stimm-ai/stimm/archive/d6834c4dba647b0b4c4414fddc0603e985634916.tar.gz
+livekit-agents==1.8.5
+livekit-plugins-silero==1.8.5
+livekit-plugins-mistralai==1.8.5
+livekit-plugins-elevenlabs==1.8.5
+livekit-plugins-deepgram==1.8.5

@@ -128,6 +128,11 @@ jobs:
       - name: Run tests
         run: PYTHONPATH="$GITHUB_WORKSPACE:$GITHUB_WORKSPACE/src" $HOME/.local/bin/uv run pytest --cov=. --cov-report=term-missing --cov-report=xml --junitxml=test-results/junit.xml
 
+      - name: Run digital-twin example tests
+        # Against the installed livekit-agents: without the repo root on the path, the
+        # livekit/ stubs the unit tests use stay out of the way.
+        run: PYTHONPATH="$GITHUB_WORKSPACE/src" $HOME/.local/bin/uv run pytest examples/digital-twin/tests
+
       - name: Upload coverage reports
         uses: actions/upload-artifact@v7
         with:

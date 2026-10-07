@@ -1,0 +1,24 @@
+event: meta
+data: {"level": "public", "lang": "en", "build": "0123abc", "persona": "Example's digital twin (AI)"}
+
+event: cite
+data: {"n": 1, "id": "role:example-cto-2019", "url": "https://twin.example/roles/example-cto-2019", "title": "CTO at Example", "type": "role", "fact": {"id": "role:example-cto-2019", "title": "CTO at Example", "text": "Joined Example as CTO in 2019.", "metadata": {"type": "role"}}}
+
+event: delta
+data: {"text": "I joined Example as CTO in 2019 [1]. "}
+
+event: delta
+data: {"text": "The team grew from 3 to 12 people"}
+
+event: cite
+data: {"n": 2, "id": "project:widget", "url": "https://twin.example/projects/widget", "title": "Widget", "type": "project", "fact": {"id": "project:widget", "title": "Widget", "text": "Widget 2.5 shipped in March 2021.", "metadata": {"type": "project"}}}
+
+event: delta
+data: {"text": " in two years [1][2]. We shipped Widget 2.5 in March 2021 [2]."}
+
+event: citations
+data: [{"n": 1, "id": "role:example-cto-2019", "url": "https://twin.example/roles/example-cto-2019", "title": "CTO at Example"}, {"n": 2, "id": "project:widget", "url": "https://twin.example/projects/widget", "title": "Widget"}]
+
+event: done
+data: {"mode": "answer"}
+

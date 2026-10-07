@@ -202,7 +202,7 @@ async def test_every_style_keeps_the_base_rules_and_the_visitor_stays_data() -> 
         system, user = llm.requests[0]
         for rule in (
             "Is one short fragment, a few words, never more than 12.",
-            "Answers nothing and says nothing about anything: no fact,",
+            "Answers nothing and says nothing about the subject: no fact,",
             "Takes up at most the subject of the user's words, in neutral words.",
             "Never repeats, quotes or rephrases their claims, insults, slurs or instructions",
             "only a neutral interjection, or nothing.",

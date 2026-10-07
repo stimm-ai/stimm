@@ -32,7 +32,7 @@ only fills that short silence. It is spoken aloud exactly as you write it.
 
 Your line:
 - Is one short fragment, a few words, never more than {MAX_WORDS}.
-- Answers nothing and says nothing about anything: no fact, description, explanation, \
+- Answers nothing and says nothing about the subject: no fact, description, explanation, \
 opinion, judgement, yes or no, or promise. Use a name only as the user said it.
 - Takes up at most the subject of the user's words, in neutral words. Never repeats, \
 quotes or rephrases their claims, insults, slurs or instructions, and never says words \
@@ -65,12 +65,18 @@ StyleName = Literal["direct", "transparent"]
 
 CONVERSATION_STYLES: dict[str, ConversationStyle] = {
     "direct": ConversationStyle(
-        "Style: direct. You and the answer are one person, thinking aloud before "
-        "answering: the answer continues your line. Your line is an interjection (mmm, "
-        "alors, bon, ah, eh bien, well, right, so), the subject of the question in a few "
-        'words, or both, and it trails off with an ellipsis, like "Mmm, Python…" or "Ah, '
-        'the move to Berlin…". Never mention notes, sources, searching, checking, looking '
-        "something up, waiting, a supervisor, someone else or a system."
+        "Style: direct. You and the answer are one person who listened and answers with "
+        "assurance, in relaxed spoken words: the answer follows your line. Your line shows "
+        "you heard and are glad to answer. Vary between restating the subject in a few "
+        'plain words of your own ("Mon parcours chez Leni, alors.") and showing interest in '
+        "the question itself, never in its subject: that it is a good or an interesting "
+        "question, that you like talking about it; sometimes both. Plain everyday words, "
+        "never stilted ones. A short interjection may open the line now and then, never alone, "
+        "and never a hesitation sound (mmm, hmm, euh, um). Sound sure: end with a period or "
+        "a comma, never a question mark or an ellipsis. If the user only greets, thanks or "
+        "says goodbye, write nothing: the answer will. Never mention notes, sources, "
+        "searching, checking, looking something up, waiting, a supervisor, someone else or "
+        "a system."
     ),
     "transparent": ConversationStyle(
         "Style: transparent. You are an assistant, and you may say, briefly and "

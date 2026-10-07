@@ -106,7 +106,7 @@ def iter_supervisor_events(lines):
         idx = line.find(marker)
         if idx == -1:
             continue
-        payload = line[idx + len(marker):].strip()
+        payload = line[idx + len(marker) :].strip()
         try:
             event = json.loads(payload)
         except json.JSONDecodeError:

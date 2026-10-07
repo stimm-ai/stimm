@@ -11,7 +11,7 @@ jobs:
     if: startsWith(github.ref_name, 'stimm-v')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Verify Python version matches tag
         run: |
           TAG="${GITHUB_REF_NAME#stimm-v}"   # e.g. "0.2.0"
@@ -38,8 +38,8 @@ jobs:
     permissions:
       id-token: write  # For trusted publishing
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - run: pip install build
@@ -54,10 +54,10 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Log in to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -68,7 +68,7 @@ jobs:
         run: echo "version=${GITHUB_REF_NAME#stimm-v}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: docker/agent
           push: true
@@ -80,7 +80,7 @@ jobs:
     if: startsWith(github.ref_name, 'protocol-v')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Verify npm version matches tag
         run: |
           TAG="${GITHUB_REF_NAME#protocol-v}"   # e.g. "0.2.0"
@@ -104,8 +104,8 @@ jobs:
       id-token: write  # Required for npm OIDC trusted publishing
       contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"

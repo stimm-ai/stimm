@@ -131,12 +131,7 @@ class TestStimmProtocol:
         proto.on_transcript(handler)
         assert len(proto._handlers.get("transcript", [])) == 1
 
-    def test_unbound_send_warns(self) -> None:
+    async def test_unbound_send_warns(self) -> None:
         """Sending on an unbound protocol should not raise."""
         proto = StimmProtocol()
-        # _send is async but we can check it doesn't crash when unbound
-        import asyncio
-
-        asyncio.get_event_loop().run_until_complete(
-            proto.send_transcript(TranscriptMessage(partial=True, text="test", timestamp=0))
-        )
+        await proto.send_transcript(TranscriptMessage(partial=True, text="test", timestamp=0))

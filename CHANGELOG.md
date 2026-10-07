@@ -20,6 +20,11 @@
 * **worker:** pass a provider plugin only the arguments it takes ([#28](https://github.com/stimm-ai/stimm/issues/28)) ([bf234f0](https://github.com/stimm-ai/stimm/commit/bf234f0d13da870ace34759c7146e816e1f30678))
 
 
+### Dependencies
+
+* bump livekit-agents and plugins to 1.8, refresh the lock and CI actions ([#25](https://github.com/stimm-ai/stimm/issues/25)) ([c45f435](https://github.com/stimm-ai/stimm/commit/c45f43572b7e5f6e7dc082a7974e20d601ffa46c))
+
+
 ### Documentation
 
 * **website:** add Signal landing page at the site root ([de1dfc8](https://github.com/stimm-ai/stimm/commit/de1dfc816d9d1984b4613ec7caaa5f62ecc54282))

@@ -1,12 +1,5 @@
 # Changelog
 
-## [0.1.4](https://github.com/stimm-ai/stimm/compare/protocol-v0.1.3...protocol-v0.1.4) (2026-10-07)
-
-
-### Features
-
-* supervisor-provided speech ([#29](https://github.com/stimm-ai/stimm/issues/29)) ([d6834c4](https://github.com/stimm-ai/stimm/commit/d6834c4dba647b0b4c4414fddc0603e985634916))
-
 ## [0.1.3](https://github.com/stimm-ai/stimm/compare/protocol-v0.1.2...protocol-v0.1.3) (2026-02-26)
 
 

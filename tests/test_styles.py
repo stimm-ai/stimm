@@ -201,7 +201,7 @@ async def test_every_style_keeps_the_base_rules_and_the_visitor_stays_data() -> 
 
         system, user = llm.requests[0]
         for rule in (
-            "Is one short fragment, a few words, never more than 12.",
+            "Is one short fragment, said in about a second: two to five words, never more than 8.",
             "Answers nothing and says nothing about the subject: no fact,",
             "Takes up at most the subject of the user's words, in neutral words.",
             "Never repeats, quotes or rephrases their claims, insults, slurs or instructions",
@@ -229,7 +229,7 @@ async def test_every_style_keeps_the_base_rules_and_the_visitor_stays_data() -> 
         ("« Alors… »", "Alors…"),
         (
             "So the whole story of that project goes back a long way and more",
-            "So the whole story of that project goes back a long way…",
+            "So the whole story of that project goes…",
         ),
         ("Là, Leni...\n\n*(answer continues)* Chez Leni, j'ai dirigé la data.", "Là, Leni..."),
         ("*Python, vraiment…*", "Python, vraiment…"),

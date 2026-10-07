@@ -22,7 +22,7 @@ from livekit.agents import llm
 logger = logging.getLogger("stimm.styles")
 
 #: The guard on every bridge, whatever the LLM wrote: its first sentence, at most this many words.
-MAX_WORDS = 12
+MAX_WORDS = 8
 
 #: The rules every style keeps.
 BASE_INSTRUCTIONS = f"""\
@@ -31,7 +31,7 @@ being prepared, and it will be spoken right after your line, in the same voice. 
 only fills that short silence. It is spoken aloud exactly as you write it.
 
 Your line:
-- Is one short fragment, a few words, never more than {MAX_WORDS}.
+- Is one short fragment, said in about a second: two to five words, never more than {MAX_WORDS}.
 - Answers nothing and says nothing about the subject: no fact, description, explanation, \
 opinion, judgement, yes or no, or promise. Use a name only as the user said it.
 - Takes up at most the subject of the user's words, in neutral words. Never repeats, \

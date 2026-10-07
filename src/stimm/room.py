@@ -368,17 +368,18 @@ class StimmRoom:
         """
         from livekit import api as lkapi
 
-        token = lkapi.AccessToken(self._api_key, self._api_secret)
-        token.identity = identity
-        token.ttl = timedelta(seconds=ttl_seconds)
-
-        grant = lkapi.VideoGrants(
-            room_join=True,
-            room=self._room_name,
-            can_publish=can_publish,
-            can_subscribe=can_subscribe,
-            can_publish_data=can_publish_data,
+        return (
+            lkapi.AccessToken(self._api_key, self._api_secret)
+            .with_identity(identity)
+            .with_ttl(timedelta(seconds=ttl_seconds))
+            .with_grants(
+                lkapi.VideoGrants(
+                    room_join=True,
+                    room=self._room_name,
+                    can_publish=can_publish,
+                    can_subscribe=can_subscribe,
+                    can_publish_data=can_publish_data,
+                )
+            )
+            .to_jwt()
         )
-        token.video_grant = grant
-
-        return token.to_jwt()

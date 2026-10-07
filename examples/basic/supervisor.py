@@ -16,6 +16,7 @@ Environment:
 import asyncio
 import logging
 import os
+from datetime import timedelta
 
 from stimm import BeforeSpeakMessage, MetricsMessage, Supervisor, TranscriptMessage
 
@@ -77,18 +78,20 @@ async def main() -> None:
     api_secret = os.environ.get("LIVEKIT_API_SECRET", "secret")
 
     # Generate a data-only token for the supervisor
-    token = lkapi.AccessToken(api_key, api_secret)
-    token.identity = "stimm-supervisor"
-    token.ttl = 3600
-
-    grant = lkapi.VideoGrants(
-        room_join=True,
-        room="stimm-demo",
-        can_publish=False,  # No audio — data only
-        can_subscribe=True,
-        can_publish_data=True,
+    token = (
+        lkapi.AccessToken(api_key, api_secret)
+        .with_identity("stimm-supervisor")
+        .with_ttl(timedelta(hours=1))
+        .with_grants(
+            lkapi.VideoGrants(
+                room_join=True,
+                room="stimm-demo",
+                can_publish=False,  # No audio — data only
+                can_subscribe=True,
+                can_publish_data=True,
+            )
+        )
     )
-    token.video_grant = grant
 
     supervisor = DemoSupervisor()
     await supervisor.connect(url, token.to_jwt())

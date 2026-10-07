@@ -39,6 +39,7 @@ import type {
   ActionResultMessage,
   ModeMessage,
   OverrideMessage,
+  SpeechEndedMessage,
   StimmMessage,
 } from "./messages.js";
 
@@ -53,6 +54,7 @@ type VoiceAgentEventMap = {
   state: StateMessage;
   before_speak: BeforeSpeakMessage;
   metrics: MetricsMessage;
+  speech_ended: SpeechEndedMessage;
 };
 
 type VoiceAgentEvent = keyof VoiceAgentEventMap;
@@ -79,6 +81,7 @@ export class StimmSupervisorClient {
   private url: string;
   private token: string;
   private handlers: Map<string, Array<EventHandler<any>>> = new Map();
+  private speeches: Map<string, (interrupted: boolean) => void> = new Map();
   private _connected = false;
 
   constructor(options: StimmSupervisorClientOptions) {
@@ -141,6 +144,9 @@ export class StimmSupervisorClient {
     try {
       const text = new TextDecoder().decode(payload);
       const msg = JSON.parse(text) as StimmMessage;
+      if (msg.type === "speech_ended") {
+        this.speeches.get(msg.speech_id)?.(msg.interrupted);
+      }
       const handlers = this.handlers.get(msg.type) ?? [];
       for (const handler of handlers) {
         Promise.resolve(handler(msg)).catch((err) => {
@@ -169,6 +175,49 @@ export class StimmSupervisorClient {
     await this.send({ type: "instruction", ...msg });
   }
 
+  /**
+   * Have the voice agent say `text` verbatim, as one interruptible utterance.
+   *
+   * Unlike `instruct()`, this bypasses the voice agent's LLM in every mode, and
+   * an async iterable is streamed: each chunk is spoken as soon as it arrives.
+   * Resolves `true` once the utterance has played to the end, or `false` if it
+   * was cut off. The rest of `text` is then never read: its iterator is returned.
+   */
+  async speak(text: string | AsyncIterable<string>): Promise<boolean> {
+    const speechId = `s_${Math.random().toString(36).slice(2, 14)}`;
+    const ended = new Promise<boolean>((resolve) => this.speeches.set(speechId, resolve));
+    const cutOff = ended.then(() => null);
+    const iterator = (typeof text === "string" ? once(text) : text)[Symbol.asyncIterator]();
+    const sendFinal = () =>
+      this.send({ type: "speech", speech_id: speechId, text: "", final: true });
+    try {
+      for (;;) {
+        let next: IteratorResult<string> | null;
+        try {
+          next = await Promise.race([iterator.next(), cutOff]);
+        } catch (err) {
+          await sendFinal();
+          throw err;
+        }
+        if (next === null) {
+          // Not awaited: an async generator answers return() only after its pending next().
+          iterator.return?.()?.catch(() => undefined);
+          break;
+        }
+        if (next.done) {
+          await sendFinal();
+          break;
+        }
+        if (next.value) {
+          await this.send({ type: "speech", speech_id: speechId, text: next.value, final: false });
+        }
+      }
+      return !(await ended);
+    } finally {
+      this.speeches.delete(speechId);
+    }
+  }
+
   /** Add context to the voice agent's working memory. */
   async addContext(msg: Omit<ContextMessage, "type">): Promise<void> {
     await this.send({ type: "context", ...msg });
@@ -190,4 +239,8 @@ export class StimmSupervisorClient {
   async override(msg: Omit<OverrideMessage, "type">): Promise<void> {
     await this.send({ type: "override", ...msg });
   }
+}
+
+async function* once(text: string): AsyncGenerator<string> {
+  yield text;
 }

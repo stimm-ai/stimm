@@ -10,8 +10,12 @@ supervision logic.
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import logging
-from typing import Any
+from collections.abc import AsyncIterable, AsyncIterator
+from typing import TYPE_CHECKING, Any
+from uuid import uuid4
 
 from stimm.protocol import (
     ActionResultMessage,
@@ -21,10 +25,15 @@ from stimm.protocol import (
     InstructionMessage,
     MetricsMessage,
     OverrideMessage,
+    SpeechEndedMessage,
+    SpeechMessage,
     StateMessage,
     StimmProtocol,
     TranscriptMessage,
 )
+
+if TYPE_CHECKING:
+    from stimm.voice_agent import VoiceAgent
 
 logger = logging.getLogger("stimm.supervisor")
 
@@ -55,6 +64,7 @@ class Supervisor:
         self._room = room
         self._protocol = StimmProtocol()
         self._connected = False
+        self._speeches: dict[str, asyncio.Future[bool]] = {}
 
     @property
     def protocol(self) -> StimmProtocol:
@@ -87,15 +97,27 @@ class Supervisor:
 
         await self._room.connect(url, token)
         self._protocol.bind(self._room)
+        self._register_handlers()
+        self._connected = True
+        logger.info("Supervisor connected to room")
 
-        # Register protocol handlers → dispatch to overridable on_* methods
+    def attach(self, voice_agent: VoiceAgent) -> None:
+        """Supervise *voice_agent* from its own process, without joining the room.
+
+        Messages go straight between the two protocols. Use this instead of
+        :meth:`connect` when the supervisor runs in the voice agent's job.
+        """
+        self._protocol.link(voice_agent.protocol)
+        self._register_handlers()
+        self._connected = True
+
+    def _register_handlers(self) -> None:
+        # Protocol messages → overridable on_* methods
         self._protocol.on_transcript(self.on_transcript)
         self._protocol.on_state(self.on_state_change)
         self._protocol.on_before_speak(self.on_before_speak)
         self._protocol.on_metrics(self.on_metrics)
-
-        self._connected = True
-        logger.info("Supervisor connected to room")
+        self._protocol.on_speech_ended(self._handle_speech_ended)
 
     async def disconnect(self) -> None:
         """Disconnect from the room."""
@@ -153,6 +175,51 @@ class Supervisor:
             InstructionMessage(text=text, speak=speak, priority=priority)  # type: ignore[arg-type]
         )
 
+    async def speak(self, text: str | AsyncIterable[str]) -> bool:
+        """Have the voice agent say *text* verbatim, as one interruptible utterance.
+
+        Unlike :meth:`instruct`, this bypasses the voice agent's LLM in every mode,
+        and an async iterable is streamed: each chunk is spoken as soon as it
+        arrives. Returns ``True`` once the utterance has played to the end, or
+        ``False`` if it was cut off. The rest of *text* is then never read, and an
+        async generator is closed, which cancels whatever it was streaming from.
+        """
+        if not self._connected:
+            raise RuntimeError("connect() or attach() the supervisor before speak()")
+        speech_id = f"s_{uuid4().hex[:12]}"
+        ended = asyncio.get_running_loop().create_future()
+        self._speeches[speech_id] = ended
+
+        async def send_all() -> None:
+            try:
+                async with contextlib.aclosing(_chunks(text)) as chunks:
+                    async for chunk in chunks:
+                        if chunk:
+                            await self._protocol.send_speech(
+                                SpeechMessage(speech_id=speech_id, text=chunk)
+                            )
+            finally:
+                if not ended.done():  # done, failed or cancelled: close the utterance
+                    await self._protocol.send_speech(SpeechMessage(speech_id=speech_id, final=True))
+
+        sender = asyncio.ensure_future(send_all())
+        try:
+            await asyncio.wait([sender, ended], return_when=asyncio.FIRST_COMPLETED)
+            if sender.done():
+                sender.result()  # surface an error raised by *text*
+            return not await ended
+        finally:
+            self._speeches.pop(speech_id, None)
+            if not sender.done():  # cut off, or speak() itself was cancelled
+                sender.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await sender
+
+    async def _handle_speech_ended(self, msg: SpeechEndedMessage) -> None:
+        ended = self._speeches.get(msg.speech_id)
+        if ended is not None and not ended.done():
+            ended.set_result(msg.interrupted)
+
     async def add_context(self, text: str, *, append: bool = True) -> None:
         """Add context to the voice agent's working memory.
 
@@ -198,3 +265,18 @@ class Supervisor:
         await self._protocol.send_override(
             OverrideMessage(turn_id=turn_id, replacement=replacement)
         )
+
+
+async def _chunks(text: str | AsyncIterable[str]) -> AsyncIterator[str]:
+    """Iterate *text* as chunks, closing the source when the caller stops early."""
+    if isinstance(text, str):
+        yield text
+        return
+    source = aiter(text)
+    try:
+        async for chunk in source:
+            yield chunk
+    finally:
+        aclose = getattr(source, "aclose", None)
+        if aclose is not None:
+            await aclose()

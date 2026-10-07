@@ -1,5 +1,6 @@
 """Tests for the stimm protocol message types and serialization."""
 
+import asyncio
 import json
 
 from stimm.protocol import (
@@ -11,6 +12,8 @@ from stimm.protocol import (
     MetricsMessage,
     ModeMessage,
     OverrideMessage,
+    SpeechEndedMessage,
+    SpeechMessage,
     StateMessage,
     StimmProtocol,
     TranscriptMessage,
@@ -99,6 +102,8 @@ class TestMessageTypeRegistry:
             "action_result",
             "mode",
             "override",
+            "speech",
+            "speech_ended",
         }
         assert set(_MESSAGE_TYPES.keys()) == expected
 
@@ -113,6 +118,8 @@ class TestMessageTypeRegistry:
             "action_result": {"action": "a", "status": "ok", "summary": "done"},
             "mode": {"mode": "relay"},
             "override": {"turn_id": "t_001", "replacement": "new"},
+            "speech": {"speech_id": "s_1", "text": "Hello."},
+            "speech_ended": {"speech_id": "s_1", "interrupted": True},
         }
         for msg_type, fields in samples.items():
             cls = _MESSAGE_TYPES[msg_type]
@@ -130,6 +137,23 @@ class TestStimmProtocol:
 
         proto.on_transcript(handler)
         assert len(proto._handlers.get("transcript", [])) == 1
+
+    async def test_link_delivers_in_process_both_ways(self) -> None:
+        agent_side, supervisor_side = StimmProtocol(), StimmProtocol()
+        agent_side.link(supervisor_side)
+        received: list[object] = []
+
+        async def collect(msg: object) -> None:
+            received.append(msg)
+
+        agent_side.on_speech(collect)
+        supervisor_side.on_speech_ended(collect)
+
+        await supervisor_side.send_speech(SpeechMessage(speech_id="s_1", text="Hi."))
+        await agent_side.send_speech_ended(SpeechEndedMessage(speech_id="s_1"))
+        await asyncio.sleep(0)
+
+        assert [m.type for m in received] == ["speech", "speech_ended"]  # type: ignore[attr-defined]
 
     async def test_unbound_send_warns(self) -> None:
         """Sending on an unbound protocol should not raise."""

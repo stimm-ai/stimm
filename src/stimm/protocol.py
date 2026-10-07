@@ -64,6 +64,18 @@ class MetricsMessage(BaseModel):
     total_ms: float = 0.0
 
 
+class SpeechEndedMessage(BaseModel):
+    """A supervisor utterance (see :class:`SpeechMessage`) is over.
+
+    ``interrupted`` is true when it did not play to the end: the user cut it off,
+    a new turn replaced it, or the voice agent had no session to speak in.
+    """
+
+    type: Literal["speech_ended"] = "speech_ended"
+    speech_id: str
+    interrupted: bool = False
+
+
 # ---------------------------------------------------------------------------
 # Supervisor → VoiceAgent messages
 # ---------------------------------------------------------------------------
@@ -112,6 +124,19 @@ class OverrideMessage(BaseModel):
     replacement: str
 
 
+class SpeechMessage(BaseModel):
+    """Text for the voice agent to say verbatim, without going through its LLM.
+
+    Chunks that share a ``speech_id`` form one utterance, spoken as they arrive
+    and interrupted as a whole. ``final`` closes the utterance.
+    """
+
+    type: Literal["speech"] = "speech"
+    speech_id: str
+    text: str = ""
+    final: bool = False
+
+
 # ---------------------------------------------------------------------------
 # Union of all message types
 # ---------------------------------------------------------------------------
@@ -121,11 +146,13 @@ StimmMessage = (
     | StateMessage
     | BeforeSpeakMessage
     | MetricsMessage
+    | SpeechEndedMessage
     | InstructionMessage
     | ContextMessage
     | ActionResultMessage
     | ModeMessage
     | OverrideMessage
+    | SpeechMessage
 )
 
 _MESSAGE_TYPES: dict[str, type[BaseModel]] = {
@@ -133,11 +160,13 @@ _MESSAGE_TYPES: dict[str, type[BaseModel]] = {
     "state": StateMessage,
     "before_speak": BeforeSpeakMessage,
     "metrics": MetricsMessage,
+    "speech_ended": SpeechEndedMessage,
     "instruction": InstructionMessage,
     "context": ContextMessage,
     "action_result": ActionResultMessage,
     "mode": ModeMessage,
     "override": OverrideMessage,
+    "speech": SpeechMessage,
 }
 
 # Callback type for message handlers
@@ -160,6 +189,7 @@ class StimmProtocol:
     def __init__(self) -> None:
         self._handlers: dict[str, list[MessageHandler]] = {}
         self._room: Any | None = None  # livekit.rtc.Room (lazy import)
+        self._peer: StimmProtocol | None = None
 
     def bind(self, room: Any) -> None:
         """Bind to a LiveKit room's data channel.
@@ -170,6 +200,15 @@ class StimmProtocol:
         self._room = room
         room.on("data_received", self._on_data)
         logger.debug("StimmProtocol bound to room")
+
+    def link(self, peer: StimmProtocol) -> None:
+        """Exchange messages with *peer* in-process instead of over a room.
+
+        For a supervisor that runs in the voice agent's process: nothing joins
+        the room and nothing crosses the network.
+        """
+        self._peer = peer
+        peer._peer = self
 
     def _on_data(self, data: Any) -> None:
         """Handle incoming data channel packet."""
@@ -189,8 +228,10 @@ class StimmProtocol:
             logger.exception("Failed to deserialize stimm message")
             return
 
-        handlers = self._handlers.get(msg_type, [])  # type: ignore[arg-type]
-        for handler in handlers:
+        self._dispatch(msg)  # type: ignore[arg-type]
+
+    def _dispatch(self, msg: StimmMessage) -> None:
+        for handler in self._handlers.get(msg.type, []):
             asyncio.ensure_future(handler(msg))
 
     # -- Registration helpers ------------------------------------------------
@@ -225,9 +266,18 @@ class StimmProtocol:
     def on_override(self, handler: MessageHandler) -> None:
         self._on("override", handler)
 
+    def on_speech(self, handler: MessageHandler) -> None:
+        self._on("speech", handler)
+
+    def on_speech_ended(self, handler: MessageHandler) -> None:
+        self._on("speech_ended", handler)
+
     # -- Send helpers --------------------------------------------------------
 
-    async def _send(self, msg: BaseModel) -> None:
+    async def _send(self, msg: StimmMessage) -> None:
+        if self._peer is not None:
+            self._peer._dispatch(msg)
+            return
         if not self._room:
             logger.warning("Cannot send — protocol not bound to a room")
             return
@@ -263,4 +313,10 @@ class StimmProtocol:
         await self._send(ModeMessage(mode=mode))
 
     async def send_override(self, msg: OverrideMessage) -> None:
+        await self._send(msg)
+
+    async def send_speech(self, msg: SpeechMessage) -> None:
+        await self._send(msg)
+
+    async def send_speech_ended(self, msg: SpeechEndedMessage) -> None:
         await self._send(msg)

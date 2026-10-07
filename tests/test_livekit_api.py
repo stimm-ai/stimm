@@ -30,6 +30,10 @@ assert {"room", "room_options", "room_input_options"} <= set(
     inspect.signature(AgentSession.start).parameters)
 assert {"instructions", "input_modality"} <= set(
     inspect.signature(AgentSession.generate_reply).parameters)
+# supervisor-provided speech: say() a text stream, then watch the handle
+from livekit.agents.voice import SpeechHandle
+assert "AsyncIterable" in str(inspect.signature(AgentSession.say).parameters["text"].annotation)
+assert callable(SpeechHandle.add_done_callback) and isinstance(SpeechHandle.interrupted, property)
 assert "rtc_config" in inspect.signature(JobContext.connect).parameters
 RtcConfiguration(ice_transport_type=IceTransportType.TRANSPORT_ALL)
 assert callable(silero.VAD.load)

@@ -71,6 +71,11 @@ class Config:
     keyterms: list[str]
     tts_provider: str
     tts_model: str
+    tts_stability: float
+    tts_similarity: float
+    tts_style: float
+    tts_speed: float | None
+    character_url: str
     bridge_provider: str
     bridge_model: str
     bridge_base_url: str
@@ -92,6 +97,11 @@ class Config:
             keyterms=[t.strip() for t in env.get("STT_KEYTERMS", "").split(",") if t.strip()],
             tts_provider=env.get("TTS_PROVIDER", "mistral"),
             tts_model=env.get("TTS_MODEL", ""),
+            tts_stability=float(env.get("TTS_STABILITY", "0.3")),
+            tts_similarity=float(env.get("TTS_SIMILARITY", "0.75")),
+            tts_style=float(env.get("TTS_STYLE", "0.2")),
+            tts_speed=float(env["TTS_SPEED"]) if env.get("TTS_SPEED") else None,
+            character_url=env.get("CHARACTER_URL", "https://mcp.etiennelescot.fr/api/v1/character"),
             bridge_provider=env.get("BRIDGE_PROVIDER", "mistral"),
             bridge_model=env.get("BRIDGE_MODEL", ""),
             bridge_base_url=env.get("BRIDGE_BASE_URL", ""),
@@ -180,8 +190,22 @@ def make_tts(cfg: Config, lang: str) -> Any:
     if cfg.tts_provider == "elevenlabs":
         from livekit.plugins import elevenlabs
 
+        # Lower stability than ElevenLabs' 0.5: a more expressive voice. eleven_v3/v4 models go
+        # through text-to-dialogue, where livekit-plugins-elevenlabs 1.8.5 sends stability only
+        # (and logs that it drops the rest); similarity 0.75 is that API's default anyway.
+        settings = elevenlabs.VoiceSettings(
+            stability=cfg.tts_stability,
+            similarity_boost=cfg.tts_similarity,
+            style=cfg.tts_style,
+            **({"speed": cfg.tts_speed} if cfg.tts_speed is not None else {}),
+        )
         kwargs = {"voice_id": voice} if voice else {}
-        return elevenlabs.TTS(model=cfg.tts_model or "eleven_flash_v2_5", language=lang, **kwargs)
+        return elevenlabs.TTS(
+            model=cfg.tts_model or "eleven_flash_v2_5",
+            language=lang,
+            voice_settings=settings,
+            **kwargs,
+        )
     raise ValueError(f"TTS_PROVIDER must be mistral or elevenlabs: {cfg.tts_provider}")
 
 
@@ -220,6 +244,59 @@ def make_bridge_llm(cfg: Config) -> Any:
         return inference.LLM(model=model, extra_kwargs=options)
     raise ValueError(
         f"BRIDGE_PROVIDER must be mistral, openai-compatible or livekit: {cfg.bridge_provider}"
+    )
+
+
+# The character per language, fetched once per worker process: every session reads the same.
+_characters: dict[str, str] = {}
+
+
+async def character_instructions(url: str, lang: str) -> str:
+    """How the person sounds, for the bridge LLM: their `interaction` primitives.
+
+    Best effort: ``""`` without a URL, or if the backend does not answer within a second
+    and a half; the twin then bridges in the style alone. Only an answer is cached, so a
+    later session tries again.
+    """
+    if not url:
+        return ""
+    if lang in _characters:
+        return _characters[lang]
+    try:
+        async with aiohttp.ClientSession() as http:
+            async with http.get(
+                url, params={"lang": lang}, timeout=aiohttp.ClientTimeout(total=1.5)
+            ) as response:
+                response.raise_for_status()
+                entries = (await response.json())["character"]
+    except Exception as exc:
+        logger.warning("no character: %s", type(exc).__name__)
+        return ""
+    _characters[lang] = render_character(entries)
+    return _characters[lang]
+
+
+def render_character(entries: list[dict[str, Any]]) -> str:
+    """The `interaction` primitives as a description of how to sound, never lines to say."""
+    lines = []
+    for entry in entries:
+        if entry.get("kind") != "interaction" or not entry.get("statement"):
+            continue
+        line = f"- {entry['statement']}"
+        if samples := entry.get("calibration"):
+            line += " (register: " + ", ".join(f"«{s}»" for s in samples) + ")"
+        lines.append(line)
+    if not lines:
+        return ""
+    return "\n".join(
+        [
+            "Character: how the person whose voice you are sounds. It colours the tone and the "
+            "words of your line, nothing more: every rule above still holds, so your line stays "
+            "short and says nothing about the subject.",
+            *lines,
+            "The samples in brackets only show a register: never say them, as written or "
+            "nearly, and never describe the character.",
+        ]
     )
 
 
@@ -314,13 +391,14 @@ async def entrypoint(ctx: JobContext) -> None:
     phrases = cfg.phrases(lang)
     vad = ctx.proc.userdata["vad"]
     timeline = Timeline()
+    character = await character_instructions(cfg.character_url, lang)
 
     agent = TwinAgent(
         stt=make_stt(cfg, lang, vad),
         tts=make_tts(cfg, lang),
         vad=vad,
         bridge_llm=make_bridge_llm(cfg),
-        instructions=f"Always speak {LANGUAGES[lang]}.",
+        instructions="\n\n".join(filter(None, [f"Always speak {LANGUAGES[lang]}.", character])),
         closing=phrases.closing,
         timeline=timeline,
     )

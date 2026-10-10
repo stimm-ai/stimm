@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.1.15](https://github.com/stimm-ai/stimm/compare/stimm-v0.1.14...stimm-v0.1.15) (2026-10-10)
+
+
+### Features
+
+* conversation styles for the relay voice ([#34](https://github.com/stimm-ai/stimm/issues/34)) ([9eb001f](https://github.com/stimm-ai/stimm/commit/9eb001f6d396e359a42c59d0013a3612ec905679))
+* **digital-twin:** the bridge sounds like the person, in a more expressive voice ([#41](https://github.com/stimm-ai/stimm/issues/41)) ([5d7316b](https://github.com/stimm-ai/stimm/commit/5d7316b3513848b1121429a767add183f04f6036))
+* direct style restates and welcomes with assurance ([#39](https://github.com/stimm-ai/stimm/issues/39)) ([9ecd4ae](https://github.com/stimm-ai/stimm/commit/9ecd4aefd1c0815b93a43d5282fe6130aec54763))
+* **examples:** digital twin bridge on LiveKit Inference (default google/gemma-4-31b-it) ([#38](https://github.com/stimm-ai/stimm/issues/38)) ([cd10e18](https://github.com/stimm-ai/stimm/commit/cd10e18158ffeda3b47cc1af61b4f5987d066708))
+* **examples:** digital twin bridges each turn in the direct style ([#35](https://github.com/stimm-ai/stimm/issues/35)) ([268a60a](https://github.com/stimm-ai/stimm/commit/268a60a5bef8f7e9b40532ddcb8de1a4adcc0c96))
+
+
+### Bug Fixes
+
+* **examples:** digital-twin registers its voice plugins on the main thread ([#33](https://github.com/stimm-ai/stimm/issues/33)) ([cc35ee4](https://github.com/stimm-ai/stimm/commit/cc35ee441deb9c662ac0362a4ee1ccd08f7d402c))
+* say a supervisor answer to its end, even when it was ready before say() ([#36](https://github.com/stimm-ai/stimm/issues/36)) ([9ade010](https://github.com/stimm-ai/stimm/commit/9ade0101b610987e35b21bfb791c0b1054097d39))
+* the bridge always speaks; the twin's visitor interrupts on voice activity ([#40](https://github.com/stimm-ai/stimm/issues/40)) ([9ed9d12](https://github.com/stimm-ai/stimm/commit/9ed9d12d4526c7ca3437192080c4d86f7b4089ec))
+
 ## [0.1.14](https://github.com/stimm-ai/stimm/compare/stimm-v0.1.13...stimm-v0.1.14) (2026-10-07)
 
 

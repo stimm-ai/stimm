@@ -1,5 +1,5 @@
-# stimm with conversation styles (#34) and the full answer after the bridge (#36), until a release ships them. Bump with the example.
-stimm @ https://github.com/stimm-ai/stimm/archive/9ade0101b610987e35b21bfb791c0b1054097d39.tar.gz
+# stimm at the main commit the example was last deployed from. Bump with the example.
+stimm @ https://github.com/stimm-ai/stimm/archive/5d7316b3513848b1121429a767add183f04f6036.tar.gz
 livekit-agents==1.8.5
 livekit-plugins-silero==1.8.5
 livekit-plugins-mistralai==1.8.5

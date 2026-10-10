@@ -7,11 +7,13 @@ import logging
 import threading
 from types import SimpleNamespace
 
+import agent
 import aiohttp
 import pytest
 from agent import (
     DEFAULT_PHRASES,
     Config,
+    character_instructions,
     leave_when_alone,
     limit_duration,
     make_bridge_llm,
@@ -270,3 +272,93 @@ def test_selected_providers_build_off_the_main_thread(tmp_path, monkeypatch) -> 
     thread.start()
     thread.join()
     assert errors == []
+
+
+CHARACTER = [
+    {
+        "id": "character:registre",
+        "kind": "interaction",
+        "label": "Registre",
+        "statement": "Le registre suit celui du visiteur.",
+        "url": "u",
+    },
+    {
+        "id": "character:lexique",
+        "kind": "interaction",
+        "label": "Lexique",
+        "statement": "Lexique parlé, exclamations courtes.",
+        "calibration": ["Ah ça c'est cool"],
+        "url": "u",
+    },
+    {"id": "character:gpu", "kind": "preference", "statement": "Aime les GPU.", "valence": "like"},
+]
+
+
+class Character(Answer):
+    def raise_for_status(self) -> None:
+        if self.status >= 300:
+            raise aiohttp.ClientResponseError(None, (), status=self.status)  # type: ignore[arg-type]
+
+    async def json(self) -> dict:
+        return {"character": CHARACTER}
+
+
+def serve_character(monkeypatch: pytest.MonkeyPatch, status: int | None) -> list[dict]:
+    """Answer the character GETs with `status`, or fail to connect when None."""
+    monkeypatch.setattr(agent, "_characters", {})
+    requests: list[dict] = []
+
+    def get(self, url, **kwargs):  # type: ignore[no-untyped-def]
+        requests.append({"url": url, **kwargs})
+        if status is None:
+            raise aiohttp.ClientConnectionError("connection refused")
+        return Character(status)
+
+    monkeypatch.setattr(aiohttp.ClientSession, "get", get)
+    return requests
+
+
+async def test_the_bridge_reads_how_the_person_sounds(monkeypatch: pytest.MonkeyPatch) -> None:
+    requests = serve_character(monkeypatch, 200)
+    text = await character_instructions("https://twin.example/character", "fr")
+
+    assert requests[0]["params"] == {"lang": "fr"}
+    assert "Le registre suit celui du visiteur." in text
+    assert "Aime les GPU." not in text  # a preference is a fact for /ask, not a tone
+    assert "every rule above still holds" in text  # the bridge's own rules come first
+    # A sample sets a register; the instruction is never to say it.
+    assert "(register: «Ah ça c'est cool»)" in text
+    assert "never say them" in text
+
+    assert await character_instructions("https://twin.example/character", "fr") == text
+    assert len(requests) == 1  # once per worker process
+    await character_instructions("https://twin.example/character", "en")
+    assert requests[1]["params"] == {"lang": "en"}
+
+
+@pytest.mark.parametrize("status", [None, 404])
+async def test_without_a_character_the_twin_still_bridges(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture, status: int | None
+) -> None:
+    requests = serve_character(monkeypatch, status)
+    assert await character_instructions("https://twin.example/character", "fr") == ""
+    assert "no character" in caplog.text
+    await character_instructions("https://twin.example/character", "fr")
+    assert len(requests) == 2  # a failure is not cached: the next session tries again
+    assert await character_instructions("", "fr") == ""  # CHARACTER_URL= turns it off
+
+
+def test_the_cloned_voice_is_more_expressive_at_its_own_speed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    elevenlabs = pytest.importorskip("livekit.plugins.elevenlabs")
+    monkeypatch.setattr(elevenlabs, "TTS", lambda **kwargs: kwargs)
+    env = {"TTS_PROVIDER": "elevenlabs", "TTS_MODEL": "eleven_v4_turbo", "TTS_VOICE": "v"}
+
+    built = make_tts(Config.from_env(env), "fr")
+    assert built["voice_settings"] == elevenlabs.VoiceSettings(
+        stability=0.3, similarity_boost=0.75, style=0.2
+    )  # no speed: the voice's own
+    tuned = make_tts(Config.from_env({**env, "TTS_STABILITY": "0.5", "TTS_SPEED": "1.1"}), "fr")
+    assert tuned["voice_settings"].stability == 0.5
+    assert tuned["voice_settings"].speed == 1.1

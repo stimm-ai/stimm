@@ -1714,9 +1714,10 @@
     {
       "id": "cartesia",
       "label": "Cartesia",
-      "defaultModel": "sonic-2",
+      "defaultModel": "sonic-3.6",
       "defaultVoice": "default",
       "presets": [
+        "sonic-3.6",
         "sonic-2",
         "sonic-english",
         "sonic-multilingual"

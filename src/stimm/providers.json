@@ -459,6 +459,128 @@
       }
     },
     {
+      "id": "inworld",
+      "label": "Inworld",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/inworld.md"
+      }
+    },
+    {
+      "id": "openai",
+      "label": "OpenAI",
+      "defaultModel": "gpt-4o-mini-transcribe",
+      "presets": [
+        "gpt-4o-mini-transcribe",
+        "gpt-4o-transcribe",
+        "whisper-1"
+      ],
+      "api": {
+        "kind": "openai-compat",
+        "baseUrl": "https://api.openai.com",
+        "includeFilter": "transcribe|whisper",
+        "docsUrl": "https://docs.livekit.io/agents/models/stt/openai.md"
+      },
+      "parameters": [
+        {
+          "name": "language",
+          "required": false,
+          "default": "en",
+          "type": "str | list[str]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "detect_language",
+          "required": false,
+          "default": false,
+          "type": "bool",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "model",
+          "required": false,
+          "default": "gpt-4o-mini-transcribe",
+          "type": "STTModels | str",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "prompt",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[str]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "keywords",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[list[str]]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "turn_detection",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[SessionTurnDetection]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "noise_reduction_type",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[str]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "temperature",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[float]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "base_url",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[str]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "api_key",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[str]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "client",
+          "required": false,
+          "default": null,
+          "type": "openai.AsyncClient | None",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "use_realtime",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[bool]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "vad",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[vad.VAD | None]",
+          "source": "runtime-introspection"
+        }
+      ]
+    },
+    {
       "id": "spacexai",
       "label": "SpaceXAI",
       "defaultModel": "default",
@@ -1400,19 +1522,6 @@
       }
     },
     {
-      "id": "inworld",
-      "label": "Inworld",
-      "defaultModel": "default",
-      "presets": [
-        "default"
-      ],
-      "parameters": [],
-      "api": {
-        "kind": "livekit-docs",
-        "docsUrl": "https://docs.livekit.io/agents/models/stt/inworld.md"
-      }
-    },
-    {
       "id": "meta",
       "label": "Meta",
       "defaultModel": "default",
@@ -1477,115 +1586,6 @@
         "kind": "livekit-docs",
         "docsUrl": "https://docs.livekit.io/agents/models/stt/nvidia.md"
       }
-    },
-    {
-      "id": "openai",
-      "label": "OpenAI",
-      "defaultModel": "gpt-4o-mini-transcribe",
-      "presets": [
-        "gpt-4o-mini-transcribe",
-        "gpt-4o-transcribe",
-        "whisper-1"
-      ],
-      "api": {
-        "kind": "openai-compat",
-        "baseUrl": "https://api.openai.com",
-        "includeFilter": "transcribe|whisper",
-        "docsUrl": "https://docs.livekit.io/agents/models/stt/openai.md"
-      },
-      "parameters": [
-        {
-          "name": "language",
-          "required": false,
-          "default": "en",
-          "type": "str | list[str]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "detect_language",
-          "required": false,
-          "default": false,
-          "type": "bool",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "model",
-          "required": false,
-          "default": "gpt-4o-mini-transcribe",
-          "type": "STTModels | str",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "prompt",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[str]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "keywords",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[list[str]]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "turn_detection",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[SessionTurnDetection]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "noise_reduction_type",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[str]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "temperature",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[float]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "base_url",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[str]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "api_key",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[str]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "client",
-          "required": false,
-          "default": null,
-          "type": "openai.AsyncClient | None",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "use_realtime",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[bool]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "vad",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[vad.VAD | None]",
-          "source": "runtime-introspection"
-        }
-      ]
     },
     {
       "id": "ovhcloud",
@@ -1711,6 +1711,20 @@
     }
   ],
   "tts": [
+    {
+      "id": "assemblyai",
+      "label": "AssemblyAI",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/assemblyai.md"
+      },
+      "defaultVoice": "default"
+    },
     {
       "id": "cartesia",
       "label": "Cartesia",
@@ -1870,6 +1884,84 @@
       "api": {
         "kind": "livekit-docs",
         "docsUrl": "https://docs.livekit.io/agents/models/tts/fishaudio.md"
+      },
+      "defaultVoice": "default"
+    },
+    {
+      "id": "gemini",
+      "label": "Gemini",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [
+        {
+          "name": "model",
+          "required": false,
+          "default": "gemini-3.1-flash-tts-preview",
+          "type": "GEMINI_TTS_MODELS | str",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "voice_name",
+          "required": false,
+          "default": "Kore",
+          "type": "GEMINI_VOICES | str",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "api_key",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[str]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "vertexai",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[bool]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "project",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[str]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "location",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[str]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "instructions",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[str | None]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "speakers",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[dict[str, str]]",
+          "source": "runtime-introspection"
+        },
+        {
+          "name": "speaker",
+          "required": false,
+          "default": "NOT_GIVEN",
+          "type": "NotGivenOr[str]",
+          "source": "runtime-introspection"
+        }
+      ],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/gemini.md"
       },
       "defaultVoice": "default"
     },
@@ -2678,84 +2770,6 @@
       ]
     },
     {
-      "id": "gemini",
-      "label": "Gemini",
-      "defaultModel": "default",
-      "presets": [
-        "default"
-      ],
-      "parameters": [
-        {
-          "name": "model",
-          "required": false,
-          "default": "gemini-3.1-flash-tts-preview",
-          "type": "GEMINI_TTS_MODELS | str",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "voice_name",
-          "required": false,
-          "default": "Kore",
-          "type": "GEMINI_VOICES | str",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "api_key",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[str]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "vertexai",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[bool]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "project",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[str]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "location",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[str]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "instructions",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[str | None]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "speakers",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[dict[str, str]]",
-          "source": "runtime-introspection"
-        },
-        {
-          "name": "speaker",
-          "required": false,
-          "default": "NOT_GIVEN",
-          "type": "NotGivenOr[str]",
-          "source": "runtime-introspection"
-        }
-      ],
-      "api": {
-        "kind": "livekit-docs",
-        "docsUrl": "https://docs.livekit.io/agents/models/tts/gemini.md"
-      },
-      "defaultVoice": "default"
-    },
-    {
       "id": "gnani",
       "label": "Gnani",
       "defaultModel": "default",
@@ -3460,6 +3474,20 @@
         "docsUrl": "https://docs.livekit.io/agents/models/tts/spitch.md"
       },
       "defaultVoice": "default"
+    },
+    {
+      "id": "vakyam",
+      "label": "Vakyam",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/tts/vakyam.md"
+      },
+      "defaultVoice": "default"
     }
   ],
   "llm": [
@@ -3655,6 +3683,19 @@
       "api": {
         "kind": "livekit-docs",
         "docsUrl": "https://docs.livekit.io/agents/models/llm/gemini.md"
+      }
+    },
+    {
+      "id": "kimi",
+      "label": "Kimi",
+      "defaultModel": "default",
+      "presets": [
+        "default"
+      ],
+      "parameters": [],
+      "api": {
+        "kind": "livekit-docs",
+        "docsUrl": "https://docs.livekit.io/agents/models/llm/kimi.md"
       }
     },
     {
